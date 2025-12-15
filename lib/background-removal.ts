@@ -21,6 +21,9 @@ export interface BackgroundRemovalOptions {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let bgRemovalModule: any = null
 
+// Package name stored separately to prevent webpack static analysis
+const BG_REMOVAL_PACKAGE = '@imgly/background-removal'
+
 async function getBackgroundRemovalModule() {
   // Only run on client side
   if (typeof window === 'undefined') {
@@ -28,11 +31,10 @@ async function getBackgroundRemovalModule() {
   }
 
   if (!bgRemovalModule) {
-    // Dynamic import to avoid build-time analysis
-    bgRemovalModule = await import(
-      /* webpackIgnore: true */
-      '@imgly/background-removal'
-    )
+    // Use Function constructor to create truly dynamic import that webpack cannot analyze
+    // This is necessary because @imgly/background-removal uses WASM which fails during SSR build
+    const dynamicImport = new Function('pkg', 'return import(pkg)')
+    bgRemovalModule = await dynamicImport(BG_REMOVAL_PACKAGE)
   }
   return bgRemovalModule
 }
