@@ -1,0 +1,552 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
+import {
+  ArrowLeft,
+  Download,
+  Share2,
+  Copy,
+  Check,
+  Wand2,
+  RefreshCw,
+  Loader2,
+  Instagram,
+  Facebook,
+  MessageCircle,
+  Sparkles,
+  Image as ImageIcon,
+  Settings2,
+  Type
+} from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Slider } from '@/components/ui/slider'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import { config } from '@/lib/config'
+
+interface ImageData {
+  id: string
+  original_url: string
+  enhanced_url: string | null
+  thumbnail_url: string | null
+  original_filename: string
+  style_preset: string
+  status: string
+  enhancement_settings: {
+    brightness?: number
+    contrast?: number
+    saturation?: number
+    warmth?: number
+    sharpness?: number
+    highlights?: number
+    shadows?: number
+  } | null
+  metadata: Record<string, unknown> | null
+  created_at: string
+  processed_at: string | null
+}
+
+export default function ImageEditorPage({ params }: { params: { id: string } }) {
+  const [image, setImage] = useState<ImageData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [generating, setGenerating] = useState(false)
+  const [caption, setCaption] = useState('')
+  const [hashtags, setHashtags] = useState<string[]>([])
+  const [alternates, setAlternates] = useState<string[]>([])
+  const [copied, setCopied] = useState(false)
+  const [selectedPlatform, setSelectedPlatform] = useState('instagram')
+  const [selectedLanguage, setSelectedLanguage] = useState('en')
+  const [selectedTone, setSelectedTone] = useState('engaging')
+  const [enhancing, setEnhancing] = useState(false)
+  const [selectedStyle, setSelectedStyle] = useState<string>('')
+
+  const router = useRouter()
+  const supabase = createClient()
+
+  useEffect(() => {
+    loadImage()
+  }, [params.id])
+
+  const loadImage = async () => {
+    setLoading(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/auth/login')
+        return
+      }
+
+      const { data: business } = await supabase
+        .from('businesses')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .single()
+
+      if (!business) {
+        router.push('/dashboard')
+        return
+      }
+
+      const { data: imageData, error } = await supabase
+        .from('images')
+        .select('*')
+        .eq('id', params.id)
+        .eq('business_id', business.id)
+        .single()
+
+      if (error || !imageData) {
+        router.push('/gallery')
+        return
+      }
+
+      setImage(imageData)
+      setSelectedStyle(imageData.style_preset || 'delivery')
+    } catch (err) {
+      console.error('Error loading image:', err)
+      router.push('/gallery')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleGenerateCaption = async () => {
+    if (!image) return
+
+    setGenerating(true)
+    try {
+      const response = await fetch('/api/ai/caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageId: image.id,
+          platform: selectedPlatform,
+          language: selectedLanguage,
+          tone: selectedTone,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Caption generation failed')
+      }
+
+      const data = await response.json()
+      setCaption(data.caption || '')
+      setHashtags(data.hashtags || [])
+      setAlternates(data.alternateVersions || [])
+    } catch (err) {
+      console.error('Error generating caption:', err)
+    } finally {
+      setGenerating(false)
+    }
+  }
+
+  const handleReEnhance = async () => {
+    if (!image || !selectedStyle) return
+
+    setEnhancing(true)
+    try {
+      const response = await fetch('/api/ai/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageId: image.id,
+          stylePreset: selectedStyle,
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Enhancement failed')
+      }
+
+      // Reload image to get updated data
+      await loadImage()
+    } catch (err) {
+      console.error('Error enhancing:', err)
+    } finally {
+      setEnhancing(false)
+    }
+  }
+
+  const handleCopyCaption = () => {
+    const fullCaption = caption + '\n\n' + hashtags.map(h => `#${h}`).join(' ')
+    navigator.clipboard.writeText(fullCaption)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleDownload = async () => {
+    if (!image) return
+
+    const url = image.enhanced_url || image.original_url
+    const response = await fetch(url)
+    const blob = await response.blob()
+    const blobUrl = URL.createObjectURL(blob)
+
+    const a = document.createElement('a')
+    a.href = blobUrl
+    a.download = `foodsnap-${image.original_filename || 'image.jpg'}`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(blobUrl)
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
+      </div>
+    )
+  }
+
+  if (!image) {
+    return (
+      <div className="p-6">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <ImageIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="font-medium mb-2">Image not found</h3>
+            <Button asChild>
+              <Link href="/gallery">Back to Gallery</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-6 space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" size="icon" asChild className="h-9 w-9">
+            <Link href="/gallery">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold">{image.original_filename || 'Untitled'}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              {image.status === 'completed' && (
+                <Badge className="bg-green-500">Enhanced</Badge>
+              )}
+              {image.status === 'processing' && (
+                <Badge className="bg-orange-500">Processing</Badge>
+              )}
+              {image.status === 'pending' && (
+                <Badge variant="outline">Pending</Badge>
+              )}
+              {image.status === 'failed' && (
+                <Badge variant="destructive">Failed</Badge>
+              )}
+              <span className="text-sm text-muted-foreground">
+                {image.style_preset && config.stylePresets.find(p => p.id === image.style_preset)?.name}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={handleDownload}>
+            <Download className="mr-2 h-4 w-4" />
+            Download
+          </Button>
+          <Button className="bg-orange-500 hover:bg-orange-600">
+            <Share2 className="mr-2 h-4 w-4" />
+            Post to Social
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Image Preview */}
+        <div className="space-y-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                <img
+                  src={image.enhanced_url || image.original_url}
+                  alt={image.original_filename || 'Food photo'}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Enhancement Settings Display */}
+          {image.enhancement_settings && (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Settings2 className="h-4 w-4" />
+                  Enhancement Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {Object.entries(image.enhancement_settings).map(([key, value]) => (
+                  <div key={key} className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="capitalize">{key}</span>
+                      <span className="text-muted-foreground">{value}</span>
+                    </div>
+                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-orange-500 rounded-full"
+                        style={{ width: `${Math.min(100, Math.max(0, (value as number) + 50))}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Editor Panel */}
+        <div className="space-y-4">
+          <Tabs defaultValue="caption" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="caption">
+                <Type className="mr-2 h-4 w-4" />
+                Caption
+              </TabsTrigger>
+              <TabsTrigger value="style">
+                <Wand2 className="mr-2 h-4 w-4" />
+                Style
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Caption Tab */}
+            <TabsContent value="caption" className="space-y-4 mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">AI Caption Generator</CardTitle>
+                  <CardDescription>
+                    Generate engaging captions for your food photo
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Platform Selection */}
+                  <div className="space-y-2">
+                    <Label>Platform</Label>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'instagram', icon: Instagram, label: 'Instagram' },
+                        { id: 'facebook', icon: Facebook, label: 'Facebook' },
+                        { id: 'tiktok', icon: MessageCircle, label: 'TikTok' },
+                        { id: 'xiaohongshu', icon: Sparkles, label: 'Xiaohongshu' },
+                      ].map((platform) => (
+                        <button
+                          key={platform.id}
+                          onClick={() => setSelectedPlatform(platform.id)}
+                          className={cn(
+                            'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all',
+                            selectedPlatform === platform.id
+                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                              : 'border-border hover:border-muted-foreground/50'
+                          )}
+                        >
+                          <platform.icon className="h-4 w-4" />
+                          {platform.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Language Selection */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Language</Label>
+                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="en">English</SelectItem>
+                          <SelectItem value="zh">简体中文</SelectItem>
+                          <SelectItem value="zh-tw">繁體中文</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Tone</Label>
+                      <Select value={selectedTone} onValueChange={setSelectedTone}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="engaging">Engaging</SelectItem>
+                          <SelectItem value="professional">Professional</SelectItem>
+                          <SelectItem value="casual">Casual</SelectItem>
+                          <SelectItem value="playful">Playful</SelectItem>
+                          <SelectItem value="informative">Informative</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={handleGenerateCaption}
+                    disabled={generating}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {generating ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Generate Caption
+                      </>
+                    )}
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Generated Caption */}
+              {caption && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-lg">Generated Caption</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleCopyCaption}
+                      >
+                        {copied ? (
+                          <>
+                            <Check className="mr-2 h-4 w-4" />
+                            Copied!
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="mr-2 h-4 w-4" />
+                            Copy
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <Textarea
+                      value={caption}
+                      onChange={(e) => setCaption(e.target.value)}
+                      rows={4}
+                      className="resize-none"
+                    />
+
+                    {hashtags.length > 0 && (
+                      <div>
+                        <Label className="text-sm">Hashtags</Label>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {hashtags.map((tag, index) => (
+                            <Badge key={index} variant="secondary">
+                              #{tag}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {alternates.length > 0 && (
+                      <div>
+                        <Label className="text-sm">Alternative Versions</Label>
+                        <div className="space-y-2 mt-2">
+                          {alternates.map((alt, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setCaption(alt)}
+                              className="w-full p-3 text-left text-sm border rounded-lg hover:bg-muted transition-colors"
+                            >
+                              {alt}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            {/* Style Tab */}
+            <TabsContent value="style" className="space-y-4 mt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Re-enhance with Different Style</CardTitle>
+                  <CardDescription>
+                    Apply a different style preset to your image
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    {config.stylePresets.map((preset) => (
+                      <button
+                        key={preset.id}
+                        onClick={() => setSelectedStyle(preset.id)}
+                        disabled={enhancing}
+                        className={cn(
+                          'p-3 rounded-lg border text-left transition-all',
+                          selectedStyle === preset.id
+                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20 ring-2 ring-orange-500'
+                            : 'border-border hover:border-muted-foreground/50'
+                        )}
+                      >
+                        <div className="font-medium text-sm">{preset.name}</div>
+                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
+                          {preset.description}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+
+                  <Button
+                    onClick={handleReEnhance}
+                    disabled={enhancing || selectedStyle === image.style_preset}
+                    className="w-full bg-orange-500 hover:bg-orange-600"
+                  >
+                    {enhancing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Enhancing...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Re-enhance (1 credit)
+                      </>
+                    )}
+                  </Button>
+
+                  {selectedStyle === image.style_preset && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      Select a different style to re-enhance
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </div>
+  )
+}
