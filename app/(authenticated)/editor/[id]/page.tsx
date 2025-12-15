@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -10,22 +10,19 @@ import {
   Share2,
   Copy,
   Check,
-  Wand2,
-  RefreshCw,
   Loader2,
   Instagram,
   Facebook,
   MessageCircle,
   Sparkles,
   Image as ImageIcon,
-  Settings2,
-  Type
+  Type,
+  Sliders
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -37,6 +34,8 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { config } from '@/lib/config'
+import { ImageEditor } from '@/components/editor'
+import type { EnhancementSettings } from '@/lib/image-processing'
 
 interface ImageData {
   id: string
@@ -46,15 +45,7 @@ interface ImageData {
   original_filename: string
   style_preset: string
   status: string
-  enhancement_settings: {
-    brightness?: number
-    contrast?: number
-    saturation?: number
-    warmth?: number
-    sharpness?: number
-    highlights?: number
-    shadows?: number
-  } | null
+  enhancement_settings: EnhancementSettings | null
   metadata: Record<string, unknown> | null
   created_at: string
   processed_at: string | null
@@ -71,8 +62,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [selectedPlatform, setSelectedPlatform] = useState('instagram')
   const [selectedLanguage, setSelectedLanguage] = useState('en')
   const [selectedTone, setSelectedTone] = useState('engaging')
-  const [enhancing, setEnhancing] = useState(false)
   const [selectedStyle, setSelectedStyle] = useState<string>('')
+  const [activeMainTab, setActiveMainTab] = useState<'edit' | 'caption'>('edit')
+  const [businessId, setBusinessId] = useState<string | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -101,6 +93,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         return
       }
 
+      setBusinessId(business.id)
+
       const { data: imageData, error } = await supabase
         .from('images')
         .select('*')
@@ -122,6 +116,49 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       setLoading(false)
     }
   }
+
+  // Save enhanced image to Supabase Storage
+  const handleSaveEnhancedImage = useCallback(async (imageBlob: Blob) => {
+    if (!image || !businessId) return
+
+    try {
+      // Create unique filename for enhanced image
+      const fileName = `${businessId}/enhanced/${image.id}-${Date.now()}.jpg`
+
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('images')
+        .upload(fileName, imageBlob, {
+          cacheControl: '3600',
+          upsert: true
+        })
+
+      if (uploadError) throw uploadError
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('images')
+        .getPublicUrl(fileName)
+
+      // Update image record with enhanced URL
+      const { error: updateError } = await supabase
+        .from('images')
+        .update({
+          enhanced_url: publicUrl,
+          status: 'completed',
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', image.id)
+
+      if (updateError) throw updateError
+
+      // Reload image to get updated data
+      await loadImage()
+    } catch (err) {
+      console.error('Error saving enhanced image:', err)
+      throw err
+    }
+  }, [image, businessId, supabase])
 
   const handleGenerateCaption = async () => {
     if (!image) return
@@ -151,33 +188,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       console.error('Error generating caption:', err)
     } finally {
       setGenerating(false)
-    }
-  }
-
-  const handleReEnhance = async () => {
-    if (!image || !selectedStyle) return
-
-    setEnhancing(true)
-    try {
-      const response = await fetch('/api/ai/enhance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageId: image.id,
-          stylePreset: selectedStyle,
-        }),
-      })
-
-      if (!response.ok) {
-        throw new Error('Enhancement failed')
-      }
-
-      // Reload image to get updated data
-      await loadImage()
-    } catch (err) {
-      console.error('Error enhancing:', err)
-    } finally {
-      setEnhancing(false)
     }
   }
 
@@ -272,66 +282,47 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Image Preview */}
-        <div className="space-y-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                <img
-                  src={image.enhanced_url || image.original_url}
-                  alt={image.original_filename || 'Food photo'}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Main Tabs: Edit vs Caption */}
+      <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as typeof activeMainTab)} className="w-full">
+        <TabsList className="grid w-full grid-cols-2 max-w-md">
+          <TabsTrigger value="edit">
+            <Sliders className="mr-2 h-4 w-4" />
+            Edit Image
+          </TabsTrigger>
+          <TabsTrigger value="caption">
+            <Type className="mr-2 h-4 w-4" />
+            Caption
+          </TabsTrigger>
+        </TabsList>
 
-          {/* Enhancement Settings Display */}
-          {image.enhancement_settings && (
+        {/* Edit Image Tab - Real-time Image Editor */}
+        <TabsContent value="edit" className="mt-6">
+          <ImageEditor
+            originalUrl={image.original_url}
+            aiSettings={image.enhancement_settings || undefined}
+            stylePreset={image.style_preset}
+            onSave={handleSaveEnhancedImage}
+          />
+        </TabsContent>
+
+        {/* Caption Tab */}
+        <TabsContent value="caption" className="mt-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Image Preview */}
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Settings2 className="h-4 w-4" />
-                  Enhancement Settings
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {Object.entries(image.enhancement_settings).map(([key, value]) => (
-                  <div key={key} className="space-y-1">
-                    <div className="flex justify-between text-xs">
-                      <span className="capitalize">{key}</span>
-                      <span className="text-muted-foreground">{value}</span>
-                    </div>
-                    <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-orange-500 rounded-full"
-                        style={{ width: `${Math.min(100, Math.max(0, (value as number) + 50))}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+              <CardContent className="p-4">
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={image.enhanced_url || image.original_url}
+                    alt={image.original_filename || 'Food photo'}
+                    className="w-full h-full object-contain"
+                  />
+                </div>
               </CardContent>
             </Card>
-          )}
-        </div>
 
-        {/* Editor Panel */}
-        <div className="space-y-4">
-          <Tabs defaultValue="caption" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="caption">
-                <Type className="mr-2 h-4 w-4" />
-                Caption
-              </TabsTrigger>
-              <TabsTrigger value="style">
-                <Wand2 className="mr-2 h-4 w-4" />
-                Style
-              </TabsTrigger>
-            </TabsList>
-
-            {/* Caption Tab */}
-            <TabsContent value="caption" className="space-y-4 mt-4">
+            {/* Caption Generator Panel */}
+            <div className="space-y-4">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-lg">AI Caption Generator</CardTitle>
@@ -485,68 +476,10 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   </CardContent>
                 </Card>
               )}
-            </TabsContent>
-
-            {/* Style Tab */}
-            <TabsContent value="style" className="space-y-4 mt-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Re-enhance with Different Style</CardTitle>
-                  <CardDescription>
-                    Apply a different style preset to your image
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-2">
-                    {config.stylePresets.map((preset) => (
-                      <button
-                        key={preset.id}
-                        onClick={() => setSelectedStyle(preset.id)}
-                        disabled={enhancing}
-                        className={cn(
-                          'p-3 rounded-lg border text-left transition-all',
-                          selectedStyle === preset.id
-                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20 ring-2 ring-orange-500'
-                            : 'border-border hover:border-muted-foreground/50'
-                        )}
-                      >
-                        <div className="font-medium text-sm">{preset.name}</div>
-                        <div className="text-xs text-muted-foreground mt-1 line-clamp-2">
-                          {preset.description}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-
-                  <Button
-                    onClick={handleReEnhance}
-                    disabled={enhancing || selectedStyle === image.style_preset}
-                    className="w-full bg-orange-500 hover:bg-orange-600"
-                  >
-                    {enhancing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Enhancing...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Re-enhance (1 credit)
-                      </>
-                    )}
-                  </Button>
-
-                  {selectedStyle === image.style_preset && (
-                    <p className="text-sm text-muted-foreground text-center">
-                      Select a different style to re-enhance
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }
