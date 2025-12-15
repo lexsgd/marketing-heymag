@@ -17,12 +17,22 @@ export interface BackgroundRemovalOptions {
   onProgress?: (progress: number) => void
 }
 
-// Dynamically import the background removal library only when needed
-let bgRemovalModule: typeof import('@imgly/background-removal') | null = null
+// Cache for the dynamically imported module
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let bgRemovalModule: any = null
 
 async function getBackgroundRemovalModule() {
+  // Only run on client side
+  if (typeof window === 'undefined') {
+    throw new Error('Background removal can only run in the browser')
+  }
+
   if (!bgRemovalModule) {
-    bgRemovalModule = await import('@imgly/background-removal')
+    // Dynamic import to avoid build-time analysis
+    bgRemovalModule = await import(
+      /* webpackIgnore: true */
+      '@imgly/background-removal'
+    )
   }
   return bgRemovalModule
 }
