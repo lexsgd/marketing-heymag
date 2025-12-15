@@ -40,10 +40,10 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <Button variant="ghost" asChild>
-              <Link href="/login">Log in</Link>
+              <Link href="/auth/login">Log in</Link>
             </Button>
             <Button asChild className="food-gradient border-0">
-              <Link href="/signup">
+              <Link href="/auth/signup">
                 Start Free Trial
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
