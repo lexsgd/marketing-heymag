@@ -5,8 +5,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 // Use Node.js runtime (not Edge) for Google AI SDK
 export const runtime = 'nodejs'
 
-// Initialize Google AI
-const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
+// Lazy initialization of Google AI client
+let genAI: GoogleGenerativeAI | null = null
+
+function getGoogleAI(): GoogleGenerativeAI {
+  if (!genAI) {
+    genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
+  }
+  return genAI
+}
 
 // Style preset prompts
 const stylePrompts: Record<string, string> = {
@@ -92,7 +99,7 @@ export async function POST(request: NextRequest) {
       const mimeType = image.mime_type || 'image/jpeg'
 
       // Call Google Gemini for image enhancement
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+      const model = getGoogleAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
 
       const result = await model.generateContent([
         {

@@ -5,9 +5,17 @@ import Anthropic from '@anthropic-ai/sdk'
 // Use Node.js runtime (not Edge) for Anthropic SDK
 export const runtime = 'nodejs'
 
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+// Lazy initialization of Anthropic client
+let anthropicClient: Anthropic | null = null
+
+function getAnthropic(): Anthropic {
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({
+      apiKey: process.env.ANTHROPIC_API_KEY,
+    })
+  }
+  return anthropicClient
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -98,7 +106,7 @@ Respond with JSON in this format:
   "alternateVersions": ["Alternative caption 1", "Alternative caption 2"]
 }`
 
-    const message = await anthropic.messages.create({
+    const message = await getAnthropic().messages.create({
       model: 'claude-3-haiku-20240307',
       max_tokens: 500,
       messages: [
