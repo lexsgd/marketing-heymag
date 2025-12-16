@@ -22,18 +22,18 @@ export default async function AuthenticatedLayout({
   let business = null
   const { data: businessData } = await supabase
     .from('businesses')
-    .select(`
-      *,
-      credits (
-        credits_remaining,
-        credits_used
-      )
-    `)
+    .select('*')
     .eq('auth_user_id', user.id)
     .single()
 
   if (businessData) {
-    const creditsData = businessData.credits?.[0]
+    // Get credits separately (more reliable than nested select)
+    const { data: creditsData } = await supabase
+      .from('credits')
+      .select('credits_remaining, credits_used')
+      .eq('business_id', businessData.id)
+      .single()
+
     business = {
       ...businessData,
       credits_remaining: creditsData?.credits_remaining || 0,

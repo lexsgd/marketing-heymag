@@ -21,27 +21,32 @@ export default async function DashboardPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  // Get business with credits
+  // Get business first
   const { data: business, error: businessError } = await supabase
     .from('businesses')
-    .select(`
-      *,
-      credits (
-        credits_remaining,
-        credits_used
-      )
-    `)
+    .select('*')
     .eq('auth_user_id', user.id)
     .single()
 
+  // Get credits separately (more reliable than nested select)
+  let creditsRemaining = 0
+  let creditsUsed = 0
+
+  if (business?.id) {
+    const { data: creditsData } = await supabase
+      .from('credits')
+      .select('credits_remaining, credits_used')
+      .eq('business_id', business.id)
+      .single()
+
+    creditsRemaining = creditsData?.credits_remaining || 0
+    creditsUsed = creditsData?.credits_used || 0
+  }
+
   // Debug logging
   console.log('[Dashboard] User ID:', user.id)
-  console.log('[Dashboard] Business:', JSON.stringify(business, null, 2))
-  console.log('[Dashboard] Business Error:', businessError)
-  console.log('[Dashboard] Credits array:', business?.credits)
-
-  const creditsRemaining = business?.credits?.[0]?.credits_remaining || 0
-  const creditsUsed = business?.credits?.[0]?.credits_used || 0
+  console.log('[Dashboard] Business ID:', business?.id)
+  console.log('[Dashboard] Credits:', { creditsRemaining, creditsUsed })
   const isTrialing = business?.subscription_status === 'trial'
 
   // Get recent images
