@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import {
   Upload,
   Camera,
@@ -30,7 +29,6 @@ export default function EditorPage() {
   const [error, setError] = useState<string | null>(null)
 
   const router = useRouter()
-  const supabase = createClient()
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -85,57 +83,26 @@ export default function EditorPage() {
     setUploadProgress(0)
 
     try {
-      // Get user business
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) throw new Error('Not authenticated')
+      setUploadProgress(10)
 
-      const { data: business } = await supabase
-        .from('businesses')
-        .select('id')
-        .eq('auth_user_id', user.id)
-        .single()
+      // Upload via API route (uses service role for storage)
+      const formData = new FormData()
+      formData.append('file', selectedFile)
+      formData.append('stylePreset', selectedStyle)
 
-      if (!business) throw new Error('Business not found')
-
-      // Create unique filename
-      const fileExt = selectedFile.name.split('.').pop()
-      const fileName = `${business.id}/original/${Date.now()}.${fileExt}`
-
-      setUploadProgress(20)
-
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(fileName, selectedFile, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (uploadError) throw uploadError
+      const uploadResponse = await fetch('/api/images/upload', {
+        method: 'POST',
+        body: formData,
+      })
 
       setUploadProgress(50)
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(fileName)
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json()
+        throw new Error(errorData.error || 'Upload failed')
+      }
 
-      // Create image record
-      const { data: imageRecord, error: imageError } = await supabase
-        .from('images')
-        .insert({
-          business_id: business.id,
-          original_url: publicUrl,
-          original_filename: selectedFile.name,
-          file_size_bytes: selectedFile.size,
-          mime_type: selectedFile.type,
-          style_preset: selectedStyle,
-          status: 'pending',
-        })
-        .select()
-        .single()
-
-      if (imageError) throw imageError
+      const { image: imageRecord } = await uploadResponse.json()
 
       setUploadProgress(70)
       setUploading(false)
