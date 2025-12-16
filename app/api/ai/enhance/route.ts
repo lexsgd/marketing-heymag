@@ -82,33 +82,56 @@ interface RetryConfig {
 }
 
 const GEMINI_RETRY_CONFIG: RetryConfig = {
-  maxRetries: 4,           // Try up to 4 times total (1 initial + 3 retries)
-  baseDelayMs: 5000,       // Start with 5 second delay
-  maxDelayMs: 45000,       // Cap at 45 seconds
-  backoffMultiplier: 2.5,  // Exponential backoff: 5s -> 12.5s -> 31.25s -> 45s (capped)
+  maxRetries: 3,           // 3 attempts total (fits in 60s Vercel limit)
+  baseDelayMs: 2000,       // Start with 2 second delay (fast retries)
+  maxDelayMs: 5000,        // Cap at 5 seconds
+  backoffMultiplier: 2,    // Exponential backoff: 2s -> 4s
 }
+
+// Per-request timeout for Gemini API calls
+// This prevents hanging on slow/overloaded model responses
+const GEMINI_REQUEST_TIMEOUT_MS = 18000 // 18 seconds per attempt
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
+// Timeout wrapper using Promise.race
+// This ensures each API call fails fast instead of hanging
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`TIMEOUT: ${errorMessage}`)), timeoutMs)
+    )
+  ])
+}
+
 function isRetryableError(error: unknown): boolean {
-  const errorMessage = String(error)
+  const errorMessage = String(error).toLowerCase()
 
   // 503 Service Unavailable - model overloaded
-  if (errorMessage.includes('503') || errorMessage.includes('Service Unavailable')) {
+  if (errorMessage.includes('503') || errorMessage.includes('service unavailable')) {
     return true
   }
   // 429 Too Many Requests - rate limited
-  if (errorMessage.includes('429') || errorMessage.includes('Too Many Requests')) {
+  if (errorMessage.includes('429') || errorMessage.includes('too many requests')) {
     return true
   }
-  // Connection/timeout issues
-  if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+  // Our custom timeout wrapper
+  if (errorMessage.includes('timeout')) {
+    return true
+  }
+  // Connection issues
+  if (errorMessage.includes('etimedout') || errorMessage.includes('econnreset')) {
     return true
   }
   // Model temporarily unavailable
   if (errorMessage.includes('overloaded') || errorMessage.includes('temporarily unavailable')) {
+    return true
+  }
+  // Network errors
+  if (errorMessage.includes('fetch failed') || errorMessage.includes('network')) {
     return true
   }
 
@@ -485,18 +508,26 @@ OUTPUT: Return the enhanced version of THIS EXACT photo. Preserve subject fideli
 After enhancement, provide 3 tips in format:
 SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
-        // Wrap Gemini API call with retry logic for 503 "model overloaded" errors
+        // Wrap Gemini API call with retry logic AND per-request timeout
+        // - Timeout: 18s per attempt (prevents hanging on overloaded model)
+        // - Retries: 3 attempts with 2s -> 4s delays
+        // - Total max time: ~18*3 + 6 = ~60s (fits Vercel limit)
         const result = await retryWithBackoff(
           async () => {
-            return await model.generateContent([
-              {
-                inlineData: {
-                  mimeType,
-                  data: sharpEnhancedBase64 // Use Sharp-enhanced image as input
-                }
-              },
-              { text: preservationPrompt }
-            ])
+            // Add timeout to prevent hanging on slow model responses
+            return await withTimeout(
+              model.generateContent([
+                {
+                  inlineData: {
+                    mimeType,
+                    data: sharpEnhancedBase64 // Use Sharp-enhanced image as input
+                  }
+                },
+                { text: preservationPrompt }
+              ]),
+              GEMINI_REQUEST_TIMEOUT_MS,
+              `Gemini 3 Pro Image request exceeded ${GEMINI_REQUEST_TIMEOUT_MS / 1000}s`
+            )
           },
           'Gemini 3 Pro Image',
           GEMINI_RETRY_CONFIG
