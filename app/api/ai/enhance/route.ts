@@ -6,6 +6,9 @@ import sharp from 'sharp'
 // Use Node.js runtime (not Edge) for Sharp and Google AI SDK
 export const runtime = 'nodejs'
 
+// Extend timeout to 60 seconds (requires Vercel Pro, falls back to 10s on Hobby)
+export const maxDuration = 60
+
 // Lazy initialization of Google AI client
 let genAI: GoogleGenerativeAI | null = null
 

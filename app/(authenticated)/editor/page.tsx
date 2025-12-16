@@ -122,25 +122,54 @@ export default function EditorPage() {
       setUploading(false)
       setEnhancing(true)
 
-      // Call AI enhancement API
-      const enhanceResponse = await fetch('/api/ai/enhance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageId: imageRecord.id,
-          stylePreset: selectedStyle,
-        }),
-      })
+      // Call AI enhancement API with timeout
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 60000) // 60s timeout
 
-      if (!enhanceResponse.ok) {
-        const errorData = await enhanceResponse.json()
-        throw new Error(errorData.error || 'Enhancement failed')
+      try {
+        const enhanceResponse = await fetch('/api/ai/enhance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageId: imageRecord.id,
+            stylePreset: selectedStyle,
+          }),
+          signal: controller.signal,
+        })
+
+        clearTimeout(timeoutId)
+
+        // Get response text first to handle empty responses
+        const enhanceText = await enhanceResponse.text()
+
+        if (!enhanceText) {
+          console.error('Empty response from enhance API')
+          throw new Error('Enhancement server returned empty response. The image was uploaded - please try enhancing from the gallery.')
+        }
+
+        let enhanceData
+        try {
+          enhanceData = JSON.parse(enhanceText)
+        } catch {
+          console.error('Invalid JSON from enhance API:', enhanceText.substring(0, 200))
+          throw new Error('Enhancement failed: Invalid server response')
+        }
+
+        if (!enhanceResponse.ok) {
+          throw new Error(enhanceData.error || 'Enhancement failed')
+        }
+
+        setUploadProgress(100)
+
+        // Redirect to editor with image
+        router.push(`/editor/${imageRecord.id}`)
+      } catch (fetchError: unknown) {
+        clearTimeout(timeoutId)
+        if ((fetchError as Error).name === 'AbortError') {
+          throw new Error('Enhancement timed out. The image was uploaded - please try enhancing from the gallery.')
+        }
+        throw fetchError
       }
-
-      setUploadProgress(100)
-
-      // Redirect to editor with image
-      router.push(`/editor/${imageRecord.id}`)
     } catch (err: unknown) {
       console.error('Upload error:', err)
       setError((err as Error).message || 'Upload failed. Please try again.')
