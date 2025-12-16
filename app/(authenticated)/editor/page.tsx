@@ -97,12 +97,26 @@ export default function EditorPage() {
 
       setUploadProgress(50)
 
-      if (!uploadResponse.ok) {
-        const errorData = await uploadResponse.json()
-        throw new Error(errorData.error || 'Upload failed')
+      // Get response text first to handle empty responses
+      const responseText = await uploadResponse.text()
+
+      if (!responseText) {
+        throw new Error('Server returned empty response. Please try again.')
       }
 
-      const { image: imageRecord } = await uploadResponse.json()
+      let uploadData
+      try {
+        uploadData = JSON.parse(responseText)
+      } catch {
+        console.error('Failed to parse response:', responseText)
+        throw new Error('Invalid server response. Please try again.')
+      }
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || 'Upload failed')
+      }
+
+      const imageRecord = uploadData.image
 
       setUploadProgress(70)
       setUploading(false)
