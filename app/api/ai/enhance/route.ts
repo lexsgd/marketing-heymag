@@ -340,7 +340,8 @@ export async function POST(request: NextRequest) {
       // Call Google Gemini for image analysis and enhancement recommendations
       currentStep = 'initializing Google AI'
       console.log('[Enhance] Initializing Google AI model')
-      const model = getGoogleAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
+      // Use gemini-2.0-flash (gemini-1.5-flash was deprecated/removed)
+      const model = getGoogleAI().getGenerativeModel({ model: 'gemini-2.0-flash' })
 
       currentStep = 'calling Google Gemini API'
       console.log('[Enhance] Calling Google Gemini API...')
@@ -456,7 +457,7 @@ export async function POST(request: NextRequest) {
           enhanced_url: enhancedUrl,
           enhancement_settings: enhancementData.enhancements,
           processed_at: new Date().toISOString(),
-          ai_model: 'gemini-1.5-flash',
+          ai_model: 'gemini-2.0-flash',
           ai_suggestions: enhancementData.suggestions,
           processing_skipped: processingSkipped, // Track if server-side processing was skipped
         })
