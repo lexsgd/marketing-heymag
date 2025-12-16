@@ -63,55 +63,136 @@ function getGoogleAI(): GoogleGenerativeAI {
   return genAI
 }
 
-// Style preset prompts - 30+ presets with SEA market focus
+// Style preset prompts - Research-backed prompts optimized for each platform
+// Based on official platform guidelines and food photography best practices
 const stylePrompts: Record<string, string> = {
-  // SEA Delivery Platforms
-  'grab': 'Professional food photography optimized for GrabFood listing. Clean bright background, perfectly lit from above, appetizing presentation, high contrast, vibrant colors that make food look fresh and irresistible. Square format, hero shot angle.',
-  'foodpanda': 'High-impact food photo for Foodpanda marketplace. Bright, clean presentation, vibrant saturated colors, professional studio lighting. Square format optimized for pink/magenta brand context.',
-  'deliveroo': 'Premium food photography for Deliveroo SEA. Clean modern aesthetic, professional lighting, appetizing styling. Teal-friendly color palette, high quality restaurant feel.',
-  'gojek': 'GoFood Indonesia-style food photography. Bright, appetizing, approachable presentation. Clean background, vibrant colors, suitable for local SEA cuisine.',
-  'shopee': 'ShopeeFood marketplace optimized photo. Bright, eye-catching, high saturation. Orange-friendly tones, clean background, scroll-stopping appeal.',
-  'delivery': 'Professional food photography for delivery app listing. Clean white or light background, perfectly lit from above, appetizing presentation, high contrast, vibrant colors that make food look fresh and delicious.',
+  // ============================================
+  // SEA DELIVERY PLATFORMS
+  // ============================================
 
-  // Social Media Platforms
-  'instagram': 'Instagram-worthy food photo. Vibrant colors, perfect lighting, lifestyle aesthetic, appetizing and shareable. Square format composition, trendy food styling, natural light effect.',
-  'instagram-stories': 'Vertical 9:16 format food photo for Instagram Stories. Dynamic composition, bold colors, eye-catching presentation, modern and trendy aesthetic with room for text overlay.',
-  'instagram-reels': 'High-energy vertical food content for Instagram Reels. Punchy colors, dynamic angles, scroll-stopping visual impact. Modern Gen-Z aesthetic.',
-  'tiktok': 'TikTok-optimized food visual. Eye-catching, scroll-stopping, vibrant colors. Dynamic composition, trendy aesthetic, designed to grab attention in first 0.5 seconds.',
-  'facebook': 'Facebook feed optimized food photo. Warm, inviting, shareable aesthetic. Balanced colors, approachable presentation, works well in varied feed contexts.',
-  'xiaohongshu': 'Xiaohongshu (RED) style food photo. Trendy, lifestyle-focused, pastel or vibrant colors. Cute presentation, social media perfect, Chinese youth aesthetic.',
-  'wechat': 'WeChat Moments shareable format. Clean, professional, culturally appropriate for Chinese social media. Elegant but not overly stylized.',
+  // GrabFood: Official specs - 800x800px, 1:1 square, JPEG/PNG, max 6MB
+  'grab': 'Professional GrabFood menu photography. Square 1:1 composition with dish perfectly centered, leaving small margins on all sides for app cropping. Clean uncluttered light background. Soft natural window lighting from above at 45 degrees. Single dish focus - one item only. High resolution, appetizing colors, food taking up majority of frame. Top-down overhead angle for bowls/plates, or 45-degree hero shot for burgers/sandwiches. No hands, faces, text, or watermarks. Fresh, vibrant, irresistible presentation optimized for mobile viewing.',
 
-  // Restaurant Styles
-  'fine-dining': 'Fine dining restaurant photography. Dark, moody background with dramatic lighting. Elegant plating, sophisticated atmosphere, Michelin-star quality presentation.',
-  'casual': 'Warm, inviting casual dining photo. Natural wood tones, cozy atmosphere, comfort food aesthetic. Friendly and approachable presentation.',
-  'fast-food': 'High-energy fast food marketing photo. Bold colors, high saturation, appetizing and indulgent. Dynamic angles, youthful and exciting presentation.',
-  'cafe': 'Artisan cafe aesthetic. Rustic wood surfaces, natural light, handcrafted feel. Cozy coffee shop atmosphere, Instagram-worthy plating.',
-  'street-food': 'Authentic street food photography. Vibrant, energetic, real-world atmosphere. Captures the essence of hawker culture and street dining.',
-  'menu': 'Professional menu card photography. Clean, elegant presentation on neutral background. Professional studio lighting, precise food styling, suitable for printed menus.',
-  'kopitiam': 'Traditional kopitiam coffee shop aesthetic. Nostalgic, warm, local SEA heritage feel. Rustic surfaces, vintage atmosphere, comfort food presentation.',
-  'hawker': 'Hawker centre style food photography. Authentic, vibrant, captures the spirit of SEA street food culture. Casual but appetizing presentation.',
+  // Foodpanda: Square format, pink/magenta brand context, high saturation
+  'foodpanda': 'Foodpanda marketplace food photography. Square 1:1 format with centered composition and generous margins. Bright, high-saturation colors that pop on mobile screens. Professional studio-quality lighting with no harsh shadows. Clean complementary background - works well with pink/magenta brand accents. Single dish per photo, precisely styled. Overhead or 45-degree angle depending on dish height. Appetizing, scroll-stopping presentation. No collages, no stock imagery look.',
 
-  // Background Styles
-  'minimal': 'Minimalist food photography on pure white background. Clean, product-focused, professional e-commerce style. Maximum clarity and food focus.',
-  'rustic': 'Rustic wooden table surface backdrop. Natural, organic feel, artisan aesthetic. Warm wood tones complement food colors.',
-  'marble': 'Elegant marble surface backdrop. Luxury, sophisticated, upscale restaurant feel. Cool tones, premium aesthetic.',
-  'dark-moody': 'Dark moody food photography. Dramatic shadows, rich contrast, artistic presentation. Sophisticated, editorial magazine style.',
-  'bright-airy': 'Bright and airy natural light aesthetic. Fresh, healthy, appetizing. Soft shadows, clean whites, lifestyle magazine feel.',
-  'tropical': 'Tropical paradise aesthetic. Bright vibrant colors, palm leaves, exotic fruits. Perfect for tropical cuisine and beach vibes.',
-  'concrete': 'Industrial concrete surface backdrop. Modern, urban, edgy aesthetic. Works great for trendy cafe and modern cuisine.',
-  'botanical': 'Botanical green backdrop with plants and leaves. Fresh, healthy, organic aesthetic. Perfect for salads, healthy bowls, vegetarian cuisine.',
+  // Deliveroo: Menu 1200x800 (3:2 crops to 1:1), Hero 1920x1080 (16:9)
+  'deliveroo': 'Deliveroo menu photography following official guidelines. Landscape 3:2 aspect ratio (crops to square). Dish centered in frame with small margins all around. Single dish focus - exactly one item per photo. Soft natural window lighting, no dark shadows. All ingredients and components clearly visible. Teal-friendly neutral color palette. Clean, modern, premium restaurant aesthetic. No hands, faces, text overlays, or watermarks. Photorealistic, not overly photoshopped. Professional quality that boosts order conversion.',
 
-  // Photography Techniques
-  'overhead': 'Flat lay top-down food photography. Perfect symmetry, full dish visibility, ideal for complex platings and bowls.',
-  'natural-light': 'Window-lit natural light photography. Soft, diffused lighting, organic feel. No harsh shadows, gentle gradients.',
-  'neon': 'Neon-lit night market style. Vibrant artificial lighting, urban nightlife aesthetic. Bold colors, modern edge.',
-  'vintage': 'Vintage nostalgic aesthetic. Warm sepia tones, film grain, retro feel. Comfort food, heritage recipes.',
-  'hdr': 'HDR enhanced high dynamic range. Maximum detail in shadows and highlights, punchy colors, dramatic impact.',
-  'bokeh': 'Shallow depth of field with bokeh background. Blurred background lights, focus on food subject, artistic restaurant atmosphere.',
+  // GoFood/Gojek: Indonesian market, vibrant, mobile-optimized
+  'gojek': 'GoFood Indonesia-style food photography. Bright, vibrant, appetizing presentation suitable for local SEA cuisine. Proper lighting highlighting food textures and colors. Clean background that complements Indonesian dishes. Centered composition for mobile app display. High resolution menu photo quality. Authentic presentation that resonates with Indonesian food culture. Natural, approachable, mouth-watering appeal.',
 
-  // Legacy presets (for backward compatibility)
-  'stories': 'Vertical 9:16 format food photo for Instagram Stories and Reels. Dynamic composition, bold colors, eye-catching presentation, modern and trendy aesthetic.',
+  // ShopeeFood: Orange brand tones, high saturation, scroll-stopping
+  'shopee': 'ShopeeFood marketplace photography. Eye-catching, scroll-stopping presentation with high color saturation. Orange-friendly warm tones that complement ShopeeFood branding. Bright, well-lit with no shadows. Clean background, centered single dish composition. Mobile-first optimization for small screen viewing. Bold, appetizing, designed to convert browsers to buyers. Fresh, vibrant, irresistible food appeal.',
+
+  // Generic delivery app optimization
+  'delivery': 'Professional delivery app menu photography. Clean white or light neutral background. Perfectly lit with soft diffused lighting from above. Single dish centered in square format with crop margins. High contrast, vibrant natural colors. Top-down for bowls and flat dishes, 45-degree for tall items like burgers. All ingredients visible. No people, text, or watermarks. Appetizing, professional, conversion-optimized presentation.',
+
+  // ============================================
+  // SOCIAL MEDIA PLATFORMS
+  // ============================================
+
+  // Instagram Feed: 4:5 portrait (1080x1350) optimal for engagement
+  'instagram': 'Instagram-worthy food photography in optimal 4:5 portrait format (1080x1350). Vibrant saturated colors that pop in the feed. Soft natural window lighting creating gentle shadows for depth. Shallow depth of field with creamy bokeh background. Modern minimalist styling with negative space. Rule of thirds composition. Trendy food styling with lifestyle aesthetic. Natural light effect, no harsh flash. Scroll-stopping, highly shareable, thumb-stopping first impression.',
+
+  // Instagram Stories/Reels: 9:16 vertical, safe zone for UI
+  'instagram-stories': 'Instagram Stories/Reels vertical format photography at 9:16 aspect ratio (1080x1920). Dynamic action composition - steam rising, sauce drizzling, or cheese pulling. Bold vibrant colors with high energy. Important elements centered in safe zone (avoiding top/bottom 310 pixels for UI). Room for text overlay or stickers. Modern trendy Gen-Z aesthetic. Movement and action suggested in the frame. Eye-catching, designed for quick consumption.',
+
+  // Instagram Reels: Action-focused, scroll-stopping
+  'instagram-reels': 'Instagram Reels optimized food content at 9:16 vertical. High-energy action moment frozen - cheese pull, sauce pour, steam release, or crispy bite. Punchy saturated colors, dramatic contrast. Dynamic angle creating movement and excitement. Scroll-stopping first frame that hooks viewers instantly. Modern Gen-Z aesthetic with trend awareness. Bold, vibrant, designed to generate saves and shares.',
+
+  // TikTok: First frame critical, action shots, viral appeal
+  'tiktok': 'TikTok viral food content style at 9:16 vertical format. CRITICAL: Show finished dish prominently to hook viewers in first 0.5 seconds. Action moment freeze-frame - gooey cheese pull, sauce drip, steam rising, crispy crunch. Bright saturated colors that pop on mobile. Close-up on appetizing textures and details. High contrast between dish and background. Well-lit with no harsh shadows. Gen-Z scroll-stopping aesthetic. Designed for maximum watch time and engagement.',
+
+  // Facebook: Older demographic, warm/authentic, community focus
+  'facebook': 'Facebook feed optimized food photography for broad demographic appeal. Warm, inviting, authentic presentation. Clear well-lit images readable at smaller sizes. Comfort food aesthetic that resonates with mature audience (54+ demographic). No trendy filters - traditional quality food photography. Relatable home-style or restaurant atmosphere. Sharp focus on main dish. Appetizing, shareable, designed to generate comments and engagement. Works well in varied feed contexts.',
+
+  // Xiaohongshu: Lulicore aesthetic, muted pastels, Chinese Gen-Z
+  'xiaohongshu': 'Xiaohongshu RED platform aesthetic food photography. Lulicore style with soft muted pastel color palette - pink, cream, sage green, soft brown, gentle yellow. Dreamy feminine atmosphere inspired by French patisserie aesthetic. Delicate plating on aesthetic ceramics or vintage plates. Soft natural lighting with slight overexposure for airy feel. Chinese Gen-Z lifestyle appeal. Cute, trendy presentation. Instagram-meets-Pinterest composition. Cafe lifestyle aesthetic with warm nostalgic mood. Designed for saves and collection boards.',
+
+  // WeChat Moments: Shareable, culturally appropriate, group appeal
+  'wechat': 'WeChat Moments shareable food photography. Clean, crisp, high-quality presentation. Culturally appropriate styling for Chinese social media. Warm inviting colors suitable for group sharing. Restaurant ambience subtly visible. Mobile-optimized clarity and sharpness. Traditional elegant presentation without excessive trendy filters. Group dining appeal - dishes that look shareable. Rule of thirds composition with clear subject. Professional but approachable aesthetic.',
+
+  // ============================================
+  // RESTAURANT STYLES
+  // ============================================
+
+  // Fine Dining: Michelin techniques, negative space, sauce artistry
+  'fine-dining': 'Michelin-star fine dining photography. Elegant minimalist plating on white or neutral ceramic. Artful sauce presentation - swoosh, dots, or geometric patterns. Microgreen and edible flower garnish used sparingly with purpose. Rule of thirds composition with generous negative space allowing plate to breathe. Soft directional lighting creating gentle shadows for depth. Shallow depth of field with sophisticated restaurant atmosphere softly blurred. Height and texture contrast in plating. Every element has purpose - no excessive garnish. Editorial magazine quality.',
+
+  // Casual Dining: Warm, comfort food, lifestyle context
+  'casual': 'Casual dining comfort food photography. Generous hearty portions visibly appetizing. Warm inviting color temperature. Rustic wooden table or natural material surface. Soft natural window lighting. Homestyle presentation that feels approachable and satisfying. Lifestyle context with napkins, utensils subtly visible. Medium depth of field keeping more in focus. Cozy atmosphere suggested. Comfort and satisfaction appeal. Relatable, not overly styled.',
+
+  // Fast Food: Red/yellow psychology, action shots, appetite appeal
+  'fast-food': 'Fast food commercial photography with appetite psychology. Bold red and yellow color accents triggering appetite response. High saturation and contrast for maximum impact. Action moment - dramatic cheese pull, sauce drip, or crispy texture highlight. Close-up on indulgent textures - gooey cheese, crispy coating, fresh lettuce. Steam rising for freshness. Clean background letting food be hero. Dynamic angle suggesting grab-and-go energy. Youthful, exciting, crave-inducing presentation.',
+
+  // Cafe: Artisan aesthetic, latte art, cozy atmosphere
+  'cafe': 'Artisan cafe aesthetic photography. Latte art clearly visible on coffee drinks. Warm cozy lighting - natural window light preferred. Marble, wooden, or ceramic surfaces. Minimalist styling with hipster-chic appeal. Soft bokeh background showing cafe atmosphere. Handcrafted artisan feel - imperfect edges welcome. Flat-lay for breakfast spreads, 45-degree for drinks and pastries. Pastel accent colors. Instagram-worthy without being over-styled. Cozy coffee shop vibes.',
+
+  // Street Food: Documentary style, authentic, cultural context
+  'street-food': 'Authentic street food documentary photography. Vibrant chaotic market atmosphere as natural backdrop. Steam rising dramatically into ambient light. Action moment of cooking or serving captured. Cultural context and storytelling - vendor hands, cooking equipment visible. Natural ambient lighting with shadows adding mood. Photojournalistic approach - authentic not staged. Hawker culture energy. Bold colors, real textures, genuine atmosphere. Captures spirit of street dining.',
+
+  // Menu Card: Clean, neutral, print-ready
+  'menu': 'Professional menu card photography for print. Clean neutral white or light grey background. Studio-quality consistent lighting across all items. Precise food styling with no messy edges. Each dish perfectly centered for grid layout. Accurate color representation for print reproduction. Sharp focus throughout - narrow aperture. No creative angles - straightforward presentation. Consistent shadow direction. Commercial catalog quality suitable for printed menus and signage.',
+
+  // Kopitiam: SEA heritage, nostalgic, traditional
+  'kopitiam': 'Traditional Singapore kopitiam coffee shop photography. Nostalgic warm vintage atmosphere. Heritage tableware - patterned plates, enamel cups. Rustic worn surfaces with character. Warm tungsten-toned lighting suggesting old coffee shops. Local comfort food presentation - kaya toast, soft-boiled eggs, kopi. Cultural authenticity and heritage feel. Slightly faded nostalgic color grade. SEA food culture pride. Comfort and familiarity appeal.',
+
+  // Hawker Centre: Authentic SEA, documentary, cultural pride
+  'hawker': 'Singapore hawker centre food photography. Authentic bustling atmosphere visible. Natural ambient lighting with dramatic steam effects. Melamine plates and traditional hawker tableware. Cultural pride in local cuisine presentation. Documentary photography approach. Weathered hawker hands in frame optional. Bold vibrant colors of SEA cuisine. Char kway teow, chicken rice, laksa authentically styled. Real hawker centre energy captured.',
+
+  // ============================================
+  // BACKGROUND STYLES
+  // ============================================
+
+  // Minimal: E-commerce style, pure white, product focus
+  'minimal': 'E-commerce product photography style. Pure clean white background with no distractions. Soft even studio lighting eliminating harsh shadows. Maximum clarity and sharpness on food subject. Professional catalog aesthetic. Perfect for product listings, websites, and clean marketing. Food fills majority of frame. No props unless essential. Commercial quality with precise styling.',
+
+  // Rustic: Wooden surfaces, artisan, natural
+  'rustic': 'Rustic artisan food photography. Warm-toned wooden table surface - weathered, natural character. Soft natural side lighting creating texture on wood grain. Organic handmade feel with linen napkins, wooden utensils as props. Earth tones complementing food colors. Farmhouse aesthetic. Authentic not overly staged. Natural imperfections welcome. Warm, inviting, homemade appeal.',
+
+  // Marble: Luxury, cool tones, upscale
+  'marble': 'Luxury marble surface food photography. Elegant white or grey marble with subtle veining. Cool sophisticated color palette. Soft overhead or side lighting. Premium upscale restaurant aesthetic. Minimalist styling - let marble and food be stars. Suitable for fine dining, patisserie, high-end cafe content. Clean lines, geometric composition. Luxurious without being cold.',
+
+  // Dark Moody: Chiaroscuro, painterly, dramatic
+  'dark-moody': 'Dark moody chiaroscuro food photography. Dramatic single-source directional lighting with deep rich shadows. Painterly Renaissance atmosphere. Dark matte surfaces - slate, weathered wood, dark ceramics. Backlight creating rim glow on food edges. Rich contrast between highlights and deep blacks. Rustic matte props with patina. Editorial fine art aesthetic. Sophisticated, dramatic, magazine-worthy. No bright shiny elements.',
+
+  // Bright Airy: Fresh, healthy, ethereal
+  'bright-airy': 'Light and airy food photography. Bright ethereal atmosphere with soft diffused natural lighting. White or cream background and props. Gentle soft shadows providing subtle depth - not completely shadowless. Shallow depth of field with dreamy creamy bokeh. Fresh healthy wellness aesthetic. Clean minimalist composition. Dreamy inviting mood. Perfect for health food, salads, light cuisine. Overexposed whites, soft contrasts.',
+
+  // Tropical: Vibrant, exotic, paradise
+  'tropical': 'Tropical paradise food photography. Bright vibrant saturated colors. Palm fronds, banana leaves, tropical flowers as props. Exotic fruit styling. Warm golden sunlight feel. Beach vacation aesthetic. Bold tropical color palette - oranges, pinks, greens. Fresh coconut, pineapple, mango themes. Island getaway mood. Perfect for smoothie bowls, tropical cuisine, resort dining.',
+
+  // Concrete: Industrial, urban, modern
+  'concrete': 'Industrial concrete surface food photography. Modern urban aesthetic with raw grey concrete backdrop. Edgy contemporary styling. Cool neutral tones. Minimalist arrangement. Works for trendy cafe, modern cuisine, craft cocktails. Masculine aesthetic balance. Geometric clean lines. Subtle texture in concrete visible.',
+
+  // Botanical: Plants, green, organic
+  'botanical': 'Botanical green food photography. Fresh plants, leaves, herbs as styling elements. Organic healthy aesthetic. Green color palette dominating. Natural light through foliage feel. Perfect for vegetarian, vegan, healthy cuisine. Fresh garden-to-table vibe. Eucalyptus, monstera, herb sprigs as props. Wellness and nature connection. Light airy feel with green accents.',
+
+  // ============================================
+  // PHOTOGRAPHY TECHNIQUES
+  // ============================================
+
+  // Overhead/Flat lay: 90-degree, composition rules
+  'overhead': 'Professional flat-lay overhead food photography at perfect 90-degree angle. Rule of thirds composition with main dish off-center. Rule of odds for prop arrangement. Supporting elements (utensils, ingredients, napkins) placed with purpose. Soft natural light at 45 degrees creating gentle shadows for depth. Clean background with subtle texture. Everything in sharp focus - narrow aperture f/8+. Negative space for breathing room. Instagram-worthy styling without clutter.',
+
+  // Natural Light: Window light, authentic
+  'natural-light': 'Natural window light food photography. Soft diffused daylight from large window at 45-degree side angle. White reflector filling shadow side for gentle contrast. Authentic natural color temperature. No artificial lighting. Gentle soft shadows adding depth and dimension. Fresh organic feel. Lifestyle authenticity. Golden hour warmth optional. Honest, beautiful, natural presentation.',
+
+  // Neon: Night market, urban, bold
+  'neon': 'Neon night market food photography. Vibrant artificial colored lighting - pink, blue, purple neon glow. Urban nightlife atmosphere. Bold dramatic shadows from neon sources. Street food energy with modern twist. Eye-catching saturated color palette. Night owl aesthetic. Perfect for late-night food, asian street food, modern fusion. Edgy urban feel.',
+
+  // Vintage: Nostalgic, film grain, retro
+  'vintage': 'Vintage nostalgic food photography. Warm sepia and faded tones. Subtle film grain texture overlay. Retro color palette - muted oranges, browns, creams. Heritage recipe feel. Grandmother\'s kitchen aesthetic. Slightly soft focus edges. Comfort food and family recipe vibe. Polaroid or film photography inspiration. Timeless, nostalgic, heartwarming appeal.',
+
+  // HDR: Maximum detail, punchy
+  'hdr': 'HDR enhanced food photography. Maximum detail visible in both shadows and highlights. Punchy vivid colors with enhanced saturation. Dramatic visual impact. Every texture and detail emphasized. Bold appetizing presentation. High dynamic range revealing all food details. Eye-catching, scroll-stopping intensity. Commercial advertising impact.',
+
+  // Bokeh: Shallow DOF, restaurant atmosphere
+  'bokeh': 'Shallow depth of field food photography with beautiful bokeh. Wide aperture f/2.8 or wider. Main dish in sharp focus, background softly blurred. Creamy smooth bokeh circles from ambient restaurant lights. Subject separation from background. Restaurant atmosphere visible but not distracting. Warm ambient light creating golden bokeh highlights. 85mm portrait lens perspective. Artistic, professional, appetizing.',
+
+  // Legacy preset
+  'stories': 'Vertical 9:16 format food photography for Stories and Reels. Dynamic action composition with room for text overlay. Bold vibrant colors. Modern trendy aesthetic. Safe zone composition avoiding UI elements. Eye-catching scroll-stopping presentation designed for vertical mobile consumption.',
 }
 
 // Apply image enhancements using Sharp (with fallback if Sharp unavailable)
