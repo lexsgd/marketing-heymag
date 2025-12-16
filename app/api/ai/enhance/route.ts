@@ -69,6 +69,92 @@ function getGoogleAI(): GoogleGenerativeAI {
   return genAI
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// RETRY LOGIC FOR GEMINI 3 PRO IMAGE
+// Handles 503 "model overloaded" errors with exponential backoff
+// ═══════════════════════════════════════════════════════════════════════════
+
+interface RetryConfig {
+  maxRetries: number
+  baseDelayMs: number
+  maxDelayMs: number
+  backoffMultiplier: number
+}
+
+const GEMINI_RETRY_CONFIG: RetryConfig = {
+  maxRetries: 4,           // Try up to 4 times total (1 initial + 3 retries)
+  baseDelayMs: 5000,       // Start with 5 second delay
+  maxDelayMs: 45000,       // Cap at 45 seconds
+  backoffMultiplier: 2.5,  // Exponential backoff: 5s -> 12.5s -> 31.25s -> 45s (capped)
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms))
+}
+
+function isRetryableError(error: unknown): boolean {
+  const errorMessage = String(error)
+
+  // 503 Service Unavailable - model overloaded
+  if (errorMessage.includes('503') || errorMessage.includes('Service Unavailable')) {
+    return true
+  }
+  // 429 Too Many Requests - rate limited
+  if (errorMessage.includes('429') || errorMessage.includes('Too Many Requests')) {
+    return true
+  }
+  // Connection/timeout issues
+  if (errorMessage.includes('timeout') || errorMessage.includes('ETIMEDOUT')) {
+    return true
+  }
+  // Model temporarily unavailable
+  if (errorMessage.includes('overloaded') || errorMessage.includes('temporarily unavailable')) {
+    return true
+  }
+
+  return false
+}
+
+async function retryWithBackoff<T>(
+  operation: () => Promise<T>,
+  operationName: string,
+  config: RetryConfig = GEMINI_RETRY_CONFIG
+): Promise<T> {
+  let lastError: unknown
+  let delayMs = config.baseDelayMs
+
+  for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
+    try {
+      console.log(`[Enhance] ${operationName}: Attempt ${attempt}/${config.maxRetries}`)
+      const startTime = Date.now()
+      const result = await operation()
+      const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+      console.log(`[Enhance] ${operationName}: SUCCESS after ${duration}s on attempt ${attempt}`)
+      return result
+    } catch (error) {
+      lastError = error
+      const errorMessage = String(error)
+      console.error(`[Enhance] ${operationName}: Attempt ${attempt} FAILED - ${errorMessage.substring(0, 200)}`)
+
+      // Only retry on specific error types
+      if (!isRetryableError(error)) {
+        console.error(`[Enhance] ${operationName}: Non-retryable error, failing immediately`)
+        throw error
+      }
+
+      if (attempt < config.maxRetries) {
+        console.log(`[Enhance] ${operationName}: Waiting ${(delayMs / 1000).toFixed(1)}s before retry...`)
+        await sleep(delayMs)
+        // Calculate next delay with exponential backoff
+        delayMs = Math.min(delayMs * config.backoffMultiplier, config.maxDelayMs)
+      }
+    }
+  }
+
+  console.error(`[Enhance] ${operationName}: All ${config.maxRetries} attempts failed`)
+  throw lastError
+}
+
 // Style prompts are now imported from '@/lib/style-prompts' for shared access with client components
 // The getStylePrompt function handles custom prompt overrides
 
@@ -337,13 +423,15 @@ export async function POST(request: NextRequest) {
       console.log('[Enhance] Platform config:', platformConfig.aspectRatio, platformConfig.imageSize, platformConfig.description)
 
       try {
-        // Use Gemini 2.5 Flash Image (Nano Banana) - stable and fast image generation
-        // Note: gemini-3-pro-image-preview has timeout issues, using 2.5 for reliability
-        // Features: 1K resolution, fast response, good quality
+        // Use Gemini 3 Pro Image (Nano Banana Pro) - premium image generation
+        // Features: Superior quality, professional food photography enhancement
+        // Note: Has 503 "model overloaded" issues, using retry logic with exponential backoff
+        // Required config per docs: temperature=1.0, responseModalities=['Text', 'Image']
         const model = getGoogleAI().getGenerativeModel({
-          model: 'gemini-2.5-flash-image', // Nano Banana - stable and reliable
+          model: 'gemini-3-pro-image-preview', // Nano Banana Pro - premium quality
           generationConfig: {
             responseModalities: ['Text', 'Image'] as const,
+            temperature: 1.0, // Required for Gemini 3 Pro Image generation
           }
         })
 
@@ -397,15 +485,22 @@ OUTPUT: Return the enhanced version of THIS EXACT photo. Preserve subject fideli
 After enhancement, provide 3 tips in format:
 SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
-        const result = await model.generateContent([
-          {
-            inlineData: {
-              mimeType,
-              data: sharpEnhancedBase64 // Use Sharp-enhanced image as input
-            }
+        // Wrap Gemini API call with retry logic for 503 "model overloaded" errors
+        const result = await retryWithBackoff(
+          async () => {
+            return await model.generateContent([
+              {
+                inlineData: {
+                  mimeType,
+                  data: sharpEnhancedBase64 // Use Sharp-enhanced image as input
+                }
+              },
+              { text: preservationPrompt }
+            ])
           },
-          { text: preservationPrompt }
-        ])
+          'Gemini 3 Pro Image',
+          GEMINI_RETRY_CONFIG
+        )
 
         currentStep = 'processing Gemini response'
         const response = await result.response
@@ -513,7 +608,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           enhanced_url: enhancedUrl,
           enhancement_settings: enhancementData.enhancements,
           processed_at: new Date().toISOString(),
-          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'hybrid-sharp+gemini-2.5-flash-image' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
+          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'hybrid-sharp+gemini-3-pro-image' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
           ai_suggestions: enhancementData.suggestions,
           // Note: processing_skipped is returned in API response but not stored in DB
         })
