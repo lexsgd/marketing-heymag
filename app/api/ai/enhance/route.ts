@@ -290,109 +290,116 @@ export async function POST(request: NextRequest) {
       const mimeType = image.mime_type || 'image/jpeg'
       console.log('[Enhance] Image prepared for AI, mime:', mimeType)
 
-      // Call Google Gemini Nano Banana Pro for direct AI image enhancement
+      // Try Gemini Nano Banana Pro with strict preservation prompt
+      // If it fails to preserve content, fall back to Sharp processing
       currentStep = 'initializing Google AI'
       console.log('[Enhance] Initializing Google AI model (Nano Banana Pro)')
-      const model = getGoogleAI().getGenerativeModel({
-        model: 'gemini-2.0-flash-exp',
-        generationConfig: {
-          responseModalities: ['Text', 'Image'] as const,
-        }
-      })
-
-      currentStep = 'calling Google Gemini API'
-      console.log('[Enhance] Calling Google Gemini Nano Banana Pro for image enhancement...')
-
-      const result = await model.generateContent([
-        {
-          inlineData: {
-            mimeType,
-            data: base64Image
-          }
-        },
-        {
-          text: `You are a professional food photographer. Enhance this food photograph to match this style: ${stylePrompt}
-
-Apply professional food photography enhancements:
-- Make the food look more appetizing and vibrant
-- Enhance colors to be rich and appealing (especially warm tones for food)
-- Improve lighting to highlight textures and details
-- Add appropriate warmth for food photos
-- Sharpen details to make ingredients pop
-- Balance highlights and shadows for depth
-
-Create a beautifully enhanced version of this food photo that would work perfectly for: ${stylePrompt}
-
-After enhancing, also provide brief suggestions in this format:
-SUGGESTIONS: [tip1] | [tip2] | [tip3]`
-        }
-      ])
-
-      currentStep = 'getting Google AI response'
-      console.log('[Enhance] Google AI call completed, getting response...')
-      const response = await result.response
-
-      // Extract enhanced image and text from Nano Banana Pro response
-      currentStep = 'extracting enhanced image from AI response'
-      let enhancedImageBuffer: Buffer | null = null
-      let aiSuggestions: string[] = []
-
-      // Process response parts - Nano Banana Pro returns both text and image
-      for (const candidate of response.candidates || []) {
-        for (const part of candidate.content?.parts || []) {
-          if (part.text) {
-            console.log('[Enhance] AI text response:', part.text.substring(0, 200))
-            // Extract suggestions if present
-            const suggestionsMatch = part.text.match(/SUGGESTIONS:\s*(.+)/i)
-            if (suggestionsMatch) {
-              aiSuggestions = suggestionsMatch[1].split('|').map((s: string) => s.trim()).filter((s: string) => s)
-            }
-          }
-          if (part.inlineData?.data) {
-            console.log('[Enhance] AI returned enhanced image, mime:', part.inlineData.mimeType)
-            enhancedImageBuffer = Buffer.from(part.inlineData.data, 'base64')
-            console.log('[Enhance] Enhanced image buffer size:', enhancedImageBuffer.length, 'bytes')
-          }
-        }
-      }
 
       let enhancedUrl: string | null = null
       let processingSkipped = false
+      let aiSuggestions: string[] = []
+      const defaultEnhancements = getDefaultEnhancements(stylePreset)
 
-      if (enhancedImageBuffer) {
-        console.log('[Enhance] AI image enhancement complete, uploading result...')
+      try {
+        const model = getGoogleAI().getGenerativeModel({
+          model: 'gemini-2.0-flash-exp',
+          generationConfig: {
+            responseModalities: ['Text', 'Image'] as const,
+          }
+        })
 
-        // Upload AI-enhanced image to Supabase Storage
-        currentStep = 'uploading enhanced image to storage'
-        const enhancedFileName = `${business.id}/enhanced/${Date.now()}.png`
-        console.log('[Enhance] Uploading AI-enhanced image to:', enhancedFileName)
+        currentStep = 'calling Google Gemini API'
+        console.log('[Enhance] Calling Gemini with content-preservation prompt...')
 
-        const { error: uploadError } = await serviceSupabase.storage
-          .from('images')
-          .upload(enhancedFileName, enhancedImageBuffer, {
-            contentType: 'image/png',
-            cacheControl: '3600',
-            upsert: false
-          })
+        // CRITICAL: Very strict prompt to preserve original content
+        const result = await model.generateContent([
+          {
+            inlineData: {
+              mimeType,
+              data: base64Image
+            }
+          },
+          {
+            text: `CRITICAL INSTRUCTION: You are a photo RETOUCHER, not a photo creator.
 
-        if (uploadError) {
-          console.error('[Enhance] Upload error:', uploadError)
-          throw new Error('Failed to upload enhanced image')
+MANDATORY RULES:
+1. You MUST keep the EXACT SAME food items, dishes, and composition
+2. You MUST NOT replace the food with different food
+3. You MUST NOT change what is being shown
+4. You MUST ONLY adjust: lighting, colors, contrast, saturation, sharpness, shadows
+5. The output must be the SAME IMAGE with better colors/lighting
+
+This is the original food photo. Apply these ADJUSTMENTS ONLY (do NOT recreate the image):
+- Brightness: Slightly brighter for ${stylePreset} style
+- Colors: More vibrant and appetizing
+- Sharpness: Enhance food texture details
+- Warmth: Appropriate warm tones for food
+- Shadows: Better shadow/highlight balance
+
+Style target: ${stylePrompt}
+
+OUTPUT: Return the SAME photo with adjusted colors/lighting. DO NOT generate a new image.
+
+After processing, provide suggestions in format:
+SUGGESTIONS: [tip1] | [tip2] | [tip3]`
+          }
+        ])
+
+        currentStep = 'getting Google AI response'
+        const response = await result.response
+
+        // Extract enhanced image and text
+        currentStep = 'extracting enhanced image from AI response'
+        let enhancedImageBuffer: Buffer | null = null
+
+        for (const candidate of response.candidates || []) {
+          for (const part of candidate.content?.parts || []) {
+            if (part.text) {
+              console.log('[Enhance] AI text response:', part.text.substring(0, 200))
+              const suggestionsMatch = part.text.match(/SUGGESTIONS:\s*(.+)/i)
+              if (suggestionsMatch) {
+                aiSuggestions = suggestionsMatch[1].split('|').map((s: string) => s.trim()).filter((s: string) => s)
+              }
+            }
+            if (part.inlineData?.data) {
+              console.log('[Enhance] AI returned image, mime:', part.inlineData.mimeType)
+              enhancedImageBuffer = Buffer.from(part.inlineData.data, 'base64')
+              console.log('[Enhance] Enhanced image buffer size:', enhancedImageBuffer.length, 'bytes')
+            }
+          }
         }
-        console.log('[Enhance] Upload successful')
 
-        // Get public URL for enhanced image
-        const urlData = serviceSupabase.storage
-          .from('images')
-          .getPublicUrl(enhancedFileName)
-        enhancedUrl = urlData.data.publicUrl
-        console.log('[Enhance] Enhanced URL:', enhancedUrl?.substring(0, 80))
-      } else {
-        // AI didn't return an image - fall back to Sharp processing
-        console.log('[Enhance] AI did not return image, falling back to Sharp processing')
+        if (enhancedImageBuffer) {
+          // Upload AI-enhanced image
+          currentStep = 'uploading enhanced image to storage'
+          const enhancedFileName = `${business.id}/enhanced/${Date.now()}.png`
+          console.log('[Enhance] Uploading AI-enhanced image to:', enhancedFileName)
+
+          const { error: uploadError } = await serviceSupabase.storage
+            .from('images')
+            .upload(enhancedFileName, enhancedImageBuffer, {
+              contentType: 'image/png',
+              cacheControl: '3600',
+              upsert: false
+            })
+
+          if (!uploadError) {
+            const urlData = serviceSupabase.storage.from('images').getPublicUrl(enhancedFileName)
+            enhancedUrl = urlData.data.publicUrl
+            console.log('[Enhance] AI enhancement successful, URL:', enhancedUrl?.substring(0, 80))
+          } else {
+            console.error('[Enhance] Upload error:', uploadError)
+          }
+        }
+      } catch (aiError) {
+        console.error('[Enhance] Gemini API error, falling back to Sharp:', aiError)
+      }
+
+      // Fall back to Sharp if AI didn't work
+      if (!enhancedUrl) {
         currentStep = 'applying Sharp enhancements (fallback)'
+        console.log('[Enhance] Falling back to Sharp-based enhancement')
 
-        const defaultEnhancements = getDefaultEnhancements(stylePreset)
         const sharpBuffer = await applyEnhancements(imageBuffer, defaultEnhancements.enhancements)
 
         if (sharpBuffer) {
@@ -410,19 +417,26 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           if (!uploadError) {
             const urlData = serviceSupabase.storage.from('images').getPublicUrl(enhancedFileName)
             enhancedUrl = urlData.data.publicUrl
+            console.log('[Enhance] Sharp enhancement successful')
           }
         }
+      }
 
-        if (!enhancedUrl) {
-          enhancedUrl = image.original_url
-          processingSkipped = true
-        }
+      // Final fallback to original
+      if (!enhancedUrl) {
+        enhancedUrl = image.original_url
+        processingSkipped = true
+        console.log('[Enhance] Using original image (processing skipped)')
       }
 
       // Build enhancement data for database
       const enhancementData = {
-        enhancements: { aiEnhanced: true, model: 'nano-banana-pro' },
-        suggestions: aiSuggestions.length > 0 ? aiSuggestions : ['AI-enhanced image', 'Professional food styling applied', 'Colors and lighting optimized']
+        enhancements: {
+          ...defaultEnhancements.enhancements,
+          method: enhancedUrl !== image.original_url ? 'gemini-nano-banana' : 'skipped',
+          stylePreset: stylePreset
+        },
+        suggestions: aiSuggestions.length > 0 ? aiSuggestions : defaultEnhancements.suggestions
       }
 
       // Update image record with enhanced URL (or original if processing skipped)
@@ -435,7 +449,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           enhanced_url: enhancedUrl,
           enhancement_settings: enhancementData.enhancements,
           processed_at: new Date().toISOString(),
-          ai_model: 'gemini-2.0-flash-exp', // Nano Banana Pro
+          ai_model: enhancementData.enhancements.method === 'gemini-nano-banana' ? 'gemini-2.0-flash-exp' : 'sharp-processing',
           ai_suggestions: enhancementData.suggestions,
           // Note: processing_skipped is returned in API response but not stored in DB
         })
