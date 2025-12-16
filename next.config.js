@@ -10,6 +10,8 @@ const nextConfig = {
     // Temporarily ignore to debug Vercel build
     ignoreBuildErrors: true,
   },
+  // Exclude sharp from webpack bundling - it's loaded at runtime if available
+  serverExternalPackages: ['sharp'],
   images: {
     remotePatterns: [
       {

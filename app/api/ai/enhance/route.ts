@@ -21,8 +21,9 @@ async function getSharp() {
     return sharpInstance
   }
   try {
-    const sharpModule = await import('sharp')
-    sharpInstance = sharpModule.default
+    // Use require with try-catch to avoid webpack resolution errors
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    sharpInstance = require('sharp')
     console.log('[Enhance] Sharp loaded successfully')
     return sharpInstance
   } catch (error) {
