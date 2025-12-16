@@ -71,8 +71,8 @@ export default function LoginPage() {
 
       setSuccess(true)
       setTimeout(() => {
-        router.push('/dashboard')
-        router.refresh()
+        // Use window.location for a full page reload to ensure cookies are picked up
+        window.location.href = '/dashboard'
       }, 1000)
     } catch (error: unknown) {
       const errorMessage = getAuthErrorMessage((error as Error).message)

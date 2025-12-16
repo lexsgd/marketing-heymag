@@ -46,6 +46,7 @@ export default function SignupPage() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [rawError, setRawError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const router = useRouter()
   const supabase = createClient()
@@ -127,9 +128,22 @@ export default function SignupPage() {
       if (authError) throw authError
 
       // The business will be created automatically by the database trigger
-      router.push('/auth/verify-email')
+      // Use window.location for full page reload
+      window.location.href = '/auth/verify-email'
     } catch (error: unknown) {
-      const errorMessage = getAuthErrorMessage((error as Error).message)
+      // Log the raw error for debugging
+      const rawErrorMsg = (error as Error).message || JSON.stringify(error)
+      console.error('[Signup Error]', {
+        message: rawErrorMsg,
+        name: (error as Error).name,
+        stack: (error as Error).stack,
+        raw: error,
+      })
+
+      // Store raw error for debugging display
+      setRawError(rawErrorMsg)
+
+      const errorMessage = getAuthErrorMessage(rawErrorMsg)
       setError(errorMessage)
 
       // Navigate back to the appropriate step based on error
@@ -252,6 +266,15 @@ export default function SignupPage() {
                 >
                   Sign in instead
                 </Link>
+              )}
+              {/* Debug: Show raw error */}
+              {rawError && (
+                <details className="mt-2 text-xs">
+                  <summary className="cursor-pointer opacity-70">Debug info</summary>
+                  <pre className="mt-1 p-2 bg-black/10 rounded text-[10px] overflow-auto max-h-24">
+                    {rawError}
+                  </pre>
+                </details>
               )}
             </AlertDescription>
           </Alert>
