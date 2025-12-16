@@ -2,29 +2,67 @@ import { createClient } from '@/lib/supabase/server'
 import { createServiceRoleClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
+// Use Node.js runtime for better error handling
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
-    // Get user session
-    const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    console.log('[Upload] Starting upload request')
 
-    if (!user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    // Get user session
+    let supabase
+    try {
+      supabase = await createClient()
+    } catch (clientError) {
+      console.error('[Upload] Supabase client error:', clientError)
+      return NextResponse.json({ error: 'Database connection failed' }, { status: 500 })
     }
 
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError) {
+      console.error('[Upload] Auth error:', authError)
+      return NextResponse.json({ error: 'Authentication failed: ' + authError.message }, { status: 401 })
+    }
+
+    if (!user) {
+      console.log('[Upload] No user found')
+      return NextResponse.json({ error: 'Unauthorized - please log in' }, { status: 401 })
+    }
+
+    console.log('[Upload] User authenticated:', user.id)
+
     // Get business
-    const { data: business } = await supabase
+    const { data: business, error: businessError } = await supabase
       .from('businesses')
       .select('id')
       .eq('auth_user_id', user.id)
       .single()
 
-    if (!business) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    if (businessError) {
+      console.error('[Upload] Business query error:', businessError)
+      return NextResponse.json({
+        error: 'Database error: ' + businessError.message,
+        hint: businessError.hint || 'Make sure the database migration has been run'
+      }, { status: 500 })
     }
 
-    // Get the form data
-    const formData = await request.formData()
+    if (!business) {
+      console.log('[Upload] No business found for user')
+      return NextResponse.json({ error: 'Business not found. Please complete account setup.' }, { status: 404 })
+    }
+
+    console.log('[Upload] Business found:', business.id)
+
+    // Get the form data with error handling
+    let formData
+    try {
+      formData = await request.formData()
+    } catch (formError) {
+      console.error('[Upload] Form data parse error:', formError)
+      return NextResponse.json({ error: 'Invalid form data' }, { status: 400 })
+    }
+
     const file = formData.get('file') as File
     const stylePreset = formData.get('stylePreset') as string
 
@@ -42,16 +80,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'File size must be less than 50MB' }, { status: 400 })
     }
 
-    // Create unique filename
-    const fileExt = file.name.split('.').pop()
+    // Create unique filename - sanitize to remove emojis and special chars
+    const originalFilename = file.name || 'image'
+    const fileExt = originalFilename.split('.').pop()?.toLowerCase() || 'jpg'
+    // Use timestamp only for storage path to avoid encoding issues
     const fileName = `${business.id}/original/${Date.now()}.${fileExt}`
 
+    console.log('[Upload] Preparing to upload file:', fileName, 'Original:', originalFilename)
+
     // Use service role client for storage operations (bypasses RLS)
-    const serviceClient = createServiceRoleClient()
+    let serviceClient
+    try {
+      serviceClient = createServiceRoleClient()
+    } catch (serviceError) {
+      console.error('[Upload] Service client error:', serviceError)
+      return NextResponse.json({
+        error: 'Service configuration error',
+        hint: 'Check SUPABASE_SERVICE_ROLE_KEY environment variable'
+      }, { status: 500 })
+    }
 
     // Convert file to buffer
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
+
+    console.log('[Upload] Uploading to storage, size:', buffer.length)
 
     // Upload to Supabase Storage
     const { data: uploadData, error: uploadError } = await serviceClient.storage
@@ -63,14 +116,21 @@ export async function POST(request: NextRequest) {
       })
 
     if (uploadError) {
-      console.error('[Upload] Storage error:', uploadError)
-      return NextResponse.json({ error: uploadError.message }, { status: 500 })
+      console.error('[Upload] Storage upload error:', uploadError)
+      return NextResponse.json({
+        error: 'Storage upload failed: ' + uploadError.message,
+        hint: 'Make sure the "images" bucket exists and is configured correctly'
+      }, { status: 500 })
     }
+
+    console.log('[Upload] File uploaded successfully:', uploadData?.path)
 
     // Get public URL
     const { data: { publicUrl } } = serviceClient.storage
       .from('images')
       .getPublicUrl(fileName)
+
+    console.log('[Upload] Creating image record in database')
 
     // Create image record
     const { data: imageRecord, error: imageError } = await supabase
@@ -88,9 +148,14 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (imageError) {
-      console.error('[Upload] Database error:', imageError)
-      return NextResponse.json({ error: imageError.message }, { status: 500 })
+      console.error('[Upload] Image insert error:', imageError)
+      return NextResponse.json({
+        error: 'Failed to create image record: ' + imageError.message,
+        hint: imageError.hint || 'Make sure the images table exists and RLS policies are configured'
+      }, { status: 500 })
     }
+
+    console.log('[Upload] Image record created:', imageRecord.id)
 
     return NextResponse.json({
       success: true,

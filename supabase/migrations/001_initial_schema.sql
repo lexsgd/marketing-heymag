@@ -21,7 +21,8 @@ CREATE TABLE IF NOT EXISTS businesses (
   -- Subscription fields
   stripe_customer_id TEXT UNIQUE,
   subscription_status TEXT DEFAULT 'trial' CHECK (subscription_status IN ('trial', 'active', 'past_due', 'canceled', 'expired')),
-  subscription_tier TEXT DEFAULT 'starter' CHECK (subscription_tier IN ('starter', 'pro', 'business')),
+  subscription_tier TEXT DEFAULT 'trial' CHECK (subscription_tier IN ('trial', 'lite', 'starter', 'pro', 'business')),
+  trial_ends_at TIMESTAMPTZ,
   subscription_ends_at TIMESTAMPTZ,
 
   -- Settings
