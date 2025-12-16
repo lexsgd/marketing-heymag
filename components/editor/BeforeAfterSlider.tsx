@@ -185,26 +185,26 @@ export function BeforeAfterSlider({
         </div>
       </div>
 
-      {/* Labels */}
+      {/* Labels - Enhanced on LEFT (clipped), Original on RIGHT (underneath) */}
       <div
         className={cn(
           'absolute bottom-4 left-4 px-3 py-1.5',
-          'bg-black/70 text-white text-sm font-medium rounded',
+          'bg-green-600 text-white text-sm font-medium rounded',
           'transition-opacity duration-200'
         )}
-        style={{ opacity: sliderPosition > 15 ? 0 : 1 }}
+        style={{ opacity: sliderPosition < 15 ? 0 : 1 }}
       >
-        Original
+        AI Enhanced
       </div>
       <div
         className={cn(
           'absolute bottom-4 right-4 px-3 py-1.5',
-          'bg-green-600 text-white text-sm font-medium rounded',
+          'bg-black/70 text-white text-sm font-medium rounded',
           'transition-opacity duration-200'
         )}
-        style={{ opacity: sliderPosition < 85 ? 0 : 1 }}
+        style={{ opacity: sliderPosition > 85 ? 0 : 1 }}
       >
-        AI Enhanced
+        Original
       </div>
 
       {/* Center indicator when at 50% */}
@@ -216,7 +216,7 @@ export function BeforeAfterSlider({
         )}
         style={{ opacity: Math.abs(sliderPosition - 50) < 5 ? 0.8 : 0 }}
       >
-        ← Original | Enhanced →
+        ← Enhanced | Original →
       </div>
 
       {/* Loading overlay */}
