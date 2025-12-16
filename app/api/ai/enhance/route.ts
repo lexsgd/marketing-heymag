@@ -337,19 +337,20 @@ export async function POST(request: NextRequest) {
       const mimeType = image.mime_type || 'image/jpeg'
       console.log('[Enhance] Image prepared for AI, mime:', mimeType)
 
-      // Call Google Gemini Nano Banana Pro for direct AI image enhancement
+      // Call Google Gemini Nano Banana for direct AI image enhancement
       currentStep = 'initializing Google AI'
-      console.log('[Enhance] Initializing Google AI model (Nano Banana Pro)')
-      // Use gemini-3-pro-image-preview (Nano Banana Pro) for direct image editing
+      console.log('[Enhance] Initializing Google AI model (Nano Banana)')
+      // Use gemini-2.0-flash-exp (Nano Banana) for direct image editing - works on free tier
+      // Note: gemini-3-pro-image-preview (Nano Banana Pro) requires paid plan
       const model = getGoogleAI().getGenerativeModel({
-        model: 'gemini-3-pro-image-preview',
+        model: 'gemini-2.0-flash-exp',
         generationConfig: {
           responseModalities: ['Text', 'Image'] as const,
         }
       })
 
       currentStep = 'calling Google Gemini API'
-      console.log('[Enhance] Calling Google Gemini Nano Banana Pro for image enhancement...')
+      console.log('[Enhance] Calling Google Gemini Nano Banana for image enhancement...')
 
       const result = await model.generateContent([
         {
@@ -486,7 +487,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           enhanced_url: enhancedUrl,
           enhancement_settings: enhancementData.enhancements,
           processed_at: new Date().toISOString(),
-          ai_model: 'gemini-3-pro-image-preview', // Nano Banana Pro
+          ai_model: 'gemini-2.0-flash-exp', // Nano Banana
           ai_suggestions: enhancementData.suggestions,
           processing_skipped: processingSkipped, // Track if server-side processing was skipped
         })
