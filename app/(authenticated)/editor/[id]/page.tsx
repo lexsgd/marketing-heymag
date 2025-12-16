@@ -65,6 +65,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [selectedStyle, setSelectedStyle] = useState<string>('')
   const [activeMainTab, setActiveMainTab] = useState<'edit' | 'caption'>('edit')
   const [businessId, setBusinessId] = useState<string | null>(null)
+  const [enhancing, setEnhancing] = useState(false)
+  const [enhanceError, setEnhanceError] = useState<string | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -114,6 +116,48 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       router.push('/gallery')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Trigger AI enhancement for pending/failed images
+  const handleEnhanceWithAI = async () => {
+    if (!image) return
+
+    setEnhancing(true)
+    setEnhanceError(null)
+
+    try {
+      // Update status to processing first
+      await supabase
+        .from('images')
+        .update({ status: 'processing' })
+        .eq('id', image.id)
+
+      // Call enhance API
+      const response = await fetch('/api/ai/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageId: image.id,
+          stylePreset: image.style_preset || 'delivery',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Enhancement failed')
+      }
+
+      // Reload image to get updated data
+      await loadImage()
+    } catch (err) {
+      console.error('Enhancement error:', err)
+      setEnhanceError((err as Error).message || 'Enhancement failed. Please try again.')
+      // Reload to get actual status
+      await loadImage()
+    } finally {
+      setEnhancing(false)
     }
   }
 
@@ -268,6 +312,39 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                 {image.style_preset && config.stylePresets.find(p => p.id === image.style_preset)?.name}
               </span>
             </div>
+            {/* Show enhance button for pending/failed images */}
+            {(image.status === 'pending' || image.status === 'failed') && (
+              <div className="mt-2">
+                <Button
+                  onClick={handleEnhanceWithAI}
+                  disabled={enhancing}
+                  className="bg-orange-500 hover:bg-orange-600"
+                  size="sm"
+                >
+                  {enhancing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Enhancing...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Enhance with AI (1 credit)
+                    </>
+                  )}
+                </Button>
+                {enhanceError && (
+                  <p className="text-sm text-destructive mt-1">{enhanceError}</p>
+                )}
+              </div>
+            )}
+            {/* Show processing indicator */}
+            {image.status === 'processing' && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                AI enhancement in progress...
+              </div>
+            )}
           </div>
         </div>
         <div className="flex gap-2">
