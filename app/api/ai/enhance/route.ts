@@ -337,10 +337,11 @@ export async function POST(request: NextRequest) {
       console.log('[Enhance] Platform config:', platformConfig.aspectRatio, platformConfig.imageSize, platformConfig.description)
 
       try {
-        // Use Gemini 3 Pro Image (Nano Banana Pro) for better preservation and thinking capability
-        // Features: High-res output (up to 4K), conversational editing, thought signatures
+        // Use Gemini 2.5 Flash Image (Nano Banana) - stable and fast image generation
+        // Note: gemini-3-pro-image-preview has timeout issues, using 2.5 for reliability
+        // Features: 1K resolution, fast response, good quality
         const model = getGoogleAI().getGenerativeModel({
-          model: 'gemini-3-pro-image-preview', // Nano Banana Pro - best for image editing
+          model: 'gemini-2.5-flash-image', // Nano Banana - stable and reliable
           generationConfig: {
             responseModalities: ['Text', 'Image'] as const,
           }
@@ -512,7 +513,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           enhanced_url: enhancedUrl,
           enhancement_settings: enhancementData.enhancements,
           processed_at: new Date().toISOString(),
-          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'hybrid-sharp+gemini-3-pro-image' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
+          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'hybrid-sharp+gemini-2.5-flash-image' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
           ai_suggestions: enhancementData.suggestions,
           // Note: processing_skipped is returned in API response but not stored in DB
         })
