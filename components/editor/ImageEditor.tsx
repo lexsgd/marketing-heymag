@@ -14,7 +14,9 @@ import {
   Check,
   Sliders,
   Scissors,
-  Save
+  Save,
+  SplitSquareHorizontal,
+  Eye
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -24,6 +26,7 @@ import {
 } from '@/lib/image-processing'
 import { EnhancementSliders, enhancementPresets } from './EnhancementSliders'
 import { BackgroundRemover } from './BackgroundRemover'
+import { BeforeAfterSlider } from './BeforeAfterSlider'
 
 interface ImageEditorProps {
   /** Original image URL */
@@ -68,6 +71,7 @@ export function ImageEditor({
   const [zoom, setZoom] = useState(1)
   const [activeTab, setActiveTab] = useState<'adjust' | 'background'>('adjust')
   const [hasChanges, setHasChanges] = useState(false)
+  const [showComparison, setShowComparison] = useState(false)
 
   // Refs
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -209,6 +213,20 @@ export function ImageEditor({
                     Processing...
                   </span>
                 )}
+                {/* Before/After Comparison Toggle */}
+                {previewUrl && (
+                  <Button
+                    variant={showComparison ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setShowComparison(!showComparison)}
+                    className={cn(
+                      showComparison && "bg-orange-500 hover:bg-orange-600"
+                    )}
+                  >
+                    <SplitSquareHorizontal className="mr-2 h-4 w-4" />
+                    {showComparison ? "Hide Compare" : "Compare"}
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -222,40 +240,59 @@ export function ImageEditor({
             </div>
 
             {/* Image Display */}
-            <div
-              className="relative bg-[url('/checkerboard.svg')] bg-repeat overflow-auto rounded-lg"
-              style={{
-                maxHeight: '60vh',
-                minHeight: '300px'
-              }}
-            >
+            {showComparison && previewUrl ? (
+              /* Before/After Comparison Mode */
               <div
-                className="transition-transform duration-200"
+                className="relative overflow-hidden rounded-lg"
                 style={{
-                  transform: `scale(${zoom})`,
-                  transformOrigin: 'top left'
+                  maxHeight: '60vh',
+                  minHeight: '300px'
                 }}
               >
-                <img
-                  src={displayUrl}
-                  alt="Preview"
-                  className="max-w-full block"
-                  style={{
-                    imageRendering: zoom > 1 ? 'pixelated' : 'auto'
-                  }}
+                <BeforeAfterSlider
+                  beforeUrl={originalUrl}
+                  afterUrl={previewUrl}
+                  alt="Food photo enhancement comparison"
+                  className="w-full h-full"
                 />
               </div>
-
-              {/* Processing overlay */}
-              {isProcessing && (
-                <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
-                  <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-lg shadow-lg">
-                    <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
-                    <span className="text-sm">Applying changes...</span>
-                  </div>
+            ) : (
+              /* Normal Preview Mode */
+              <div
+                className="relative bg-[url('/checkerboard.svg')] bg-repeat overflow-auto rounded-lg"
+                style={{
+                  maxHeight: '60vh',
+                  minHeight: '300px'
+                }}
+              >
+                <div
+                  className="transition-transform duration-200"
+                  style={{
+                    transform: `scale(${zoom})`,
+                    transformOrigin: 'top left'
+                  }}
+                >
+                  <img
+                    src={displayUrl}
+                    alt="Preview"
+                    className="max-w-full block"
+                    style={{
+                      imageRendering: zoom > 1 ? 'pixelated' : 'auto'
+                    }}
+                  />
                 </div>
-              )}
-            </div>
+
+                {/* Processing overlay */}
+                {isProcessing && (
+                  <div className="absolute inset-0 bg-background/50 flex items-center justify-center">
+                    <div className="flex items-center gap-2 bg-background px-4 py-2 rounded-lg shadow-lg">
+                      <Loader2 className="h-5 w-5 animate-spin text-orange-500" />
+                      <span className="text-sm">Applying changes...</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
