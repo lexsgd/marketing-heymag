@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   if (!user) redirect('/auth/login')
 
   // Get business with credits
-  const { data: business } = await supabase
+  const { data: business, error: businessError } = await supabase
     .from('businesses')
     .select(`
       *,
@@ -33,6 +33,12 @@ export default async function DashboardPage() {
     `)
     .eq('auth_user_id', user.id)
     .single()
+
+  // Debug logging
+  console.log('[Dashboard] User ID:', user.id)
+  console.log('[Dashboard] Business:', JSON.stringify(business, null, 2))
+  console.log('[Dashboard] Business Error:', businessError)
+  console.log('[Dashboard] Credits array:', business?.credits)
 
   const creditsRemaining = business?.credits?.[0]?.credits_remaining || 0
   const creditsUsed = business?.credits?.[0]?.credits_used || 0
