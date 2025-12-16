@@ -60,7 +60,6 @@
     "react-dropzone": "^14.3.8",
     "react-hook-form": "^7.62.0",
     "recharts": "^2.15.4",
-    "sharp": "^0.34.5",
     "sonner": "^2.0.7",
     "stripe": "^18.3.0",
     "tailwind-merge": "^3.3.1",
@@ -82,6 +81,9 @@
     "tailwindcss-animate": "^1.0.7",
     "typescript": "^5.3.3",
     "vitest": "^4.0.13"
+  },
+  "optionalDependencies": {
+    "sharp": "^0.34.5"
   },
   "engines": {
     "node": ">=20.x"
