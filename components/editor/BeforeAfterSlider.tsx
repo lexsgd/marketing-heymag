@@ -185,24 +185,30 @@ export function BeforeAfterSlider({
         </div>
       </div>
 
-      {/* Labels - Enhanced on LEFT (clipped), Original on RIGHT (underneath) */}
+      {/* Labels with smooth fade animation based on slider position */}
+      {/* AI Enhanced (LEFT): Fades out when dragging left (revealing more Original) */}
       <div
         className={cn(
           'absolute bottom-4 left-4 px-3 py-1.5',
           'bg-green-600 text-white text-sm font-medium rounded',
-          'transition-opacity duration-200'
+          'transition-opacity duration-300 ease-out'
         )}
-        style={{ opacity: sliderPosition < 15 ? 0 : 1 }}
+        style={{
+          opacity: Math.min(1, sliderPosition / 25)
+        }}
       >
         AI Enhanced
       </div>
+      {/* Original (RIGHT): Fades out when dragging right (revealing more Enhanced) */}
       <div
         className={cn(
           'absolute bottom-4 right-4 px-3 py-1.5',
           'bg-black/70 text-white text-sm font-medium rounded',
-          'transition-opacity duration-200'
+          'transition-opacity duration-300 ease-out'
         )}
-        style={{ opacity: sliderPosition > 85 ? 0 : 1 }}
+        style={{
+          opacity: Math.min(1, (100 - sliderPosition) / 25)
+        }}
       >
         Original
       </div>
