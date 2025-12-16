@@ -307,13 +307,16 @@ export async function POST(request: NextRequest) {
 
     // Use service role for storage and credit operations
     const serviceSupabase = createServiceRoleClient()
+    let currentStep = 'initialization'
 
     try {
       // Get the style prompt
+      currentStep = 'getting style prompt'
       const stylePrompt = stylePrompts[stylePreset] || stylePrompts['delivery']
       console.log('[Enhance] Using style preset:', stylePreset)
 
       // Fetch the original image
+      currentStep = 'fetching original image'
       console.log('[Enhance] Fetching original image from:', image.original_url?.substring(0, 80))
       const imageResponse = await fetch(image.original_url)
 
@@ -323,17 +326,22 @@ export async function POST(request: NextRequest) {
       }
       console.log('[Enhance] Image fetched successfully, status:', imageResponse.status)
 
+      currentStep = 'converting image to buffer'
       const imageArrayBuffer = await imageResponse.arrayBuffer()
       const imageBuffer = Buffer.from(imageArrayBuffer)
       console.log('[Enhance] Image buffer size:', imageBuffer.length, 'bytes')
 
+      currentStep = 'encoding image to base64'
       const base64Image = imageBuffer.toString('base64')
       const mimeType = image.mime_type || 'image/jpeg'
       console.log('[Enhance] Image prepared for AI, mime:', mimeType)
 
       // Call Google Gemini for image analysis and enhancement recommendations
+      currentStep = 'initializing Google AI'
       console.log('[Enhance] Initializing Google AI model')
       const model = getGoogleAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
+
+      currentStep = 'calling Google Gemini API'
       console.log('[Enhance] Calling Google Gemini API...')
 
       const result = await model.generateContent([
@@ -367,6 +375,7 @@ export async function POST(request: NextRequest) {
         }
       ])
 
+      currentStep = 'getting Google AI response'
       console.log('[Enhance] Google AI call completed, getting response...')
       const response = await result.response
       const text = response.text()
@@ -374,6 +383,7 @@ export async function POST(request: NextRequest) {
       console.log('[Enhance] AI response preview:', text.substring(0, 500))
 
       // Parse the enhancement suggestions
+      currentStep = 'parsing AI response'
       let enhancementData
       try {
         // Extract JSON from the response
@@ -392,6 +402,7 @@ export async function POST(request: NextRequest) {
       console.log('[Enhance] Applying enhancements:', JSON.stringify(enhancementData.enhancements))
 
       // Apply the enhancements using Sharp
+      currentStep = 'applying Sharp enhancements'
       console.log('[Enhance] Starting Sharp image processing...')
       const enhancedBuffer = await applyEnhancements(imageBuffer, enhancementData.enhancements)
 
@@ -402,6 +413,7 @@ export async function POST(request: NextRequest) {
         console.log('[Enhance] Sharp processing complete, enhanced buffer size:', enhancedBuffer.length, 'bytes')
 
         // Upload enhanced image to Supabase Storage
+        currentStep = 'uploading enhanced image to storage'
         const fileExt = image.original_filename?.split('.').pop() || 'jpg'
         const enhancedFileName = `${business.id}/enhanced/${Date.now()}.${fileExt}`
         console.log('[Enhance] Uploading enhanced image to:', enhancedFileName)
@@ -434,6 +446,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Update image record with enhanced URL (or original if processing skipped)
+      currentStep = 'updating image record'
       console.log('[Enhance] Updating image record...')
       const { error: imageUpdateError } = await supabase
         .from('images')
@@ -455,6 +468,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Deduct credit
+      currentStep = 'deducting credits'
       console.log('[Enhance] Deducting credit...')
       const { error: creditUpdateError } = await serviceSupabase
         .from('credits')
@@ -495,19 +509,30 @@ export async function POST(request: NextRequest) {
         processingSkipped, // If true, client should apply enhancements using the settings
       })
     } catch (aiError: unknown) {
-      console.error('AI Enhancement error:', aiError)
+      const errorMessage = (aiError as Error).message || 'Unknown error'
+      const errorStack = (aiError as Error).stack || ''
+      console.error('[Enhance] AI Enhancement error at step:', currentStep)
+      console.error('[Enhance] Error message:', errorMessage)
+      console.error('[Enhance] Error stack:', errorStack)
 
       // Update image status to failed
       await supabase
         .from('images')
         .update({
           status: 'failed',
-          error_message: (aiError as Error).message || 'Enhancement failed',
+          error_message: `${currentStep}: ${errorMessage}`,
         })
         .eq('id', imageId)
 
+      // Return detailed error for debugging (in production, would hide some details)
       return NextResponse.json(
-        { error: 'AI enhancement failed. Please try again.' },
+        {
+          error: 'AI enhancement failed',
+          failedAtStep: currentStep,
+          details: errorMessage,
+          // Include partial stack for debugging
+          debugHint: errorStack.split('\n').slice(0, 3).join(' | ')
+        },
         { status: 500 }
       )
     }
