@@ -4,19 +4,15 @@ import { useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Upload,
-  Camera,
-  Wand2,
   Loader2,
-  Check,
   X,
-  Image as ImageIcon,
   Sparkles
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { cn } from '@/lib/utils'
-import { config } from '@/lib/config'
+import { StylePresetSelector } from '@/components/editor'
 
 export default function EditorPage() {
   const [dragActive, setDragActive] = useState(false)
@@ -25,10 +21,24 @@ export default function EditorPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
+  const [customPrompts, setCustomPrompts] = useState<Record<string, string>>({})
   const [enhancing, setEnhancing] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const router = useRouter()
+
+  // Handle custom prompt changes
+  const handleCustomPromptChange = (styleId: string, prompt: string) => {
+    if (prompt) {
+      setCustomPrompts((prev) => ({ ...prev, [styleId]: prompt }))
+    } else {
+      setCustomPrompts((prev) => {
+        const newPrompts = { ...prev }
+        delete newPrompts[styleId]
+        return newPrompts
+      })
+    }
+  }
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault()
@@ -89,6 +99,10 @@ export default function EditorPage() {
       const formData = new FormData()
       formData.append('file', selectedFile)
       formData.append('stylePreset', selectedStyle)
+      // Include custom prompt if one exists for this style
+      if (customPrompts[selectedStyle]) {
+        formData.append('customPrompt', customPrompts[selectedStyle])
+      }
 
       const uploadResponse = await fetch('/api/images/upload', {
         method: 'POST',
@@ -133,6 +147,8 @@ export default function EditorPage() {
           body: JSON.stringify({
             imageId: imageRecord.id,
             stylePreset: selectedStyle,
+            // Include custom prompt if user has customized this style
+            customPrompt: customPrompts[selectedStyle] || undefined,
           }),
           signal: controller.signal,
         })
@@ -271,34 +287,21 @@ export default function EditorPage() {
         </Card>
 
         {/* Style Selection */}
-        <Card>
+        <Card className="overflow-hidden">
           <CardHeader>
             <CardTitle>Choose Style</CardTitle>
             <CardDescription>
-              Select a preset style for your enhanced photo
+              Select a preset style for your enhanced photo. Hover over any preset and click the code icon to view or customize its AI prompt.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {config.stylePresets.map((preset) => (
-                <button
-                  key={preset.id}
-                  onClick={() => setSelectedStyle(preset.id)}
-                  disabled={uploading || enhancing}
-                  className={cn(
-                    'p-4 rounded-lg border text-left transition-all',
-                    selectedStyle === preset.id
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20 ring-2 ring-orange-500'
-                      : 'border-border hover:border-muted-foreground/50'
-                  )}
-                >
-                  <div className="font-medium text-sm">{preset.name}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {preset.description}
-                  </div>
-                </button>
-              ))}
-            </div>
+          <CardContent className="max-h-[500px] overflow-y-auto">
+            <StylePresetSelector
+              selectedStyle={selectedStyle}
+              onStyleSelect={setSelectedStyle}
+              customPrompts={customPrompts}
+              onCustomPromptChange={handleCustomPromptChange}
+              disabled={uploading || enhancing}
+            />
           </CardContent>
         </Card>
       </div>
