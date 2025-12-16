@@ -16,18 +16,55 @@ function getGoogleAI(): GoogleGenerativeAI {
   return genAI
 }
 
-// Style preset prompts
+// Style preset prompts - 30+ presets with SEA market focus
 const stylePrompts: Record<string, string> = {
-  'delivery': 'Professional food photography for delivery app listing. Clean white or light background, perfectly lit from above, appetizing presentation, high contrast, vibrant colors that make food look fresh and delicious. Optimized for DoorDash, Uber Eats, and GrabFood.',
+  // SEA Delivery Platforms
+  'grab': 'Professional food photography optimized for GrabFood listing. Clean bright background, perfectly lit from above, appetizing presentation, high contrast, vibrant colors that make food look fresh and irresistible. Square format, hero shot angle.',
+  'foodpanda': 'High-impact food photo for Foodpanda marketplace. Bright, clean presentation, vibrant saturated colors, professional studio lighting. Square format optimized for pink/magenta brand context.',
+  'deliveroo': 'Premium food photography for Deliveroo SEA. Clean modern aesthetic, professional lighting, appetizing styling. Teal-friendly color palette, high quality restaurant feel.',
+  'gojek': 'GoFood Indonesia-style food photography. Bright, appetizing, approachable presentation. Clean background, vibrant colors, suitable for local SEA cuisine.',
+  'shopee': 'ShopeeFood marketplace optimized photo. Bright, eye-catching, high saturation. Orange-friendly tones, clean background, scroll-stopping appeal.',
+  'delivery': 'Professional food photography for delivery app listing. Clean white or light background, perfectly lit from above, appetizing presentation, high contrast, vibrant colors that make food look fresh and delicious.',
+
+  // Social Media Platforms
   'instagram': 'Instagram-worthy food photo. Vibrant colors, perfect lighting, lifestyle aesthetic, appetizing and shareable. Square format composition, trendy food styling, natural light effect.',
-  'stories': 'Vertical 9:16 format food photo for Instagram Stories and Reels. Dynamic composition, bold colors, eye-catching presentation, modern and trendy aesthetic.',
-  'menu': 'Professional menu card photography. Clean, elegant presentation on neutral background. Professional studio lighting, precise food styling, suitable for printed menus.',
+  'instagram-stories': 'Vertical 9:16 format food photo for Instagram Stories. Dynamic composition, bold colors, eye-catching presentation, modern and trendy aesthetic with room for text overlay.',
+  'instagram-reels': 'High-energy vertical food content for Instagram Reels. Punchy colors, dynamic angles, scroll-stopping visual impact. Modern Gen-Z aesthetic.',
+  'tiktok': 'TikTok-optimized food visual. Eye-catching, scroll-stopping, vibrant colors. Dynamic composition, trendy aesthetic, designed to grab attention in first 0.5 seconds.',
+  'facebook': 'Facebook feed optimized food photo. Warm, inviting, shareable aesthetic. Balanced colors, approachable presentation, works well in varied feed contexts.',
+  'xiaohongshu': 'Xiaohongshu (RED) style food photo. Trendy, lifestyle-focused, pastel or vibrant colors. Cute presentation, social media perfect, Chinese youth aesthetic.',
+  'wechat': 'WeChat Moments shareable format. Clean, professional, culturally appropriate for Chinese social media. Elegant but not overly stylized.',
+
+  // Restaurant Styles
   'fine-dining': 'Fine dining restaurant photography. Dark, moody background with dramatic lighting. Elegant plating, sophisticated atmosphere, Michelin-star quality presentation.',
   'casual': 'Warm, inviting casual dining photo. Natural wood tones, cozy atmosphere, comfort food aesthetic. Friendly and approachable presentation.',
   'fast-food': 'High-energy fast food marketing photo. Bold colors, high saturation, appetizing and indulgent. Dynamic angles, youthful and exciting presentation.',
   'cafe': 'Artisan cafe aesthetic. Rustic wood surfaces, natural light, handcrafted feel. Cozy coffee shop atmosphere, Instagram-worthy plating.',
-  'xiaohongshu': 'Xiaohongshu (RED) style food photo. Trendy, lifestyle-focused, pastel or vibrant colors. Cute presentation, social media perfect, Chinese youth aesthetic.',
-  'wechat': 'WeChat Moments shareable format. Clean, professional, culturally appropriate for Chinese social media. Elegant but not overly stylized.',
+  'street-food': 'Authentic street food photography. Vibrant, energetic, real-world atmosphere. Captures the essence of hawker culture and street dining.',
+  'menu': 'Professional menu card photography. Clean, elegant presentation on neutral background. Professional studio lighting, precise food styling, suitable for printed menus.',
+  'kopitiam': 'Traditional kopitiam coffee shop aesthetic. Nostalgic, warm, local SEA heritage feel. Rustic surfaces, vintage atmosphere, comfort food presentation.',
+  'hawker': 'Hawker centre style food photography. Authentic, vibrant, captures the spirit of SEA street food culture. Casual but appetizing presentation.',
+
+  // Background Styles
+  'minimal': 'Minimalist food photography on pure white background. Clean, product-focused, professional e-commerce style. Maximum clarity and food focus.',
+  'rustic': 'Rustic wooden table surface backdrop. Natural, organic feel, artisan aesthetic. Warm wood tones complement food colors.',
+  'marble': 'Elegant marble surface backdrop. Luxury, sophisticated, upscale restaurant feel. Cool tones, premium aesthetic.',
+  'dark-moody': 'Dark moody food photography. Dramatic shadows, rich contrast, artistic presentation. Sophisticated, editorial magazine style.',
+  'bright-airy': 'Bright and airy natural light aesthetic. Fresh, healthy, appetizing. Soft shadows, clean whites, lifestyle magazine feel.',
+  'tropical': 'Tropical paradise aesthetic. Bright vibrant colors, palm leaves, exotic fruits. Perfect for tropical cuisine and beach vibes.',
+  'concrete': 'Industrial concrete surface backdrop. Modern, urban, edgy aesthetic. Works great for trendy cafe and modern cuisine.',
+  'botanical': 'Botanical green backdrop with plants and leaves. Fresh, healthy, organic aesthetic. Perfect for salads, healthy bowls, vegetarian cuisine.',
+
+  // Photography Techniques
+  'overhead': 'Flat lay top-down food photography. Perfect symmetry, full dish visibility, ideal for complex platings and bowls.',
+  'natural-light': 'Window-lit natural light photography. Soft, diffused lighting, organic feel. No harsh shadows, gentle gradients.',
+  'neon': 'Neon-lit night market style. Vibrant artificial lighting, urban nightlife aesthetic. Bold colors, modern edge.',
+  'vintage': 'Vintage nostalgic aesthetic. Warm sepia tones, film grain, retro feel. Comfort food, heritage recipes.',
+  'hdr': 'HDR enhanced high dynamic range. Maximum detail in shadows and highlights, punchy colors, dramatic impact.',
+  'bokeh': 'Shallow depth of field with bokeh background. Blurred background lights, focus on food subject, artistic restaurant atmosphere.',
+
+  // Legacy presets (for backward compatibility)
+  'stories': 'Vertical 9:16 format food photo for Instagram Stories and Reels. Dynamic composition, bold colors, eye-catching presentation, modern and trendy aesthetic.',
 }
 
 // Apply image enhancements using Sharp
@@ -334,16 +371,76 @@ export async function POST(request: NextRequest) {
 // Get style-appropriate default enhancements
 function getDefaultEnhancements(stylePreset: string) {
   const defaults: Record<string, { enhancements: Record<string, number>, suggestions: string[], styleMatch: number, overallRating: number }> = {
-    'delivery': {
-      enhancements: { brightness: 15, contrast: 20, saturation: 35, warmth: 8, sharpness: 50, highlights: -5, shadows: 15 },
-      suggestions: ['Increase vibrancy for app listings', 'Ensure clean background', 'Maximize appetizing appeal'],
+    // SEA Delivery Platforms
+    'grab': {
+      enhancements: { brightness: 18, contrast: 22, saturation: 40, warmth: 8, sharpness: 55, highlights: -5, shadows: 18 },
+      suggestions: ['Optimize for GrabFood green branding', 'Maximum appetizing appeal', 'Clean bright background'],
+      styleMatch: 88, overallRating: 8
+    },
+    'foodpanda': {
+      enhancements: { brightness: 20, contrast: 25, saturation: 45, warmth: 5, sharpness: 55, highlights: 0, shadows: 15 },
+      suggestions: ['High saturation for Foodpanda', 'Vibrant colors pop', 'Professional studio look'],
+      styleMatch: 88, overallRating: 8
+    },
+    'deliveroo': {
+      enhancements: { brightness: 15, contrast: 20, saturation: 35, warmth: -3, sharpness: 50, highlights: -5, shadows: 12 },
+      suggestions: ['Premium restaurant quality', 'Teal-friendly tones', 'Clean modern aesthetic'],
+      styleMatch: 88, overallRating: 8
+    },
+    'gojek': {
+      enhancements: { brightness: 18, contrast: 20, saturation: 38, warmth: 10, sharpness: 50, highlights: 0, shadows: 15 },
+      suggestions: ['GoFood Indonesia style', 'Warm approachable feel', 'Local cuisine appeal'],
       styleMatch: 85, overallRating: 8
     },
+    'shopee': {
+      enhancements: { brightness: 20, contrast: 25, saturation: 50, warmth: 12, sharpness: 55, highlights: 5, shadows: 18 },
+      suggestions: ['ShopeeFood orange tones', 'High impact scroll-stopper', 'Marketplace optimized'],
+      styleMatch: 88, overallRating: 8
+    },
+    'delivery': {
+      enhancements: { brightness: 15, contrast: 20, saturation: 35, warmth: 8, sharpness: 50, highlights: -5, shadows: 15 },
+      suggestions: ['Universal delivery app style', 'Clean background', 'Maximum appetizing appeal'],
+      styleMatch: 85, overallRating: 8
+    },
+
+    // Social Media
     'instagram': {
       enhancements: { brightness: 10, contrast: 15, saturation: 40, warmth: 10, sharpness: 45, highlights: 0, shadows: 10 },
       suggestions: ['Boost colors for feed visibility', 'Add warm tones', 'Enhance food texture'],
       styleMatch: 85, overallRating: 8
     },
+    'instagram-stories': {
+      enhancements: { brightness: 15, contrast: 18, saturation: 45, warmth: 8, sharpness: 50, highlights: 5, shadows: 12 },
+      suggestions: ['Vertical format optimized', 'Bold colors for stories', 'Eye-catching presentation'],
+      styleMatch: 85, overallRating: 8
+    },
+    'instagram-reels': {
+      enhancements: { brightness: 18, contrast: 22, saturation: 50, warmth: 5, sharpness: 55, highlights: 5, shadows: 15 },
+      suggestions: ['High energy for Reels', 'Scroll-stopping impact', 'Gen-Z aesthetic'],
+      styleMatch: 88, overallRating: 8
+    },
+    'tiktok': {
+      enhancements: { brightness: 20, contrast: 25, saturation: 55, warmth: 5, sharpness: 55, highlights: 8, shadows: 18 },
+      suggestions: ['Maximum scroll-stopping impact', 'TikTok trending style', 'Vibrant attention-grabbing'],
+      styleMatch: 90, overallRating: 8
+    },
+    'facebook': {
+      enhancements: { brightness: 12, contrast: 15, saturation: 30, warmth: 12, sharpness: 40, highlights: 0, shadows: 10 },
+      suggestions: ['Warm inviting tone', 'Shareable quality', 'Works in varied feeds'],
+      styleMatch: 85, overallRating: 8
+    },
+    'xiaohongshu': {
+      enhancements: { brightness: 15, contrast: 10, saturation: 30, warmth: 5, sharpness: 45, highlights: 5, shadows: 10 },
+      suggestions: ['Brighten for trendy look', 'Add subtle pastel tones', 'Enhance cute factor'],
+      styleMatch: 85, overallRating: 8
+    },
+    'wechat': {
+      enhancements: { brightness: 10, contrast: 15, saturation: 25, warmth: 5, sharpness: 40, highlights: 0, shadows: 8 },
+      suggestions: ['Keep clean and professional', 'Balanced enhancement', 'Shareable quality'],
+      styleMatch: 85, overallRating: 8
+    },
+
+    // Restaurant Styles
     'fine-dining': {
       enhancements: { brightness: -5, contrast: 25, saturation: 15, warmth: -5, sharpness: 40, highlights: -10, shadows: -5 },
       suggestions: ['Darken background for drama', 'Enhance plate details', 'Add subtle contrast'],
@@ -364,14 +461,105 @@ function getDefaultEnhancements(stylePreset: string) {
       suggestions: ['Add rustic warmth', 'Enhance artisan feel', 'Soften highlights'],
       styleMatch: 85, overallRating: 8
     },
-    'xiaohongshu': {
-      enhancements: { brightness: 15, contrast: 10, saturation: 30, warmth: 5, sharpness: 45, highlights: 5, shadows: 10 },
-      suggestions: ['Brighten for trendy look', 'Add subtle pastel tones', 'Enhance cute factor'],
+    'street-food': {
+      enhancements: { brightness: 15, contrast: 20, saturation: 40, warmth: 15, sharpness: 45, highlights: 0, shadows: 15 },
+      suggestions: ['Authentic hawker vibes', 'Vibrant street atmosphere', 'Real-world feel'],
       styleMatch: 85, overallRating: 8
     },
-    'wechat': {
-      enhancements: { brightness: 10, contrast: 15, saturation: 25, warmth: 5, sharpness: 40, highlights: 0, shadows: 8 },
-      suggestions: ['Keep clean and professional', 'Balanced enhancement', 'Shareable quality'],
+    'menu': {
+      enhancements: { brightness: 10, contrast: 18, saturation: 25, warmth: 5, sharpness: 50, highlights: -5, shadows: 8 },
+      suggestions: ['Clean professional look', 'Print-ready quality', 'Neutral background'],
+      styleMatch: 88, overallRating: 8
+    },
+    'kopitiam': {
+      enhancements: { brightness: 5, contrast: 15, saturation: 20, warmth: 20, sharpness: 35, highlights: -5, shadows: 5 },
+      suggestions: ['Nostalgic warmth', 'Heritage feel', 'Rustic comfort'],
+      styleMatch: 85, overallRating: 8
+    },
+    'hawker': {
+      enhancements: { brightness: 12, contrast: 18, saturation: 35, warmth: 15, sharpness: 45, highlights: 0, shadows: 12 },
+      suggestions: ['SEA street food culture', 'Authentic presentation', 'Casual but appetizing'],
+      styleMatch: 85, overallRating: 8
+    },
+
+    // Background Styles
+    'minimal': {
+      enhancements: { brightness: 20, contrast: 15, saturation: 30, warmth: 0, sharpness: 55, highlights: 10, shadows: 5 },
+      suggestions: ['Pure white background', 'Product focus', 'E-commerce ready'],
+      styleMatch: 90, overallRating: 8
+    },
+    'rustic': {
+      enhancements: { brightness: 8, contrast: 15, saturation: 25, warmth: 20, sharpness: 40, highlights: -5, shadows: 10 },
+      suggestions: ['Warm wood tones', 'Natural organic feel', 'Artisan aesthetic'],
+      styleMatch: 85, overallRating: 8
+    },
+    'marble': {
+      enhancements: { brightness: 12, contrast: 20, saturation: 20, warmth: -5, sharpness: 50, highlights: 0, shadows: 5 },
+      suggestions: ['Cool elegant tones', 'Luxury feel', 'Upscale presentation'],
+      styleMatch: 88, overallRating: 8
+    },
+    'dark-moody': {
+      enhancements: { brightness: -10, contrast: 30, saturation: 20, warmth: -5, sharpness: 45, highlights: -15, shadows: -10 },
+      suggestions: ['Dramatic shadows', 'Editorial magazine style', 'Artistic presentation'],
+      styleMatch: 85, overallRating: 8
+    },
+    'bright-airy': {
+      enhancements: { brightness: 18, contrast: 10, saturation: 25, warmth: 8, sharpness: 40, highlights: 10, shadows: 15 },
+      suggestions: ['Fresh light feel', 'Lifestyle magazine style', 'Healthy aesthetic'],
+      styleMatch: 88, overallRating: 8
+    },
+    'tropical': {
+      enhancements: { brightness: 15, contrast: 20, saturation: 50, warmth: 10, sharpness: 45, highlights: 5, shadows: 12 },
+      suggestions: ['Vibrant tropical colors', 'Exotic beach vibes', 'Bright and fresh'],
+      styleMatch: 85, overallRating: 8
+    },
+    'concrete': {
+      enhancements: { brightness: 5, contrast: 22, saturation: 15, warmth: -5, sharpness: 50, highlights: -5, shadows: 0 },
+      suggestions: ['Urban industrial feel', 'Modern edgy aesthetic', 'Trendy cafe style'],
+      styleMatch: 85, overallRating: 8
+    },
+    'botanical': {
+      enhancements: { brightness: 12, contrast: 15, saturation: 35, warmth: 5, sharpness: 45, highlights: 0, shadows: 10 },
+      suggestions: ['Fresh green accents', 'Organic healthy feel', 'Natural presentation'],
+      styleMatch: 85, overallRating: 8
+    },
+
+    // Photography Techniques
+    'overhead': {
+      enhancements: { brightness: 15, contrast: 18, saturation: 35, warmth: 8, sharpness: 50, highlights: 0, shadows: 12 },
+      suggestions: ['Perfect flat lay composition', 'Full dish visibility', 'Ideal for bowls'],
+      styleMatch: 88, overallRating: 8
+    },
+    'natural-light': {
+      enhancements: { brightness: 12, contrast: 10, saturation: 25, warmth: 10, sharpness: 35, highlights: 5, shadows: 15 },
+      suggestions: ['Soft diffused lighting', 'No harsh shadows', 'Gentle organic feel'],
+      styleMatch: 88, overallRating: 8
+    },
+    'neon': {
+      enhancements: { brightness: 5, contrast: 30, saturation: 60, warmth: -10, sharpness: 50, highlights: 10, shadows: 5 },
+      suggestions: ['Night market vibes', 'Vibrant artificial lighting', 'Urban nightlife'],
+      styleMatch: 85, overallRating: 8
+    },
+    'vintage': {
+      enhancements: { brightness: 5, contrast: 12, saturation: 15, warmth: 25, sharpness: 30, highlights: -5, shadows: 5 },
+      suggestions: ['Nostalgic sepia tones', 'Film grain effect', 'Retro heritage feel'],
+      styleMatch: 85, overallRating: 8
+    },
+    'hdr': {
+      enhancements: { brightness: 10, contrast: 35, saturation: 45, warmth: 5, sharpness: 60, highlights: -10, shadows: 20 },
+      suggestions: ['Maximum detail range', 'Punchy dramatic colors', 'High impact visual'],
+      styleMatch: 88, overallRating: 8
+    },
+    'bokeh': {
+      enhancements: { brightness: 8, contrast: 18, saturation: 30, warmth: 10, sharpness: 55, highlights: 5, shadows: 8 },
+      suggestions: ['Blurred background effect', 'Focus on food subject', 'Artistic restaurant feel'],
+      styleMatch: 85, overallRating: 8
+    },
+
+    // Legacy
+    'stories': {
+      enhancements: { brightness: 15, contrast: 18, saturation: 45, warmth: 8, sharpness: 50, highlights: 5, shadows: 12 },
+      suggestions: ['Vertical format optimized', 'Bold colors for stories', 'Eye-catching presentation'],
       styleMatch: 85, overallRating: 8
     },
   }
