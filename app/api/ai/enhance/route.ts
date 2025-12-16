@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt } from '@/lib/style-prompts'
+import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 // Sharp is dynamically imported to handle platform-specific binary issues on Vercel
 // import sharp from 'sharp'
 
@@ -332,6 +332,10 @@ export async function POST(request: NextRequest) {
       currentStep = 'initializing Gemini 3 Pro Image'
       console.log('[Enhance] STEP 2: Applying Gemini 3 Pro Image AI polish')
 
+      // Get platform-specific image configuration
+      const platformConfig = getPlatformConfig(stylePreset)
+      console.log('[Enhance] Platform config:', platformConfig.aspectRatio, platformConfig.imageSize, platformConfig.description)
+
       try {
         // Use Gemini 3 Pro Image (Nano Banana Pro) for better preservation and thinking capability
         // Features: High-res output (up to 4K), conversational editing, thought signatures
@@ -344,9 +348,11 @@ export async function POST(request: NextRequest) {
 
         currentStep = 'calling Gemini API with preservation prompt'
         console.log('[Enhance] Calling Gemini with strict preservation prompt...')
+        console.log('[Enhance] Output format: ', platformConfig.aspectRatio, '@', platformConfig.imageSize)
 
         // CRITICAL: Research-backed prompt for maximum content preservation
-        // Based on Google's official documentation and best practices
+        // Based on Google's official documentation and best practices for Nano Banana Pro
+        // Reference: https://ai.google.dev/gemini-api/docs/gemini-3
         const preservationPrompt = `You are a professional food photo RETOUCHER. This image has already been color-corrected.
 
 ABSOLUTE PRESERVATION RULES (VIOLATION = FAILURE):
@@ -357,20 +363,33 @@ ABSOLUTE PRESERVATION RULES (VIOLATION = FAILURE):
 5. Do NOT replace any food with different food
 6. Do NOT change what is being photographed
 
+OUTPUT SPECIFICATIONS:
+- Aspect Ratio: ${platformConfig.aspectRatio} (${platformConfig.description})
+- Resolution: ${platformConfig.imageSize} quality
+- Platform: ${platformConfig.platformRequirements || 'General food photography'}
+
 YOUR TASK - Apply ONLY these professional adjustments:
-- Add subtle professional lighting simulation for ${stylePreset} style
-- Enhance food texture micro-details (make it look more appetizing)
+- Professional ${stylePreset} style lighting simulation
+- Enhance food texture micro-details (steam, glossiness, crispy elements)
 - Apply ${stylePreset}-specific color grading while preserving natural food colors
-- Improve overall professional quality
+- Sharpen texture details for appetizing appearance
+- Improve overall professional quality suitable for ${platformConfig.description}
 
 STYLE REFERENCE: ${stylePrompt}
 
-VERIFICATION (you must satisfy ALL before outputting):
+PHOTOGRAPHY TECHNIQUE:
+- Use soft diffused lighting for appetizing highlights
+- Enhance natural food colors without oversaturation
+- Add subtle depth through shadow/highlight balance
+- Maintain authentic, real appearance (not artificial)
+
+VERIFICATION CHECKLIST (satisfy ALL before outputting):
 ✓ Same food items as input
 ✓ Same dishes/plates as input
 ✓ Same arrangement as input
-✓ Same angle as input
+✓ Same camera angle as input
 ✓ Only lighting/color/texture enhanced
+✓ Output matches ${platformConfig.aspectRatio} aspect ratio
 
 OUTPUT: Return the enhanced version of THIS EXACT photo. Preserve subject fidelity.
 

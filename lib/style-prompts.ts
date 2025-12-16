@@ -1,13 +1,273 @@
 /**
- * AI Style Enhancement Prompts
+ * AI Style Enhancement Prompts & Platform Configurations
  *
  * These prompts are based on comprehensive research including:
  * - Official platform specifications (GrabFood, Foodpanda, Deliveroo, etc.)
  * - Social media best practices (Instagram, TikTok, Xiaohongshu, etc.)
  * - Professional food photography techniques
+ * - Google Gemini 3 Pro Image (Nano Banana Pro) best practices
  *
  * Users can customize these prompts per session via the UI.
  */
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PLATFORM IMAGE SPECIFICATIONS
+// Based on official platform requirements and Gemini 3 Pro Image capabilities
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface PlatformImageConfig {
+  aspectRatio: '1:1' | '2:3' | '3:2' | '3:4' | '4:3' | '4:5' | '5:4' | '9:16' | '16:9' | '21:9'
+  imageSize: '1K' | '2K' | '4K'  // 1K=1024px, 2K=2048px, 4K=4096px
+  description: string
+  platformRequirements?: string
+}
+
+export const platformImageConfigs: Record<string, PlatformImageConfig> = {
+  // ─────────────────────────────────────────────────────────────────────────────
+  // SEA Delivery Platforms
+  // ─────────────────────────────────────────────────────────────────────────────
+  'grab': {
+    aspectRatio: '1:1',
+    imageSize: '1K',  // 800x800 requirement, 1K is sufficient
+    description: 'GrabFood menu item',
+    platformRequirements: 'Square 800x800px, JPEG/PNG, max 6MB, centered dish'
+  },
+  'foodpanda': {
+    aspectRatio: '4:3',
+    imageSize: '4K',  // 4000x2925px minimum requirement
+    description: 'Foodpanda high-res menu',
+    platformRequirements: 'Minimum 4000x2925px, top/front view, no watermarks'
+  },
+  'deliveroo': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Deliveroo menu item',
+    platformRequirements: 'Square format, neutral background, 30% padding for UI'
+  },
+  'gojek': {
+    aspectRatio: '1:1',
+    imageSize: '1K',
+    description: 'GoFood menu item',
+    platformRequirements: 'Square format, bright colors for green interface'
+  },
+  'shopee': {
+    aspectRatio: '1:1',
+    imageSize: '1K',
+    description: 'ShopeeFood listing',
+    platformRequirements: 'Square format, clean background, food fills 80%'
+  },
+  'delivery': {
+    aspectRatio: '1:1',
+    imageSize: '1K',
+    description: 'Generic delivery app',
+    platformRequirements: 'Universal square format for all platforms'
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Social Media Platforms
+  // ─────────────────────────────────────────────────────────────────────────────
+  'instagram': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Instagram feed (portrait)',
+    platformRequirements: '1080x1350px optimal, maximizes screen space'
+  },
+  'instagram-stories': {
+    aspectRatio: '9:16',
+    imageSize: '2K',
+    description: 'Instagram Stories/Reels',
+    platformRequirements: '1080x1920px, text-safe zones at top/bottom 15%'
+  },
+  'instagram-reels': {
+    aspectRatio: '9:16',
+    imageSize: '2K',
+    description: 'Instagram Reels cover',
+    platformRequirements: '1080x1920px, scroll-stopping visual impact'
+  },
+  'tiktok': {
+    aspectRatio: '9:16',
+    imageSize: '2K',
+    description: 'TikTok vertical',
+    platformRequirements: '1080x1920px, attention-grabbing in 0.5 seconds'
+  },
+  'facebook': {
+    aspectRatio: '16:9',
+    imageSize: '2K',
+    description: 'Facebook feed',
+    platformRequirements: '1200x630px optimal, high contrast for scrolling'
+  },
+  'xiaohongshu': {
+    aspectRatio: '3:4',
+    imageSize: '2K',
+    description: 'Xiaohongshu RED',
+    platformRequirements: 'Portrait format, soft pastel aesthetic'
+  },
+  'wechat': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'WeChat Moments',
+    platformRequirements: 'Square or portrait, authentic presentation'
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Restaurant Styles (Default to Instagram-friendly 4:5)
+  // ─────────────────────────────────────────────────────────────────────────────
+  'fine-dining': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Fine dining editorial',
+    platformRequirements: 'Magazine quality, generous negative space'
+  },
+  'casual': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Casual dining',
+    platformRequirements: 'Warm, inviting atmosphere'
+  },
+  'fast-food': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Fast food menu',
+    platformRequirements: 'Bold colors, grab-and-go energy'
+  },
+  'cafe': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Cafe flat lay',
+    platformRequirements: 'Overhead view, lifestyle props'
+  },
+  'street-food': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Street food documentary',
+    platformRequirements: 'Authentic, environmental context'
+  },
+  'menu': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Menu card',
+    platformRequirements: 'Consistent across all items, print-ready'
+  },
+  'kopitiam': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Kopitiam heritage',
+    platformRequirements: 'Nostalgic, traditional setting'
+  },
+  'hawker': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Hawker centre',
+    platformRequirements: 'Vibrant, bustling atmosphere'
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Background Styles
+  // ─────────────────────────────────────────────────────────────────────────────
+  'minimal': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Minimal white',
+    platformRequirements: 'E-commerce ready, pure white background'
+  },
+  'rustic': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Rustic wooden',
+    platformRequirements: 'Farm-to-table aesthetic'
+  },
+  'marble': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Marble surface',
+    platformRequirements: 'Luxury, editorial aesthetic'
+  },
+  'dark-moody': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Dark moody',
+    platformRequirements: 'Dramatic chiaroscuro lighting'
+  },
+  'bright-airy': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Bright & airy',
+    platformRequirements: 'High-key, dreamy atmosphere'
+  },
+  'tropical': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Tropical vibes',
+    platformRequirements: 'Vacation, island aesthetic'
+  },
+  'concrete': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Industrial',
+    platformRequirements: 'Urban modern aesthetic'
+  },
+  'botanical': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Botanical garden',
+    platformRequirements: 'Fresh, organic, sustainable'
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Photography Techniques
+  // ─────────────────────────────────────────────────────────────────────────────
+  'overhead': {
+    aspectRatio: '1:1',
+    imageSize: '2K',
+    description: 'Overhead flat lay',
+    platformRequirements: 'Perfect 90-degree angle'
+  },
+  'natural-light': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Natural window light',
+    platformRequirements: 'Soft, authentic atmosphere'
+  },
+  'neon': {
+    aspectRatio: '9:16',
+    imageSize: '2K',
+    description: 'Neon night market',
+    platformRequirements: 'Urban night aesthetic'
+  },
+  'vintage': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Vintage film',
+    platformRequirements: 'Nostalgic Kodachrome palette'
+  },
+  'hdr': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'HDR enhanced',
+    platformRequirements: 'Full detail in shadows and highlights'
+  },
+  'bokeh': {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Bokeh background',
+    platformRequirements: 'Shallow depth of field'
+  },
+}
+
+// Helper function to get platform config
+export function getPlatformConfig(styleId: string): PlatformImageConfig {
+  return platformImageConfigs[styleId] || {
+    aspectRatio: '4:5',
+    imageSize: '2K',
+    description: 'Default',
+    platformRequirements: 'Standard Instagram-friendly format'
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// STYLE PROMPTS
+// Research-backed prompts for Gemini 3 Pro Image (Nano Banana Pro)
+// ═══════════════════════════════════════════════════════════════════════════════
 
 export const stylePrompts: Record<string, string> = {
   // SEA Delivery Platforms
