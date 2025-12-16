@@ -14,23 +14,7 @@ export function createClient() {
     )
   }
 
-  return createBrowserClient(
-    supabaseUrl,
-    supabaseAnonKey,
-    {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
-        // Keep session alive for 30 days
-        storageKey: 'foodsnap-auth',
-      },
-      cookieOptions: {
-        // 30 days in seconds
-        maxAge: 60 * 60 * 24 * 30,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    }
-  )
+  // Use Supabase defaults - no custom storageKey or cookieOptions
+  // This ensures browser client and middleware use same cookie names
+  return createBrowserClient(supabaseUrl, supabaseAnonKey)
 }

@@ -2,14 +2,6 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 
-// Cookie options for 30-day session persistence
-const cookieOptions = {
-  maxAge: 60 * 60 * 24 * 30, // 30 days
-  sameSite: 'lax' as const,
-  secure: process.env.NODE_ENV === 'production',
-  path: '/',
-}
-
 export async function createClient() {
   const cookieStore = await cookies()
 
@@ -20,6 +12,8 @@ export async function createClient() {
     throw new Error('Missing Supabase configuration. Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY')
   }
 
+  // Use Supabase defaults for cookie handling - no custom options
+  // This ensures consistency with browser client and middleware
   return createServerClient(
     supabaseUrl,
     supabaseAnonKey,
@@ -31,10 +25,7 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, {
-                ...cookieOptions,
-                ...options,
-              })
+              cookieStore.set(name, value, options)
             )
           } catch {
             // The `setAll` method was called from a Server Component.

@@ -16,14 +16,6 @@ export async function middleware(request: NextRequest) {
     return supabaseResponse
   }
 
-  // Cookie options for 30-day session persistence
-  const cookieOptions = {
-    maxAge: 60 * 60 * 24 * 30, // 30 days
-    sameSite: 'lax' as const,
-    secure: process.env.NODE_ENV === 'production',
-    path: '/',
-  }
-
   const supabase = createServerClient(
     supabaseUrl,
     supabaseAnonKey,
@@ -40,10 +32,7 @@ export async function middleware(request: NextRequest) {
             request,
           })
           cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, {
-              ...cookieOptions,
-              ...options,
-            })
+            supabaseResponse.cookies.set(name, value, options)
           )
         },
       },
