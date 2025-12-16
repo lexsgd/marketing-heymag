@@ -437,7 +437,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           processed_at: new Date().toISOString(),
           ai_model: 'gemini-2.0-flash-exp', // Nano Banana Pro
           ai_suggestions: enhancementData.suggestions,
-          processing_skipped: processingSkipped, // Track if server-side processing was skipped
+          // Note: processing_skipped is returned in API response but not stored in DB
         })
         .eq('id', imageId)
 
