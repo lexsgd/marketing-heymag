@@ -24,6 +24,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 const plans = [
   {
+    id: 'lite',
+    name: 'Lite',
+    price: 15,
+    credits: 15,
+    description: 'Try the basics',
+    icon: Sparkles,
+    features: [
+      'AI Photo Enhancement',
+      '10 Style Presets',
+      'Basic Export Formats',
+      'Watermarked Output',
+    ],
+    popular: false,
+  },
+  {
     id: 'starter',
     name: 'Starter',
     price: 25,
@@ -31,12 +46,11 @@ const plans = [
     description: 'Perfect for small restaurants',
     icon: Zap,
     features: [
-      'AI Photo Enhancement',
-      '10 Style Presets',
-      'AI Caption Generation',
-      'Multi-platform Export',
+      'Everything in Lite',
+      'AI Caption Generator',
       'No Watermarks',
-      'Email Support',
+      'Commercial License',
+      '30+ Style Presets',
     ],
     popular: false,
   },
@@ -202,7 +216,7 @@ export default async function BillingPage() {
           )}
 
           {/* Plan Cards */}
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
             {plans.map((plan) => (
               <Card
                 key={plan.id}

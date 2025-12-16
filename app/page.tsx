@@ -204,8 +204,12 @@ export default function HomePage() {
             <span className="font-bold text-xl">FoodSnap AI</span>
           </div>
           <div className="hidden md:flex items-center gap-8">
-            <Link href="/explore" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              Try Free
+            <Link
+              href="/explore"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:hover:bg-orange-900/50 transition-colors font-medium text-sm"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              Try Free Demo
             </Link>
             <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
               Features
