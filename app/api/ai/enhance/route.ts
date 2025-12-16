@@ -14,7 +14,13 @@ let genAI: GoogleGenerativeAI | null = null
 
 function getGoogleAI(): GoogleGenerativeAI {
   if (!genAI) {
-    genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY || '')
+    const apiKey = process.env.GOOGLE_AI_API_KEY
+    if (!apiKey) {
+      console.error('[Enhance] CRITICAL: GOOGLE_AI_API_KEY is not set!')
+      throw new Error('Google AI API key is not configured')
+    }
+    console.log('[Enhance] Initializing Google AI with API key:', apiKey.substring(0, 8) + '...')
+    genAI = new GoogleGenerativeAI(apiKey)
   }
   return genAI
 }
@@ -152,33 +158,62 @@ async function applyEnhancements(
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[Enhance] API called')
+
   try {
-    const { imageId, stylePreset } = await request.json()
+    // Parse request body
+    let body
+    try {
+      body = await request.json()
+      console.log('[Enhance] Request body:', JSON.stringify(body))
+    } catch (parseError) {
+      console.error('[Enhance] Failed to parse request body:', parseError)
+      return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
+    }
+
+    const { imageId, stylePreset } = body
 
     if (!imageId) {
+      console.log('[Enhance] Missing imageId')
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 })
     }
 
+    console.log('[Enhance] Processing imageId:', imageId, 'stylePreset:', stylePreset)
+
     // Get authenticated user
     const supabase = await createClient()
-    const { data: { user } } = await supabase.auth.getUser()
+    console.log('[Enhance] Supabase client created')
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
+
+    if (authError) {
+      console.error('[Enhance] Auth error:', authError)
+    }
 
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     // Get business
-    const { data: business } = await supabase
+    console.log('[Enhance] Looking up business for user:', user.id)
+    const { data: business, error: businessError } = await supabase
       .from('businesses')
       .select('id')
       .eq('auth_user_id', user.id)
       .single()
 
-    if (!business) {
-      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    if (businessError) {
+      console.error('[Enhance] Business lookup error:', businessError)
     }
 
+    if (!business) {
+      console.log('[Enhance] Business not found for user')
+      return NextResponse.json({ error: 'Business not found' }, { status: 404 })
+    }
+    console.log('[Enhance] Found business:', business.id)
+
     // Get image record
+    console.log('[Enhance] Fetching image record:', imageId)
     const { data: image, error: imageError } = await supabase
       .from('images')
       .select('*')
@@ -186,26 +221,46 @@ export async function POST(request: NextRequest) {
       .eq('business_id', business.id)
       .single()
 
-    if (imageError || !image) {
-      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+    if (imageError) {
+      console.error('[Enhance] Image fetch error:', imageError)
     }
 
+    if (imageError || !image) {
+      console.log('[Enhance] Image not found')
+      return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+    }
+    console.log('[Enhance] Found image, original_url:', image.original_url?.substring(0, 80))
+
     // Check credits
-    const { data: credits } = await supabase
+    console.log('[Enhance] Checking credits for business:', business.id)
+    const { data: credits, error: creditsError } = await supabase
       .from('credits')
       .select('credits_remaining, credits_used')
       .eq('business_id', business.id)
       .single()
 
-    if (!credits || credits.credits_remaining < 1) {
-      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+    if (creditsError) {
+      console.error('[Enhance] Credits lookup error:', creditsError)
     }
 
+    if (!credits || credits.credits_remaining < 1) {
+      console.log('[Enhance] Insufficient credits:', credits?.credits_remaining || 0)
+      return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
+    }
+    console.log('[Enhance] Credits available:', credits.credits_remaining)
+
     // Update image status to processing
-    await supabase
+    console.log('[Enhance] Updating status to processing')
+    const { error: updateError } = await supabase
       .from('images')
       .update({ status: 'processing' })
       .eq('id', imageId)
+
+    if (updateError) {
+      console.error('[Enhance] Failed to update status:', updateError)
+    } else {
+      console.log('[Enhance] Status updated to processing')
+    }
 
     // Use service role for storage and credit operations
     const serviceSupabase = createServiceRoleClient()
@@ -213,16 +268,30 @@ export async function POST(request: NextRequest) {
     try {
       // Get the style prompt
       const stylePrompt = stylePrompts[stylePreset] || stylePrompts['delivery']
+      console.log('[Enhance] Using style preset:', stylePreset)
 
       // Fetch the original image
+      console.log('[Enhance] Fetching original image from:', image.original_url?.substring(0, 80))
       const imageResponse = await fetch(image.original_url)
+
+      if (!imageResponse.ok) {
+        console.error('[Enhance] Failed to fetch image, status:', imageResponse.status)
+        throw new Error(`Failed to fetch image: ${imageResponse.status}`)
+      }
+      console.log('[Enhance] Image fetched successfully, status:', imageResponse.status)
+
       const imageArrayBuffer = await imageResponse.arrayBuffer()
       const imageBuffer = Buffer.from(imageArrayBuffer)
+      console.log('[Enhance] Image buffer size:', imageBuffer.length, 'bytes')
+
       const base64Image = imageBuffer.toString('base64')
       const mimeType = image.mime_type || 'image/jpeg'
+      console.log('[Enhance] Image prepared for AI, mime:', mimeType)
 
       // Call Google Gemini for image analysis and enhancement recommendations
+      console.log('[Enhance] Initializing Google AI model')
       const model = getGoogleAI().getGenerativeModel({ model: 'gemini-1.5-flash' })
+      console.log('[Enhance] Calling Google Gemini API...')
 
       const result = await model.generateContent([
         {
@@ -255,10 +324,11 @@ export async function POST(request: NextRequest) {
         }
       ])
 
+      console.log('[Enhance] Google AI call completed, getting response...')
       const response = await result.response
       const text = response.text()
-
-      console.log('[Enhance] AI response:', text.substring(0, 500))
+      console.log('[Enhance] AI response received, length:', text.length)
+      console.log('[Enhance] AI response preview:', text.substring(0, 500))
 
       // Parse the enhancement suggestions
       let enhancementData
@@ -276,14 +346,17 @@ export async function POST(request: NextRequest) {
         enhancementData = getDefaultEnhancements(stylePreset)
       }
 
-      console.log('[Enhance] Applying enhancements:', enhancementData.enhancements)
+      console.log('[Enhance] Applying enhancements:', JSON.stringify(enhancementData.enhancements))
 
       // Apply the enhancements using Sharp
+      console.log('[Enhance] Starting Sharp image processing...')
       const enhancedBuffer = await applyEnhancements(imageBuffer, enhancementData.enhancements)
+      console.log('[Enhance] Sharp processing complete, enhanced buffer size:', enhancedBuffer.length, 'bytes')
 
       // Upload enhanced image to Supabase Storage
       const fileExt = image.original_filename?.split('.').pop() || 'jpg'
       const enhancedFileName = `${business.id}/enhanced/${Date.now()}.${fileExt}`
+      console.log('[Enhance] Uploading enhanced image to:', enhancedFileName)
 
       const { error: uploadError } = await serviceSupabase.storage
         .from('images')
@@ -297,14 +370,17 @@ export async function POST(request: NextRequest) {
         console.error('[Enhance] Upload error:', uploadError)
         throw new Error('Failed to upload enhanced image')
       }
+      console.log('[Enhance] Upload successful')
 
       // Get public URL for enhanced image
       const { data: { publicUrl: enhancedUrl } } = serviceSupabase.storage
         .from('images')
         .getPublicUrl(enhancedFileName)
+      console.log('[Enhance] Enhanced URL:', enhancedUrl?.substring(0, 80))
 
       // Update image record with enhanced URL
-      await supabase
+      console.log('[Enhance] Updating image record with enhanced URL...')
+      const { error: imageUpdateError } = await supabase
         .from('images')
         .update({
           status: 'completed',
@@ -316,8 +392,15 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', imageId)
 
+      if (imageUpdateError) {
+        console.error('[Enhance] Image update error:', imageUpdateError)
+      } else {
+        console.log('[Enhance] Image record updated successfully')
+      }
+
       // Deduct credit
-      await serviceSupabase
+      console.log('[Enhance] Deducting credit...')
+      const { error: creditUpdateError } = await serviceSupabase
         .from('credits')
         .update({
           credits_remaining: credits.credits_remaining - 1,
@@ -326,8 +409,12 @@ export async function POST(request: NextRequest) {
         })
         .eq('business_id', business.id)
 
+      if (creditUpdateError) {
+        console.error('[Enhance] Credit update error:', creditUpdateError)
+      }
+
       // Log credit transaction
-      await serviceSupabase
+      const { error: transactionError } = await serviceSupabase
         .from('credit_transactions')
         .insert({
           business_id: business.id,
@@ -338,6 +425,11 @@ export async function POST(request: NextRequest) {
           balance_after: credits.credits_remaining - 1,
         })
 
+      if (transactionError) {
+        console.error('[Enhance] Transaction log error:', transactionError)
+      }
+
+      console.log('[Enhance] Enhancement complete! Returning success response')
       return NextResponse.json({
         success: true,
         imageId,
