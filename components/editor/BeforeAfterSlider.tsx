@@ -19,16 +19,14 @@ interface BeforeAfterSliderProps {
 /**
  * Before/After Image Comparison Slider
  *
- * Standard Convention (per industry best practices):
- * - Before (Original) on LEFT
- * - After (Enhanced) on RIGHT
- * - Dragging LEFT reveals MORE of the Enhanced (right) image
- * - Dragging RIGHT reveals MORE of the Original (left) image
+ * Implementation based on industry best practices:
+ * - Both images positioned in EXACT same location and size
+ * - Enhanced (after) image on TOP with clip-path
+ * - Original (before) image as background UNDERNEATH
+ * - Dragging RIGHT reveals MORE of the Enhanced image
+ * - Dragging LEFT reveals MORE of the Original image
  *
- * Implementation:
- * - Original image is the full background
- * - Enhanced image is clipped from the RIGHT side
- * - Slider position controls the clip edge
+ * Reference: https://codepen.io/cgrkzlkn/pen/ZEooeeW
  */
 export function BeforeAfterSlider({
   beforeUrl,
@@ -54,10 +52,11 @@ export function BeforeAfterSlider({
 
   // Mouse events
   const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault()
     setIsDragging(true)
     handleMove(e.clientX)
   }
-  const handleMouseUp = () => setIsDragging(false)
+
   const handleMouseMove = (e: React.MouseEvent) => {
     if (isDragging) {
       handleMove(e.clientX)
@@ -70,6 +69,7 @@ export function BeforeAfterSlider({
       handleMove(e.touches[0].clientX)
     }
   }
+
   const handleTouchMove = (e: React.TouchEvent) => {
     if (e.touches[0]) {
       handleMove(e.touches[0].clientX)
@@ -79,9 +79,20 @@ export function BeforeAfterSlider({
   // Global mouse up listener
   useEffect(() => {
     const handleGlobalMouseUp = () => setIsDragging(false)
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        handleMove(e.clientX)
+      }
+    }
+
     window.addEventListener('mouseup', handleGlobalMouseUp)
-    return () => window.removeEventListener('mouseup', handleGlobalMouseUp)
-  }, [])
+    window.addEventListener('mousemove', handleGlobalMouseMove)
+
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalMouseUp)
+      window.removeEventListener('mousemove', handleGlobalMouseMove)
+    }
+  }, [isDragging, handleMove])
 
   const allLoaded = imagesLoaded.before && imagesLoaded.after
 
@@ -89,86 +100,123 @@ export function BeforeAfterSlider({
     <div
       ref={containerRef}
       className={cn(
-        'relative overflow-hidden rounded-lg cursor-col-resize select-none',
-        'aspect-[4/3]', // Consistent aspect ratio for comparison
+        'relative overflow-hidden rounded-lg select-none',
+        isDragging ? 'cursor-grabbing' : 'cursor-grab',
         className
       )}
+      style={{ aspectRatio: '4/3' }}
       onMouseDown={handleMouseDown}
-      onMouseUp={handleMouseUp}
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={() => setIsDragging(false)}
     >
-      {/* BEFORE Image (Original) - Full background on LEFT */}
+      {/* BEFORE Image (Original) - Full background UNDERNEATH */}
       <img
         src={beforeUrl}
         alt={`${alt} - Original`}
-        className="absolute inset-0 w-full h-full object-contain bg-black/5"
+        className="absolute inset-0 w-full h-full object-contain"
+        style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
         onLoad={() => setImagesLoaded(prev => ({ ...prev, before: true }))}
         draggable={false}
       />
 
-      {/* AFTER Image (Enhanced) - Clipped overlay on RIGHT */}
+      {/* AFTER Image (Enhanced) - On TOP with clip-path */}
       {/*
-        Clip logic:
-        - sliderPosition = 0%: Full Enhanced visible (clip edge at left)
-        - sliderPosition = 50%: Right half shows Enhanced
-        - sliderPosition = 100%: No Enhanced visible (clip edge at right)
+        Clip behavior:
+        - sliderPosition = 0%: Enhanced completely clipped (hidden)
+        - sliderPosition = 50%: Left half of Enhanced visible
+        - sliderPosition = 100%: Full Enhanced visible
 
-        Behavior:
-        - Drag LEFT (decrease position) → More Enhanced visible
-        - Drag RIGHT (increase position) → More Original visible
+        User interaction:
+        - Drag RIGHT → sliderPosition increases → More Enhanced visible
+        - Drag LEFT → sliderPosition decreases → More Original visible
       */}
-      <div
-        className="absolute top-0 right-0 h-full overflow-hidden"
-        style={{ width: `${100 - sliderPosition}%` }}
-      >
-        <img
-          src={afterUrl}
-          alt={`${alt} - Enhanced`}
-          className="absolute top-0 right-0 h-full object-contain bg-black/5"
-          style={{
-            width: containerRef.current ? `${containerRef.current.offsetWidth}px` : '100vw',
-          }}
-          onLoad={() => setImagesLoaded(prev => ({ ...prev, after: true }))}
-          draggable={false}
-        />
-      </div>
+      <img
+        src={afterUrl}
+        alt={`${alt} - Enhanced`}
+        className="absolute inset-0 w-full h-full object-contain"
+        style={{
+          backgroundColor: 'rgba(0,0,0,0.02)',
+          clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`
+        }}
+        onLoad={() => setImagesLoaded(prev => ({ ...prev, after: true }))}
+        draggable={false}
+      />
 
-      {/* Slider Handle */}
+      {/* Slider Handle - Vertical line with draggable circle */}
       <div
-        className="absolute top-0 h-full w-0.5 bg-white shadow-[0_0_8px_rgba(0,0,0,0.3)]"
-        style={{ left: `${sliderPosition}%`, transform: 'translateX(-50%)' }}
+        className="absolute top-0 bottom-0 w-1 bg-white pointer-events-none"
+        style={{
+          left: `${sliderPosition}%`,
+          transform: 'translateX(-50%)',
+          boxShadow: '0 0 10px rgba(0,0,0,0.3)'
+        }}
       >
-        {/* Handle Circle with arrows */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg border-2 border-orange-500 flex items-center justify-center">
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-orange-500">
-            {/* Left arrow */}
-            <path d="M7 10L4 7M4 7L7 4M4 7H9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            {/* Right arrow */}
-            <path d="M13 10L16 13M16 13L13 16M16 13H11" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+        {/* Handle Circle */}
+        <div
+          className={cn(
+            'absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
+            'w-12 h-12 bg-white rounded-full shadow-lg',
+            'border-2 border-orange-500',
+            'flex items-center justify-center',
+            'pointer-events-auto',
+            isDragging ? 'cursor-grabbing scale-110' : 'cursor-grab'
+          )}
+          style={{ transition: isDragging ? 'none' : 'transform 0.1s' }}
+        >
+          {/* Left/Right arrows */}
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" className="text-orange-500">
+            <path
+              d="M8 12H4M4 12L7 9M4 12L7 15"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M16 12H20M20 12L17 9M20 12L17 15"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
           </svg>
         </div>
       </div>
 
-      {/* Labels - positioned at the edges for clarity */}
+      {/* Labels */}
       <div
-        className="absolute bottom-3 left-3 px-2.5 py-1 bg-black/70 text-white text-xs font-medium rounded"
-        style={{ opacity: sliderPosition > 10 ? 1 : 0.3 }}
+        className={cn(
+          'absolute bottom-4 left-4 px-3 py-1.5',
+          'bg-black/70 text-white text-sm font-medium rounded',
+          'transition-opacity duration-200'
+        )}
+        style={{ opacity: sliderPosition > 15 ? 0 : 1 }}
       >
         Original
       </div>
       <div
-        className="absolute bottom-3 right-3 px-2.5 py-1 bg-green-600/90 text-white text-xs font-medium rounded"
-        style={{ opacity: sliderPosition < 90 ? 1 : 0.3 }}
+        className={cn(
+          'absolute bottom-4 right-4 px-3 py-1.5',
+          'bg-green-600 text-white text-sm font-medium rounded',
+          'transition-opacity duration-200'
+        )}
+        style={{ opacity: sliderPosition < 85 ? 0 : 1 }}
       >
         AI Enhanced
       </div>
 
-      {/* Drag hint - shows briefly */}
-      <div className="absolute top-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/60 text-white text-xs rounded-full pointer-events-none opacity-70">
-        Drag to compare
+      {/* Center indicator when at 50% */}
+      <div
+        className={cn(
+          'absolute top-4 left-1/2 -translate-x-1/2',
+          'px-3 py-1 bg-black/50 text-white text-xs rounded-full',
+          'transition-opacity duration-200 pointer-events-none'
+        )}
+        style={{ opacity: Math.abs(sliderPosition - 50) < 5 ? 0.8 : 0 }}
+      >
+        ← Original | Enhanced →
       </div>
 
       {/* Loading overlay */}
