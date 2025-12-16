@@ -376,6 +376,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         <TabsContent value="edit" className="mt-6">
           <ImageEditor
             originalUrl={image.original_url}
+            enhancedUrl={image.enhanced_url || undefined}
             aiSettings={image.enhancement_settings || undefined}
             stylePreset={image.style_preset}
             onSave={handleSaveEnhancedImage}

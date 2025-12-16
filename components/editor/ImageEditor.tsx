@@ -31,6 +31,8 @@ import { BeforeAfterSlider } from './BeforeAfterSlider'
 interface ImageEditorProps {
   /** Original image URL */
   originalUrl: string
+  /** AI-enhanced image URL (from Gemini) */
+  enhancedUrl?: string
   /** AI-suggested enhancement settings (optional) */
   aiSettings?: EnhancementSettings
   /** Style preset name for presets */
@@ -53,17 +55,20 @@ const defaultSettings: EnhancementSettings = {
 
 export function ImageEditor({
   originalUrl,
+  enhancedUrl,
   aiSettings,
   stylePreset,
   onSave,
   onSettingsChange
 }: ImageEditorProps) {
-  // Image state
-  const [currentImageUrl, setCurrentImageUrl] = useState(originalUrl)
+  // Image state - start with AI-enhanced URL if available, otherwise original
+  const [currentImageUrl, setCurrentImageUrl] = useState(enhancedUrl || originalUrl)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
   const [settings, setSettings] = useState<EnhancementSettings>(
     aiSettings || (stylePreset && enhancementPresets[stylePreset]) || defaultSettings
   )
+  // Track if we're showing AI-enhanced version
+  const [showingAiEnhanced, setShowingAiEnhanced] = useState(!!enhancedUrl)
 
   // UI state
   const [isProcessing, setIsProcessing] = useState(false)
@@ -213,8 +218,29 @@ export function ImageEditor({
                     Processing...
                   </span>
                 )}
+                {/* AI Enhanced vs Original Toggle */}
+                {enhancedUrl && (
+                  <Button
+                    variant={showingAiEnhanced ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      const newShowAi = !showingAiEnhanced
+                      setShowingAiEnhanced(newShowAi)
+                      setCurrentImageUrl(newShowAi ? enhancedUrl : originalUrl)
+                      // Reset settings and preview when switching
+                      setSettings(aiSettings || (stylePreset && enhancementPresets[stylePreset]) || defaultSettings)
+                      setHasChanges(false)
+                    }}
+                    className={cn(
+                      showingAiEnhanced && "bg-green-600 hover:bg-green-700"
+                    )}
+                  >
+                    <Eye className="mr-2 h-4 w-4" />
+                    {showingAiEnhanced ? "AI Enhanced" : "Original"}
+                  </Button>
+                )}
                 {/* Before/After Comparison Toggle */}
-                {previewUrl && (
+                {enhancedUrl && (
                   <Button
                     variant={showComparison ? "default" : "outline"}
                     size="sm"
@@ -240,8 +266,8 @@ export function ImageEditor({
             </div>
 
             {/* Image Display */}
-            {showComparison && previewUrl ? (
-              /* Before/After Comparison Mode */
+            {showComparison && enhancedUrl ? (
+              /* Before/After Comparison Mode - Original vs AI Enhanced */
               <div
                 className="relative overflow-hidden rounded-lg"
                 style={{
@@ -251,10 +277,14 @@ export function ImageEditor({
               >
                 <BeforeAfterSlider
                   beforeUrl={originalUrl}
-                  afterUrl={previewUrl}
-                  alt="Food photo enhancement comparison"
+                  afterUrl={enhancedUrl}
+                  alt="Original vs AI Enhanced comparison"
                   className="w-full h-full"
                 />
+                <div className="absolute bottom-2 left-2 right-2 flex justify-between text-xs font-medium">
+                  <span className="bg-black/70 text-white px-2 py-1 rounded">Original</span>
+                  <span className="bg-green-600/90 text-white px-2 py-1 rounded">AI Enhanced</span>
+                </div>
               </div>
             ) : (
               /* Normal Preview Mode */
