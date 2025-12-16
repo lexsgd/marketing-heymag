@@ -1,10 +1,36 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
-import sharp from 'sharp'
+// Sharp is dynamically imported to handle platform-specific binary issues on Vercel
+// import sharp from 'sharp'
 
-// Use Node.js runtime (not Edge) for Sharp and Google AI SDK
+// Use Node.js runtime (not Edge) for Google AI SDK
 export const runtime = 'nodejs'
+
+// Lazy Sharp initialization to handle Vercel deployment issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let sharpInstance: any = null
+let sharpLoadError: Error | null = null
+
+async function getSharp() {
+  if (sharpLoadError) {
+    console.warn('[Enhance] Sharp previously failed to load:', sharpLoadError.message)
+    return null
+  }
+  if (sharpInstance) {
+    return sharpInstance
+  }
+  try {
+    const sharpModule = await import('sharp')
+    sharpInstance = sharpModule.default
+    console.log('[Enhance] Sharp loaded successfully')
+    return sharpInstance
+  } catch (error) {
+    sharpLoadError = error as Error
+    console.error('[Enhance] Failed to load Sharp (platform binary issue):', sharpLoadError.message)
+    return null
+  }
+}
 
 // Extend timeout to 60 seconds (requires Vercel Pro, falls back to 10s on Hobby)
 export const maxDuration = 60
@@ -87,7 +113,7 @@ const stylePrompts: Record<string, string> = {
   'stories': 'Vertical 9:16 format food photo for Instagram Stories and Reels. Dynamic composition, bold colors, eye-catching presentation, modern and trendy aesthetic.',
 }
 
-// Apply image enhancements using Sharp
+// Apply image enhancements using Sharp (with fallback if Sharp unavailable)
 async function applyEnhancements(
   imageBuffer: Buffer,
   enhancements: {
@@ -99,7 +125,13 @@ async function applyEnhancements(
     highlights?: number
     shadows?: number
   }
-): Promise<Buffer> {
+): Promise<Buffer | null> {
+  const sharp = await getSharp()
+  if (!sharp) {
+    console.warn('[Enhance] Sharp not available, skipping image processing')
+    return null // Return null to indicate processing was skipped
+  }
+
   let image = sharp(imageBuffer)
 
   // Get image metadata for format detection
@@ -362,35 +394,47 @@ export async function POST(request: NextRequest) {
       // Apply the enhancements using Sharp
       console.log('[Enhance] Starting Sharp image processing...')
       const enhancedBuffer = await applyEnhancements(imageBuffer, enhancementData.enhancements)
-      console.log('[Enhance] Sharp processing complete, enhanced buffer size:', enhancedBuffer.length, 'bytes')
 
-      // Upload enhanced image to Supabase Storage
-      const fileExt = image.original_filename?.split('.').pop() || 'jpg'
-      const enhancedFileName = `${business.id}/enhanced/${Date.now()}.${fileExt}`
-      console.log('[Enhance] Uploading enhanced image to:', enhancedFileName)
+      let enhancedUrl: string | null = null
+      let processingSkipped = false
 
-      const { error: uploadError } = await serviceSupabase.storage
-        .from('images')
-        .upload(enhancedFileName, enhancedBuffer, {
-          contentType: mimeType,
-          cacheControl: '3600',
-          upsert: false
-        })
+      if (enhancedBuffer) {
+        console.log('[Enhance] Sharp processing complete, enhanced buffer size:', enhancedBuffer.length, 'bytes')
 
-      if (uploadError) {
-        console.error('[Enhance] Upload error:', uploadError)
-        throw new Error('Failed to upload enhanced image')
+        // Upload enhanced image to Supabase Storage
+        const fileExt = image.original_filename?.split('.').pop() || 'jpg'
+        const enhancedFileName = `${business.id}/enhanced/${Date.now()}.${fileExt}`
+        console.log('[Enhance] Uploading enhanced image to:', enhancedFileName)
+
+        const { error: uploadError } = await serviceSupabase.storage
+          .from('images')
+          .upload(enhancedFileName, enhancedBuffer, {
+            contentType: mimeType,
+            cacheControl: '3600',
+            upsert: false
+          })
+
+        if (uploadError) {
+          console.error('[Enhance] Upload error:', uploadError)
+          throw new Error('Failed to upload enhanced image')
+        }
+        console.log('[Enhance] Upload successful')
+
+        // Get public URL for enhanced image
+        const urlData = serviceSupabase.storage
+          .from('images')
+          .getPublicUrl(enhancedFileName)
+        enhancedUrl = urlData.data.publicUrl
+        console.log('[Enhance] Enhanced URL:', enhancedUrl?.substring(0, 80))
+      } else {
+        // Sharp not available - save AI settings for client-side processing
+        console.log('[Enhance] Sharp unavailable, using original image with AI settings for client-side enhancement')
+        enhancedUrl = image.original_url // Use original URL as fallback
+        processingSkipped = true
       }
-      console.log('[Enhance] Upload successful')
 
-      // Get public URL for enhanced image
-      const { data: { publicUrl: enhancedUrl } } = serviceSupabase.storage
-        .from('images')
-        .getPublicUrl(enhancedFileName)
-      console.log('[Enhance] Enhanced URL:', enhancedUrl?.substring(0, 80))
-
-      // Update image record with enhanced URL
-      console.log('[Enhance] Updating image record with enhanced URL...')
+      // Update image record with enhanced URL (or original if processing skipped)
+      console.log('[Enhance] Updating image record...')
       const { error: imageUpdateError } = await supabase
         .from('images')
         .update({
@@ -400,6 +444,7 @@ export async function POST(request: NextRequest) {
           processed_at: new Date().toISOString(),
           ai_model: 'gemini-1.5-flash',
           ai_suggestions: enhancementData.suggestions,
+          processing_skipped: processingSkipped, // Track if server-side processing was skipped
         })
         .eq('id', imageId)
 
@@ -440,13 +485,14 @@ export async function POST(request: NextRequest) {
         console.error('[Enhance] Transaction log error:', transactionError)
       }
 
-      console.log('[Enhance] Enhancement complete! Returning success response')
+      console.log('[Enhance] Enhancement complete! Returning success response', processingSkipped ? '(client-side processing needed)' : '')
       return NextResponse.json({
         success: true,
         imageId,
         enhancedUrl,
         enhancements: enhancementData,
         creditsRemaining: credits.credits_remaining - 1,
+        processingSkipped, // If true, client should apply enhancements using the settings
       })
     } catch (aiError: unknown) {
       console.error('AI Enhancement error:', aiError)
