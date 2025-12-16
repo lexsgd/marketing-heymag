@@ -9,6 +9,17 @@ export const runtime = 'nodejs'
 // Extend timeout to 60 seconds (requires Vercel Pro, falls back to 10s on Hobby)
 export const maxDuration = 60
 
+// Simple GET handler to test if route is loaded
+export async function GET() {
+  console.log('[Enhance] GET called - route is loaded')
+  return NextResponse.json({
+    status: 'ok',
+    message: 'Enhance API route is loaded',
+    runtime: 'nodejs',
+    timestamp: new Date().toISOString()
+  })
+}
+
 // Lazy initialization of Google AI client
 let genAI: GoogleGenerativeAI | null = null
 
