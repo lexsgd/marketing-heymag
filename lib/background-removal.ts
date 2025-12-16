@@ -18,8 +18,7 @@ export interface BackgroundRemovalOptions {
 }
 
 // Cache for the dynamically imported module
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let bgRemovalModule: any = null
+let bgRemovalModule: unknown = null
 
 // CDN URL for the background removal package - loaded at runtime only
 const BG_REMOVAL_CDN = 'https://esm.sh/@imgly/background-removal@1.7.0'
@@ -32,7 +31,7 @@ async function getBackgroundRemovalModule() {
 
   if (!bgRemovalModule) {
     // Load from CDN at runtime - completely bypasses Vercel build
-    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    // Note: Using Function constructor for dynamic ESM import from CDN
     const dynamicImport = new Function('url', 'return import(url)')
     bgRemovalModule = await dynamicImport(BG_REMOVAL_CDN)
   }
@@ -54,7 +53,8 @@ export async function removeImageBackground(
   } = options
 
   // Dynamically import the background removal module
-  const { removeBackground } = await getBackgroundRemovalModule()
+  const bgModule = await getBackgroundRemovalModule() as { removeBackground: (source: string | Blob | File, config: Record<string, unknown>) => Promise<Blob> }
+  const { removeBackground } = bgModule
 
   // Determine model based on quality
   const modelType: 'isnet' | 'isnet_quint8' | 'isnet_fp16' =
