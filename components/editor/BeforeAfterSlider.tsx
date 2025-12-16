@@ -216,7 +216,7 @@ export function BeforeAfterSlider({
         )}
         style={{ opacity: Math.abs(sliderPosition - 50) < 5 ? 0.8 : 0 }}
       >
-        ← Enhanced | Original →
+        ← Original | Enhanced →
       </div>
 
       {/* Loading overlay */}
