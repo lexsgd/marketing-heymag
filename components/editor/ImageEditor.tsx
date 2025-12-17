@@ -281,10 +281,6 @@ export function ImageEditor({
                   alt="Original vs AI Enhanced comparison"
                   className="w-full h-full"
                 />
-                <div className="absolute bottom-2 left-2 right-2 flex justify-between text-xs font-medium">
-                  <span className="bg-green-600/90 text-white px-2 py-1 rounded">AI Enhanced</span>
-                  <span className="bg-black/70 text-white px-2 py-1 rounded">Original</span>
-                </div>
               </div>
             ) : (
               /* Normal Preview Mode */
