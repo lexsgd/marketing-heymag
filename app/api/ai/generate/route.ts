@@ -54,43 +54,47 @@ async function upscaleImage(base64Image: string, mimeType: string): Promise<stri
     console.log(`[Upscale] Real-ESRGAN completed in ${duration}s`)
     console.log('[Upscale] Output type:', typeof output, Array.isArray(output) ? 'array' : '')
 
-    // Extract URL from various Replicate output formats
+    // Extract URL from Replicate output
+    // The output could be: string, FileOutput (with toString), array, or object
     let outputUrl: string | null = null
 
-    // Log full output for debugging
-    console.log('[Upscale] Raw output:', JSON.stringify(output).substring(0, 300))
+    try {
+      // Most reliable: convert to string which works for FileOutput objects
+      const outputStr = String(output)
+      console.log('[Upscale] Output as string:', outputStr.substring(0, 100))
 
-    if (typeof output === 'string') {
-      // Direct string URL
-      outputUrl = output
-    } else if (Array.isArray(output) && output.length > 0) {
-      // Array of URLs - take the first one
-      const firstItem = output[0]
-      if (typeof firstItem === 'string') {
-        outputUrl = firstItem
-      } else if (firstItem && typeof firstItem === 'object') {
-        // FileOutput object - could have url() method or url property
-        if (typeof (firstItem as Record<string, unknown>).url === 'function') {
-          outputUrl = await (firstItem as { url: () => Promise<string> }).url()
-        } else if ('url' in firstItem && typeof (firstItem as Record<string, unknown>).url === 'string') {
-          outputUrl = (firstItem as { url: string }).url
-        } else if ('href' in firstItem && typeof (firstItem as Record<string, unknown>).href === 'string') {
-          outputUrl = (firstItem as { href: string }).href
+      // Check if it looks like a URL
+      if (outputStr.startsWith('http')) {
+        outputUrl = outputStr
+      } else if (Array.isArray(output) && output.length > 0) {
+        // Array - try first item
+        const first = String(output[0])
+        if (first.startsWith('http')) {
+          outputUrl = first
         }
       }
-    } else if (output && typeof output === 'object') {
-      // FileOutput object with url property or method
-      if (typeof (output as Record<string, unknown>).url === 'function') {
-        outputUrl = await (output as { url: () => Promise<string> }).url()
-      } else if ('url' in output && typeof (output as Record<string, unknown>).url === 'string') {
-        outputUrl = (output as { url: string }).url
-      } else if ('href' in output && typeof (output as Record<string, unknown>).href === 'string') {
-        outputUrl = (output as { href: string }).href
+    } catch {
+      console.log('[Upscale] Could not convert output to string')
+    }
+
+    // Fallback: try JSON parsing for object responses
+    if (!outputUrl) {
+      try {
+        const jsonStr = JSON.stringify(output)
+        console.log('[Upscale] Raw JSON:', jsonStr.substring(0, 200))
+
+        // Look for URL pattern in the JSON
+        const urlMatch = jsonStr.match(/"(https?:\/\/[^"]+)"/)?.[1]
+        if (urlMatch) {
+          outputUrl = urlMatch
+        }
+      } catch {
+        console.log('[Upscale] Could not parse output as JSON')
       }
     }
 
-    if (outputUrl && typeof outputUrl === 'string') {
-      console.log('[Upscale] Fetching upscaled image from:', String(outputUrl).substring(0, 80) + '...')
+    if (outputUrl) {
+      console.log('[Upscale] Fetching upscaled image from:', outputUrl.substring(0, 80) + '...')
 
       // Fetch the upscaled image and convert to base64
       const response = await fetch(outputUrl)
