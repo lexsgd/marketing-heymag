@@ -146,7 +146,11 @@ function getAdjustmentExplanation(
     }
   }
 
-  return explanations[key](value)
+  const explanation = explanations[key]
+  if (typeof explanation === 'function') {
+    return explanation(value)
+  }
+  return `${key} adjusted to ${value}.`
 }
 
 export function EnhancementExplanation({
@@ -163,10 +167,17 @@ export function EnhancementExplanation({
   // Determine which settings to explain (AI suggested or current)
   const settingsToExplain = aiSettings || settings
 
-  // Get non-zero adjustments
-  const activeAdjustments = Object.entries(settingsToExplain).filter(
-    ([_, value]) => value !== 0
-  ) as [keyof EnhancementSettings, number][]
+  // Valid enhancement keys
+  const validKeys: (keyof EnhancementSettings)[] = [
+    'brightness', 'contrast', 'saturation', 'warmth', 'sharpness', 'highlights', 'shadows'
+  ]
+
+  // Get non-zero adjustments (only valid keys)
+  const activeAdjustments = settingsToExplain
+    ? Object.entries(settingsToExplain)
+        .filter(([key, value]) => validKeys.includes(key as keyof EnhancementSettings) && typeof value === 'number' && value !== 0)
+        .map(([key, value]) => [key, value] as [keyof EnhancementSettings, number])
+    : []
 
   return (
     <Card className="mt-4">
