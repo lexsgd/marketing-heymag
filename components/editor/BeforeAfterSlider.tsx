@@ -189,9 +189,9 @@ export function BeforeAfterSlider({
       {/* AI Enhanced (LEFT): Fades out when dragging left (revealing more Original) */}
       <div
         className={cn(
-          'absolute bottom-4 left-4 px-3 py-1.5',
-          'bg-green-600 text-white text-sm font-medium rounded',
-          'transition-opacity duration-300 ease-out'
+          'absolute bottom-4 left-4 z-20 px-3 py-1.5',
+          'bg-green-600 text-white text-sm font-medium rounded shadow-lg',
+          'transition-opacity duration-300 ease-out pointer-events-none'
         )}
         style={{
           opacity: Math.min(1, sliderPosition / 25)
@@ -202,9 +202,9 @@ export function BeforeAfterSlider({
       {/* Original (RIGHT): Fades out when dragging right (revealing more Enhanced) */}
       <div
         className={cn(
-          'absolute bottom-4 right-4 px-3 py-1.5',
-          'bg-black/70 text-white text-sm font-medium rounded',
-          'transition-opacity duration-300 ease-out'
+          'absolute bottom-4 right-4 z-20 px-3 py-1.5',
+          'bg-black/80 text-white text-sm font-medium rounded shadow-lg',
+          'transition-opacity duration-300 ease-out pointer-events-none'
         )}
         style={{
           opacity: Math.min(1, (100 - sliderPosition) / 25)
