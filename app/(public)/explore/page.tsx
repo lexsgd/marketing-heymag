@@ -58,29 +58,26 @@ export default function ExplorePage() {
       <div className="pt-16 flex">
         {/* Left Sidebar */}
         <aside className="hidden lg:block w-64 border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto p-6">
-          {/* Explore Section */}
+          {/* Explore Section - Just All Templates */}
           <div className="mb-8">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
               EXPLORE
             </h3>
             <nav className="space-y-1">
-              {categories.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => {
-                    setActiveCategory(cat.id)
-                    setActiveTheme(null)
-                  }}
-                  className={cn(
-                    'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors',
-                    activeCategory === cat.id && !activeTheme
-                      ? 'bg-muted text-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  )}
-                >
-                  {cat.name}
-                </button>
-              ))}
+              <button
+                onClick={() => {
+                  setActiveCategory('all')
+                  setActiveTheme(null)
+                }}
+                className={cn(
+                  'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors',
+                  activeCategory === 'all' && !activeTheme
+                    ? 'bg-muted text-foreground'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                )}
+              >
+                All Templates
+              </button>
             </nav>
           </div>
 
