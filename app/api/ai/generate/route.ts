@@ -1,11 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import Replicate from 'replicate'
 
 // Use Node.js runtime
 export const runtime = 'nodejs'
 
-// Extend timeout to 60 seconds for Gemini 3 Pro Image
-export const maxDuration = 60
+// Extend timeout to 120 seconds for Gemini + Upscaling
+export const maxDuration = 120
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REPLICATE REAL-ESRGAN UPSCALING
+// Upscales 1024x1024 -> 2048x2048 for foodshot.ai quality match
+// Cost: ~$0.002 per image
+// ═══════════════════════════════════════════════════════════════════════════
+
+let replicateClient: Replicate | null = null
+
+function getReplicate(): Replicate {
+  if (!replicateClient) {
+    const apiToken = process.env.REPLICATE_API_TOKEN
+    if (!apiToken) {
+      throw new Error('Replicate API token is not configured')
+    }
+    replicateClient = new Replicate({ auth: apiToken })
+  }
+  return replicateClient
+}
+
+async function upscaleImage(base64Image: string, mimeType: string): Promise<string> {
+  console.log('[Upscale] Starting Real-ESRGAN 2x upscale...')
+  const startTime = Date.now()
+
+  // Convert base64 to data URL for Replicate
+  const dataUrl = `data:${mimeType};base64,${base64Image}`
+
+  try {
+    const replicate = getReplicate()
+
+    // Run Real-ESRGAN model
+    // nightmareai/real-esrgan - fastest and most reliable upscaler
+    const output = await replicate.run(
+      'nightmareai/real-esrgan:f121d640bd286e1fdc67f9799164c1d5be36ff74576ee11c803ae5b665dd46aa',
+      {
+        input: {
+          image: dataUrl,
+          scale: 2, // 2x upscale: 1024 -> 2048
+          face_enhance: false, // Not needed for food photos
+        }
+      }
+    )
+
+    const duration = ((Date.now() - startTime) / 1000).toFixed(1)
+    console.log(`[Upscale] Real-ESRGAN completed in ${duration}s`)
+
+    // Output is a URL to the upscaled image
+    if (typeof output === 'string') {
+      console.log('[Upscale] Fetching upscaled image from Replicate...')
+
+      // Fetch the upscaled image and convert to base64
+      const response = await fetch(output)
+      const arrayBuffer = await response.arrayBuffer()
+      const upscaledBase64 = Buffer.from(arrayBuffer).toString('base64')
+
+      console.log('[Upscale] Upscaled image size:', upscaledBase64.length, 'chars')
+      return upscaledBase64
+    }
+
+    throw new Error('Unexpected Replicate output format')
+  } catch (error) {
+    console.error('[Upscale] Error:', error)
+    throw error
+  }
+}
 
 // Lazy initialization of Google AI client
 let genAI: GoogleGenerativeAI | null = null
@@ -411,7 +477,28 @@ OUTPUT: Maximum resolution square image (2048x2048). This must look like a real 
     }
 
     if (generatedImageBase64) {
-      const imageDataUrl = `data:${generatedImageMimeType};base64,${generatedImageBase64}`
+      let finalImageBase64 = generatedImageBase64
+      let finalMimeType = generatedImageMimeType || 'image/png'
+      let wasUpscaled = false
+      let upscaleError: string | null = null
+
+      // Attempt to upscale the image to 2048x2048
+      if (process.env.REPLICATE_API_TOKEN) {
+        try {
+          console.log('[Generate] Upscaling to 2048x2048...')
+          finalImageBase64 = await upscaleImage(generatedImageBase64, finalMimeType)
+          wasUpscaled = true
+          console.log('[Generate] Upscaling complete!')
+        } catch (error) {
+          // If upscaling fails, return the original image
+          console.error('[Generate] Upscaling failed, returning original:', error)
+          upscaleError = (error as Error).message
+        }
+      } else {
+        console.log('[Generate] Skipping upscale - REPLICATE_API_TOKEN not configured')
+      }
+
+      const imageDataUrl = `data:${finalMimeType};base64,${finalImageBase64}`
 
       return NextResponse.json({
         success: true,
@@ -419,7 +506,10 @@ OUTPUT: Maximum resolution square image (2048x2048). This must look like a real 
         imageDataUrl,
         textResponse,
         model: 'gemini-3-pro-image-preview',
-        message: `AI-generated ${category} food photo (Gemini 3 Pro)`
+        upscaled: wasUpscaled,
+        resolution: wasUpscaled ? '2048x2048' : '1024x1024',
+        upscaleError,
+        message: `AI-generated ${category} food photo${wasUpscaled ? ' (2048x2048)' : ''}`
       })
     }
 
