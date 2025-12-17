@@ -186,9 +186,9 @@ export function ImageEditor({
       {/* Image Preview */}
       <div className="flex-1 space-y-4">
         <Card>
-          <CardContent className="p-4">
+          <CardContent className={isComparisonMode ? "p-4 pt-2" : "p-4"}>
             {/* Toolbar - compact in comparison mode, full in single view */}
-            <div className={`flex items-center mb-3 ${isComparisonMode ? 'justify-end' : 'justify-between'}`}>
+            <div className={`flex items-center mb-2 ${isComparisonMode ? 'justify-end' : 'justify-between'}`}>
               {/* Zoom controls - only in single view mode */}
               {!isComparisonMode && (
                 <div className="flex items-center gap-2">

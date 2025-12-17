@@ -1,7 +1,7 @@
 export const config = {
   // Version tracking
-  version: '0.5.52',
-  internalBuild: '0.89',
+  version: '0.5.53',
+  internalBuild: '0.90',
 
   // App info
   appName: 'FoodSnap AI',
