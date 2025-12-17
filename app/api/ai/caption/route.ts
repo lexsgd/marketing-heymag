@@ -106,13 +106,33 @@ Respond with JSON in this format:
   "alternateVersions": ["Alternative caption 1", "Alternative caption 2"]
 }`
 
+    // Get the image URL to send to Claude for vision analysis
+    const imageUrl = image.enhanced_url || image.original_url
+
+    if (!imageUrl) {
+      return NextResponse.json({ error: 'No image URL found' }, { status: 400 })
+    }
+
+    // Use Claude's vision capability to analyze the actual image
     const message = await getAnthropic().messages.create({
       model: 'claude-3-haiku-20240307',
       max_tokens: 500,
       messages: [
         {
           role: 'user',
-          content: `Generate a ${platform} caption for this food photo. The style is "${image.style_preset || 'professional'}".`
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'url',
+                url: imageUrl,
+              },
+            },
+            {
+              type: 'text',
+              text: `Analyze this food photo and generate a ${platform} caption. Look at what's actually in the image - describe the specific food items, colors, presentation, and setting you see. The editing style used was "${image.style_preset || 'professional'}".`
+            }
+          ],
         }
       ],
       system: systemPrompt,
