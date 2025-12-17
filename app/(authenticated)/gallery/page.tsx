@@ -6,15 +6,12 @@ import {
   Plus,
   Filter,
   Search,
-  Download,
-  Trash2,
-  Share2,
-  MoreHorizontal
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
+import { ImageActions } from '@/components/gallery/ImageActions'
 
 export default async function GalleryPage() {
   const supabase = await createClient()
@@ -130,9 +127,11 @@ export default async function GalleryPage() {
                       {image.style_preset || 'No style'}
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  <ImageActions
+                    imageId={image.id}
+                    imageUrl={image.enhanced_url || image.original_url}
+                    filename={image.original_filename || `foodsnap-${image.id}.jpg`}
+                  />
                 </div>
               </CardContent>
             </Card>
