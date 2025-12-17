@@ -107,181 +107,218 @@ async function retryWithBackoff<T>(
 // ═══════════════════════════════════════════════════════════════════════════
 // PROFESSIONAL FOOD PHOTOGRAPHY PROMPTS
 // Optimized for Gemini 3 Pro Image (Nano Banana Pro) premium quality
+// Benchmark: foodshot.ai quality (2048x2048, 1.3-1.4MB, natural lighting)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const categoryPrompts: Record<string, string> = {
-  'delivery': `GENERATE A STUNNING FOOD DELIVERY PHOTOGRAPH
+  'delivery': `Generate a premium food delivery photograph.
 
-SCENE SETUP:
-- A beautifully arranged takeout meal in premium eco-friendly packaging
-- Clean, bright white seamless background (infinity curve studio setup)
-- Overhead flat-lay composition at exactly 90 degrees
-- Include: kraft paper bag, branded box, wooden chopsticks, small sauce containers
+CRITICAL REQUIREMENTS:
+- Output resolution: 2048x2048 pixels SQUARE format
+- NO humans, hands, or people in the frame
+- Single food subject as hero
 
-FOOD STYLING:
-- Feature a colorful Asian poke bowl or grain bowl with:
-  - Fresh salmon sashimi or grilled chicken
-  - Perfectly sliced avocado
-  - Edamame, cucumber, pickled ginger
+SCENE:
+- Flat-lay overhead composition (90 degrees straight down)
+- Clean white or light marble surface
+- Minimal props: kraft paper, wooden utensils, small sauce container
+- Negative space around the food (not cluttered)
+
+FOOD SUBJECT:
+- Fresh poke bowl OR grain bowl with:
+  - Vibrant salmon or tuna slices
+  - Bright green avocado
+  - Colorful vegetables (edamame, cucumber, carrot)
   - Sesame seeds, microgreens garnish
-  - Vibrant colors: orange, green, white, pink
-- Food should look fresh, glistening, appetizing
-- Steam or freshness indicators visible
+- Food looks fresh and appetizing
+- Natural, not overly styled
 
 LIGHTING:
-- Soft, diffused studio lighting from above
-- No harsh shadows
-- Even, bright illumination
-- Highlight food textures and colors
-- Professional commercial photography lighting
+- Soft natural window light from one side
+- Gentle diagonal shadows across surface
+- No harsh studio lighting
+- Slight backlight for freshness glow
 
-QUALITY:
-- Ultra high resolution, 8K quality
+COLOR & MOOD:
+- Natural, slightly muted tones (not oversaturated)
+- Clean, minimalist, Instagram-ready aesthetic
+- Bright but not blown out
+
+TECHNICAL:
 - Razor sharp focus on food
-- Rich, saturated colors
-- Clean, professional aesthetic
-- Magazine advertisement quality`,
+- Professional food photography quality
+- Square 1:1 aspect ratio
+- Maximum resolution output`,
 
-  'restaurant': `GENERATE A STUNNING RESTAURANT FOOD PHOTOGRAPH
+  'restaurant': `Generate a premium restaurant menu photograph.
 
-SCENE SETUP:
-- Elegant main course on a premium ceramic plate
-- Warm wooden table surface with natural grain visible
-- 45-degree angle shot (hero angle)
-- Shallow depth of field with soft bokeh background
-- Ambient restaurant atmosphere suggested
+CRITICAL REQUIREMENTS:
+- Output resolution: 2048x2048 pixels SQUARE format
+- NO humans, hands, or people anywhere in frame
+- NO blurry people in background
+- Single plated dish as the only subject
 
-FOOD STYLING:
-- Feature a perfectly cooked protein:
-  - Pan-seared salmon with crispy skin, OR
-  - Grilled ribeye steak medium-rare, OR
-  - Roasted chicken breast with herbs
-- Accompanied by:
-  - Colorful vegetable medley (roasted carrots, broccolini)
-  - Creamy mashed potato or risotto
-  - Artistic sauce drizzle (reduction or herb oil)
-  - Fresh herb garnish (rosemary, thyme, microgreens)
+SCENE:
+- 45-degree hero angle
+- Premium surface: warm walnut wood table OR white marble
+- Clean background - solid color or very subtle texture
+- Elegant cutlery beside plate (gold or matte black)
+- Single plate composition, not cluttered
+
+FOOD SUBJECT:
+- Beautifully plated main course:
+  - Pan-seared salmon with crispy golden skin, OR
+  - Avocado toast with poached egg and microgreens
+- Accompanied by: herb garnish, sauce drizzle
+- Professional restaurant plating
+- Food looks fresh and appetizing
 
 LIGHTING:
-- Warm golden hour window light from the left side
-- Soft shadows creating depth and dimension
-- Highlights on glossy sauce and food surfaces
-- Cozy, inviting restaurant ambiance
-- Natural light simulation
+- Natural window light from left side
+- Beautiful diagonal shadows on table surface
+- Soft, diffused - not harsh studio light
+- Warm golden hour quality
+- Subtle rim light on plate edge
 
-QUALITY:
-- Professional DSLR quality, 8K resolution
-- Shallow depth of field (f/2.8 effect)
-- Rich warm color tones
-- Appetizing food styling
-- Michelin guide photography standard`,
+COLOR & MOOD:
+- Warm but natural tones
+- Muted, sophisticated palette
+- NOT oversaturated
+- Elegant fine dining aesthetic
 
-  'fine-dining': `GENERATE A STUNNING FINE DINING PHOTOGRAPH
+TECHNICAL:
+- Shallow depth of field (f/2.8 bokeh effect)
+- Creamy smooth background blur
+- Razor sharp focus on food
+- Square 1:1 aspect ratio
+- Maximum resolution output`,
 
-SCENE SETUP:
-- Minimalist tasting course on pristine white porcelain
-- Dark slate or black background for dramatic contrast
+  'fine-dining': `Generate a premium fine dining photograph.
+
+CRITICAL REQUIREMENTS:
+- Output resolution: 2048x2048 pixels SQUARE format
+- NO humans, hands, or people in frame
+- Single artistic plate as subject
+
+SCENE:
 - Slight overhead angle (60-70 degrees)
-- Negative space emphasizing artistic plating
-- Single spotlight effect
+- Dark slate OR black matte surface
+- Minimalist - just plate on surface
+- Generous negative space
+- No props except maybe single herb sprig
 
-FOOD STYLING:
-- Feature an artistic tasting portion:
-  - Seared duck breast or beef tenderloin, perfectly pink inside
-  - Multiple sauce dots and swooshes in contrasting colors
+FOOD SUBJECT:
+- Artistic tasting portion:
+  - Seared duck breast OR beef tenderlion (pink inside)
+  - Multiple sauce dots and artistic swooshes
   - Edible flowers (viola, nasturtium)
-  - Microgreens and herb oil droplets
-  - Foam or gel element
-  - Precisely placed vegetable components
-- Every element intentionally positioned
-- Tweezers-perfect plating
+  - Microgreens, herb oil droplets
+  - Precisely placed components
+- Tweezers-perfect Michelin plating
+- Small, elegant portion
 
 LIGHTING:
-- Dramatic directional lighting from one side
-- Deep shadows creating mood and mystery
+- Dramatic side lighting from left
+- Deep natural shadows
+- Single light source effect
 - Rim light on plate edge
-- Spotlight effect on main protein
-- Moody, editorial magazine style
+- Moody but clear visibility
 
-QUALITY:
-- Ultra high resolution, 8K cinematic quality
+COLOR & MOOD:
+- Rich blacks, controlled highlights
+- Sophisticated, editorial quality
+- Dramatic contrast
+- Vogue or Bon Appétit cover style
+
+TECHNICAL:
 - Extremely sharp focus
-- Rich blacks, bright highlights
-- Michelin 3-star presentation
-- Vogue or Bon Appétit cover quality`,
+- Deep blacks, bright highlights
+- Square 1:1 aspect ratio
+- Maximum resolution output`,
 
-  'cafe': `GENERATE A STUNNING CAFE PHOTOGRAPH
+  'cafe': `Generate a premium cafe photograph.
 
-SCENE SETUP:
-- Cozy morning coffee scene on rustic wooden surface
-- Soft morning window light streaming in from the right
-- 45-degree lifestyle angle
-- Warm, inviting atmosphere
-- Include lifestyle elements: newspaper edge, fresh flowers
+CRITICAL REQUIREMENTS:
+- Output resolution: 2048x2048 pixels SQUARE format
+- NO humans, hands, or people in frame
+- Single pastry or coffee as hero subject
 
-FOOD STYLING:
-- Feature artisan coffee and pastries:
-  - Perfect latte with intricate rosetta or tulip art
-  - Golden flaky croissant (layers visible)
-  - Fresh fruit danish or pain au chocolat
-  - Cinnamon roll with glaze dripping
-- Steam rising from the coffee cup
-- Butter visible, suggesting warmth
-- Powdered sugar dusting on pastries
+SCENE:
+- 45-degree angle
+- Premium surface: terrazzo OR light wood OR white marble
+- Minimalist composition - one main subject
+- Optional: soft linen napkin, elegant cutlery
+- Clean, uncluttered frame
 
-PROPS:
-- White ceramic cup and saucer
-- Small vase with fresh flowers (lavender or wildflowers)
-- Linen napkin
-- Scattered coffee beans
-- Vintage spoon
+FOOD SUBJECT - choose ONE:
+- Elegant éclair with glaze and dried flower petals, OR
+- Golden croissant with visible flaky layers, OR
+- Artisan latte with perfect rosetta art
+- Single beautiful pastry, not multiple items
+- Professional patisserie quality
 
 LIGHTING:
-- Soft diffused window light
-- Warm golden tones
-- Gentle shadows
-- Backlight creating steam glow
-- Dreamy, lifestyle aesthetic
+- Soft natural window light
+- Beautiful diagonal shadows across surface
+- Diffused, dreamy quality
+- Slight backlight glow
+- Morning light feeling
 
-QUALITY:
-- Professional lifestyle photography, 8K
-- Warm color grading
-- Soft focus on background
-- Instagram-perfect aesthetic
-- Kinfolk or Cereal magazine style`,
+COLOR & MOOD:
+- Soft, muted, natural tones
+- NOT oversaturated
+- Bright, airy, fresh feeling
+- Instagram minimalist aesthetic
+- Kinfolk magazine style
 
-  'street-food': `GENERATE A STUNNING STREET FOOD PHOTOGRAPH
+TECHNICAL:
+- Shallow depth of field
+- Soft creamy bokeh on edges
+- Sharp focus on subject
+- Square 1:1 aspect ratio
+- Maximum resolution output`,
 
-SCENE SETUP:
+  'street-food': `Generate a premium street food photograph.
+
+CRITICAL REQUIREMENTS:
+- Output resolution: 2048x2048 pixels SQUARE format
+- NO humans, hands, or people in frame
+- Single dish as hero subject
+
+SCENE:
+- Close-up hero shot, slight angle (30-45 degrees)
+- Rustic surface: worn wood OR metal tray OR banana leaf
 - Authentic hawker-style presentation
-- Night market atmosphere with warm artificial lighting
-- Close-up hero shot, slight angle
-- Busy, vibrant background (blurred)
-- Street food stall context
+- Minimal background - blurred or dark
+- Not cluttered with props
 
-FOOD STYLING:
-- Feature popular Asian street food:
-  - Char kway teow or pad thai with wok hei (smoky char)
-  - OR crispy fried chicken with golden coating
-  - OR loaded satay skewers with peanut sauce
-- Glistening with oil and sauce
-- Steam rising dramatically
-- Generous portions, abundance
-- Messy-delicious aesthetic
+FOOD SUBJECT:
+- Popular Asian street food:
+  - Loaded satay skewers with peanut sauce, OR
+  - Crispy fried chicken with golden coating, OR
+  - Steaming noodle dish with visible wok hei char
+- Glistening with sauce/oil
+- Generous, appetizing portion
+- Authentic not over-styled
 
 LIGHTING:
-- Warm tungsten/sodium vapor light simulation
+- Warm tungsten/golden light
 - Dramatic side lighting
-- Steam highlighted by backlight
-- Night market ambiance
-- Slightly moody but appetizing
+- Steam or heat haze visible
+- Slightly moody atmosphere
+- Night market warmth
 
-QUALITY:
-- High resolution, documentary style
-- Rich saturated colors
-- Sharp focus on main dish
+COLOR & MOOD:
+- Warm golden tones
+- Rich but natural colors
+- Appetizing, crave-worthy
 - Authentic street food energy
-- Anthony Bourdain show aesthetic`
+
+TECHNICAL:
+- Sharp focus on main dish
+- Background naturally blurred
+- Square 1:1 aspect ratio
+- Maximum resolution output`
 }
 
 export async function GET() {
@@ -325,23 +362,21 @@ export async function POST(request: NextRequest) {
 
     console.log('[Generate] Calling Gemini 3 Pro Image (Nano Banana Pro)...')
 
-    const masterPrompt = `You are a world-class commercial food photographer creating images for premium food brands.
+    const masterPrompt = `You are an elite food photographer. Generate a single stunning photograph.
 
 ${fullPrompt}
 
-CRITICAL TECHNICAL REQUIREMENTS:
-1. RESOLUTION: Generate the highest possible resolution image (aim for 4K/8K quality)
-2. SHARPNESS: Razor-sharp focus on the food subject, no blur or pixelation
-3. COLORS: Rich, vibrant, appetizing colors - properly saturated but natural
-4. LIGHTING: Professional studio or natural lighting as specified - no flat or dull lighting
-5. COMPOSITION: Perfect framing following rule of thirds, proper negative space
-6. STYLING: Food must look fresh, appetizing, and professionally styled
-7. BACKGROUND: Clean, appropriate background as specified - no distracting elements
-8. MOOD: Create the specific atmosphere requested for this category
+ABSOLUTE REQUIREMENTS - DO NOT IGNORE:
+1. IMAGE SIZE: Generate at 2048x2048 pixels - SQUARE format only (1:1 aspect ratio)
+2. NO HUMANS: Zero people, hands, faces, or human figures anywhere in the image - not even blurred in background
+3. SINGLE SUBJECT: One hero food item only - minimalist composition
+4. NATURAL LIGHT: Soft window light with diagonal shadows - NOT harsh studio lighting
+5. MUTED COLORS: Natural, slightly desaturated tones - NOT oversaturated or artificial
+6. SHARP FOCUS: Razor sharp on food subject with creamy bokeh background
+7. CLEAN FRAME: Uncluttered, elegant, Instagram-minimalist aesthetic
+8. PREMIUM SURFACES: Terrazzo, marble, walnut wood, or slate - real texture visible
 
-This image will be used for commercial food marketing. It must be indistinguishable from a photo taken by a professional food photographer with high-end equipment.
-
-Generate the image now with maximum quality and attention to detail.`
+OUTPUT: Maximum resolution square image (2048x2048). This must look like a real photograph from a professional food magazine, not AI-generated.`
 
     const result = await retryWithBackoff(
       async () => {
