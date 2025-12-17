@@ -233,52 +233,64 @@ export function ImageEditor({
             </div>
 
             {/* Image Display */}
-            {enhancedUrl ? (
-              /* Before/After Comparison Mode - Original vs AI Enhanced */
-              <div
-                className="relative overflow-hidden rounded-lg"
-                style={{
-                  maxHeight: '60vh',
-                  minHeight: '300px'
-                }}
-              >
-                <BeforeAfterSlider
-                  beforeUrl={originalUrl}
-                  afterUrl={previewUrl || enhancedUrl}
-                  alt="Original vs AI Enhanced comparison"
-                  className="w-full h-full"
-                  onPositionChange={setComparisonSliderPosition}
-                />
-                {/* Labels with smooth fade animation - positioned in parent container to avoid overflow clipping */}
-                {/* AI Enhanced (LEFT): Fades out when dragging left (revealing more Original) */}
-                <div
-                  className={cn(
-                    'absolute bottom-4 left-4 z-20',
-                    'px-3 py-1.5 rounded-md text-sm font-medium',
-                    'bg-green-600 text-white',
-                    'shadow-lg pointer-events-none',
-                    'transition-opacity duration-200'
-                  )}
-                  style={{ opacity: Math.min(1, comparisonSliderPosition / 25) }}
-                >
-                  AI Enhanced
-                </div>
-                {/* Original (RIGHT): Fades out when dragging right (revealing more Enhanced) */}
-                <div
-                  className={cn(
-                    'absolute bottom-4 right-4 z-20',
-                    'px-3 py-1.5 rounded-md text-sm font-medium',
-                    'bg-gray-800 text-white',
-                    'shadow-lg pointer-events-none',
-                    'transition-opacity duration-200'
-                  )}
-                  style={{ opacity: Math.min(1, (100 - comparisonSliderPosition) / 25) }}
-                >
-                  Original
-                </div>
-              </div>
-            ) : (
-              /* Normal Preview Mode */
+            {/*
+              Display mode logic:
+              - If previewUrl is PNG (transparent): show single view with checkerboard
+              - Else if enhancedUrl exists: show comparison slider
+              - Else: show single view
+            */}
+            {(() => {
+              const hasTransparency = previewUrl?.startsWith('data:image/png')
+              const showComparison = enhancedUrl && !hasTransparency
+
+              if (showComparison) {
+                return (
+                  /* Before/After Comparison Mode - Original vs AI Enhanced */
+                  <div
+                    className="relative overflow-hidden rounded-lg"
+                    style={{
+                      maxHeight: '60vh',
+                      minHeight: '300px'
+                    }}
+                  >
+                    <BeforeAfterSlider
+                      beforeUrl={originalUrl}
+                      afterUrl={previewUrl || enhancedUrl}
+                      alt="Original vs AI Enhanced comparison"
+                      className="w-full h-full"
+                      onPositionChange={setComparisonSliderPosition}
+                    />
+                    {/* Labels with smooth fade animation */}
+                    <div
+                      className={cn(
+                        'absolute bottom-4 left-4 z-20',
+                        'px-3 py-1.5 rounded-md text-sm font-medium',
+                        'bg-green-600 text-white',
+                        'shadow-lg pointer-events-none',
+                        'transition-opacity duration-200'
+                      )}
+                      style={{ opacity: Math.min(1, comparisonSliderPosition / 25) }}
+                    >
+                      AI Enhanced
+                    </div>
+                    <div
+                      className={cn(
+                        'absolute bottom-4 right-4 z-20',
+                        'px-3 py-1.5 rounded-md text-sm font-medium',
+                        'bg-gray-800 text-white',
+                        'shadow-lg pointer-events-none',
+                        'transition-opacity duration-200'
+                      )}
+                      style={{ opacity: Math.min(1, (100 - comparisonSliderPosition) / 25) }}
+                    >
+                      Original
+                    </div>
+                  </div>
+                )
+              }
+
+              return (
+                /* Single View Mode - with checkerboard for transparency */
               <div
                 className="relative bg-[url('/checkerboard.svg')] bg-repeat overflow-auto rounded-lg"
                 style={{
@@ -312,8 +324,23 @@ export function ImageEditor({
                     </div>
                   </div>
                 )}
+
+                {/* Transparency indicator label */}
+                {hasTransparency && (
+                  <div
+                    className={cn(
+                      'absolute bottom-4 left-4 z-20',
+                      'px-3 py-1.5 rounded-md text-sm font-medium',
+                      'bg-purple-600 text-white',
+                      'shadow-lg pointer-events-none'
+                    )}
+                  >
+                    Background Removed (PNG)
+                  </div>
+                )}
               </div>
-            )}
+              )
+            })()}
 
             {/* Action Buttons */}
             <div className="flex gap-3 mt-4">
