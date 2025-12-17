@@ -111,10 +111,10 @@ export default async function GalleryPage() {
                   </div>
 
                   {/* Overlay on hover */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <Button size="sm" variant="secondary" className="h-8">
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none">
+                    <span className="px-4 py-2 bg-white text-black text-sm font-medium rounded-md shadow-sm">
                       Edit
-                    </Button>
+                    </span>
                   </div>
                 </div>
               </Link>
