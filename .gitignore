@@ -47,3 +47,5 @@ next-env.d.ts
 
 # Screenshots
 /.playwright-mcp/
+generated-1024/
+generated-2048/

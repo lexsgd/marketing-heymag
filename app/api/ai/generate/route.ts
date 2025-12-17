@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import Replicate from 'replicate'
+import { optimizeAndStore, StoredImages } from '@/lib/image-optimizer'
 
 // Use Node.js runtime
 export const runtime = 'nodejs'
 
-// Extend timeout to 120 seconds for Gemini + Upscaling
-export const maxDuration = 120
+// Extend timeout to 150 seconds for Gemini + Upscaling + Optimization + Upload
+export const maxDuration = 150
 
 // ═══════════════════════════════════════════════════════════════════════════
 // REPLICATE REAL-ESRGAN UPSCALING
@@ -521,35 +522,63 @@ OUTPUT: Maximum resolution square image (2048x2048). This must look like a real 
       let finalMimeType = generatedImageMimeType || 'image/png'
       let wasUpscaled = false
       let upscaleError: string | null = null
+      let storedImages: StoredImages | null = null
+      let optimizeError: string | null = null
 
-      // Attempt to upscale the image to 2048x2048
+      // Step 1: Attempt to upscale the image to 2048x2048
       if (process.env.REPLICATE_API_TOKEN) {
         try {
-          console.log('[Generate] Upscaling to 2048x2048...')
+          console.log('[Generate] Step 1: Upscaling to 2048x2048...')
           finalImageBase64 = await upscaleImage(generatedImageBase64, finalMimeType)
           wasUpscaled = true
           console.log('[Generate] Upscaling complete!')
         } catch (error) {
-          // If upscaling fails, return the original image
-          console.error('[Generate] Upscaling failed, returning original:', error)
+          // If upscaling fails, continue with original image
+          console.error('[Generate] Upscaling failed, continuing with original:', error)
           upscaleError = (error as Error).message
         }
       } else {
         console.log('[Generate] Skipping upscale - REPLICATE_API_TOKEN not configured')
       }
 
+      // Step 2: Optimize and store in Supabase Storage
+      // Creates: original (2048 PNG), web (1200 WebP), thumb (400 WebP)
+      if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        try {
+          console.log('[Generate] Step 2: Optimizing and storing images...')
+          storedImages = await optimizeAndStore(finalImageBase64, finalMimeType, category)
+          console.log('[Generate] Optimization complete! Image ID:', storedImages.imageId)
+        } catch (error) {
+          console.error('[Generate] Optimization/storage failed:', error)
+          optimizeError = (error as Error).message
+        }
+      } else {
+        console.log('[Generate] Skipping optimization - SUPABASE_SERVICE_ROLE_KEY not configured')
+      }
+
+      // Build response with data URL fallback
       const imageDataUrl = `data:${finalMimeType};base64,${finalImageBase64}`
 
       return NextResponse.json({
         success: true,
         category,
+        // Primary: Use stored URLs if available
+        images: storedImages ? {
+          original: storedImages.original,
+          web: storedImages.web,
+          thumb: storedImages.thumb,
+          imageId: storedImages.imageId
+        } : null,
+        // Fallback: Base64 data URL (for immediate preview or if storage failed)
         imageDataUrl,
         textResponse,
         model: 'gemini-3-pro-image-preview',
         upscaled: wasUpscaled,
         resolution: wasUpscaled ? '2048x2048' : '1024x1024',
+        optimized: !!storedImages,
         upscaleError,
-        message: `AI-generated ${category} food photo${wasUpscaled ? ' (2048x2048)' : ''}`
+        optimizeError,
+        message: `AI-generated ${category} food photo${wasUpscaled ? ' (2048x2048)' : ''}${storedImages ? ' - optimized & stored' : ''}`
       })
     }
 
