@@ -178,6 +178,9 @@ export function ImageEditor({
 
   const displayUrl = previewUrl || currentImageUrl
 
+  // Determine if we're in comparison mode (zoom only works in single view)
+  const isComparisonMode = enhancedUrl && !backgroundRemoved
+
   return (
     <div className="flex flex-col lg:flex-row gap-6">
       {/* Image Preview */}
@@ -187,35 +190,40 @@ export function ImageEditor({
             {/* Toolbar */}
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleZoomOut}
-                  disabled={zoom <= 0.5}
-                  className="h-8 w-8"
-                >
-                  <ZoomOut className="h-4 w-4" />
-                </Button>
-                <span className="text-sm text-muted-foreground w-16 text-center">
-                  {Math.round(zoom * 100)}%
-                </span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleZoomIn}
-                  disabled={zoom >= 3}
-                  className="h-8 w-8"
-                >
-                  <ZoomIn className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={handleZoomReset}
-                  className="h-8 w-8"
-                >
-                  <Maximize2 className="h-4 w-4" />
-                </Button>
+                {/* Only show zoom controls in single view mode (where they work) */}
+                {!isComparisonMode && (
+                  <>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleZoomOut}
+                      disabled={zoom <= 0.5}
+                      className="h-8 w-8"
+                    >
+                      <ZoomOut className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-muted-foreground w-16 text-center">
+                      {Math.round(zoom * 100)}%
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleZoomIn}
+                      disabled={zoom >= 3}
+                      className="h-8 w-8"
+                    >
+                      <ZoomIn className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleZoomReset}
+                      className="h-8 w-8"
+                    >
+                      <Maximize2 className="h-4 w-4" />
+                    </Button>
+                  </>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
@@ -240,16 +248,12 @@ export function ImageEditor({
             {/* Image Display */}
             {/*
               Display mode logic:
-              - If background removal is active: show single view with checkerboard
-              - Else if enhancedUrl exists: show comparison slider
-              - Else: show single view
+              - If background removal is active: show single view with checkerboard + zoom
+              - Else if enhancedUrl exists: show comparison slider (no zoom)
+              - Else: show single view with zoom
             */}
             {(() => {
-              // Use explicit backgroundRemoved flag instead of file format detection
-              // This ensures comparison slider works correctly regardless of storage format
-              const showComparison = enhancedUrl && !backgroundRemoved
-
-              if (showComparison) {
+              if (isComparisonMode) {
                 return (
                   /* Before/After Comparison Mode - Original vs AI Enhanced */
                   <div
