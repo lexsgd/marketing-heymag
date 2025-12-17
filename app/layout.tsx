@@ -7,9 +7,9 @@ import { Toaster } from '@/components/ui/sonner'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'FoodSnap AI | Transform Food Photos into Marketing Gold',
-  description: 'AI-powered food photography enhancement. Turn phone photos into stunning, professional marketing content. Post to Instagram, Facebook, TikTok, Xiaohongshu in clicks.',
-  keywords: ['food photography', 'AI image enhancement', 'restaurant marketing', 'social media', 'F&B'],
+  title: 'Zazzles | AI Food Photography Studio',
+  description: 'Transform your food photos with AI-powered styling. Professional food photography for delivery apps, social media, and marketing in seconds.',
+  keywords: ['food photography', 'AI image enhancement', 'restaurant marketing', 'social media', 'F&B', 'Zazzles'],
 }
 
 export default function RootLayout({
@@ -22,8 +22,8 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           {children}

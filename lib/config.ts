@@ -1,11 +1,11 @@
 export const config = {
   // Version tracking
-  version: '0.5.62',
-  internalBuild: '0.99',
+  version: '0.6.0',
+  internalBuild: '1.00',
 
   // App info
-  appName: 'FoodSnap AI',
-  appDescription: 'AI Food Photography Enhancement',
+  appName: 'Zazzles',
+  appDescription: 'AI Food Photography Studio',
   appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://marketing.heymag.app',
 
   // Pricing tiers (SEA market pricing)
