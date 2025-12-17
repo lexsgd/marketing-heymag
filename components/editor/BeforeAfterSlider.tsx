@@ -108,23 +108,24 @@ export function BeforeAfterSlider({
     <div
       ref={containerRef}
       className={cn(
-        'relative overflow-hidden rounded-lg select-none',
+        'relative overflow-hidden rounded-lg select-none w-full h-full',
         isDragging ? 'cursor-grabbing' : 'cursor-grab',
         className
       )}
-      style={{ aspectRatio: '4/3' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={() => setIsDragging(false)}
     >
+      {/* Background for letterboxing */}
+      <div className="absolute inset-0 bg-muted/30" />
+
       {/* BEFORE Image (Original) - Full background UNDERNEATH */}
       <img
         src={beforeUrl}
         alt={`${alt} - Original`}
         className="absolute inset-0 w-full h-full object-contain"
-        style={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
         onLoad={() => setImagesLoaded(prev => ({ ...prev, before: true }))}
         draggable={false}
       />
@@ -145,7 +146,6 @@ export function BeforeAfterSlider({
         alt={`${alt} - Enhanced`}
         className="absolute inset-0 w-full h-full object-contain"
         style={{
-          backgroundColor: 'rgba(0,0,0,0.02)',
           clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`
         }}
         onLoad={() => setImagesLoaded(prev => ({ ...prev, after: true }))}
