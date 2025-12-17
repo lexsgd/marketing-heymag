@@ -5,7 +5,7 @@ import { Slider } from '@/components/ui/slider'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { RotateCcw, Wand2 } from 'lucide-react'
+import { Wand2 } from 'lucide-react'
 import type { EnhancementSettings } from '@/lib/image-processing'
 
 interface EnhancementSlidersProps {
@@ -110,10 +110,6 @@ export function EnhancementSliders({
     })
   }
 
-  const handleReset = () => {
-    onChange(defaultSettings)
-  }
-
   const handleApplyAISuggestions = () => {
     if (aiSuggestedSettings) {
       onChange(aiSuggestedSettings)
@@ -125,28 +121,17 @@ export function EnhancementSliders({
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg">Adjustments</CardTitle>
-          <div className="flex gap-2">
-            {aiSuggestedSettings && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleApplyAISuggestions}
-                disabled={disabled}
-              >
-                <Wand2 className="mr-2 h-4 w-4" />
-                AI Suggest
-              </Button>
-            )}
+          {aiSuggestedSettings && (
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              onClick={handleReset}
+              onClick={handleApplyAISuggestions}
               disabled={disabled}
             >
-              <RotateCcw className="mr-2 h-4 w-4" />
-              Reset
+              <Wand2 className="mr-2 h-4 w-4" />
+              AI Suggest
             </Button>
-          </div>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-5">
