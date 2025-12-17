@@ -73,6 +73,8 @@ export function ImageEditor({
   const [zoom, setZoom] = useState(1)
   const [activeTab, setActiveTab] = useState<'adjust' | 'background'>('adjust')
   const [hasChanges, setHasChanges] = useState(false)
+  // Track if background removal has been explicitly applied (for transparency mode)
+  const [backgroundRemoved, setBackgroundRemoved] = useState(false)
   // Default to comparison mode when enhanced URL exists
   const [comparisonSliderPosition, setComparisonSliderPosition] = useState(50)
 
@@ -122,6 +124,7 @@ export function ImageEditor({
   // Handle background removal result
   const handleBackgroundResult = (resultUrl: string) => {
     setCurrentImageUrl(resultUrl)
+    setBackgroundRemoved(true) // Mark that background removal is active
     setHasChanges(true)
     // Trigger re-preview with new base image
     setSettings({ ...settings })
@@ -131,6 +134,7 @@ export function ImageEditor({
   const handleReset = () => {
     setCurrentImageUrl(enhancedUrl || originalUrl)
     setPreviewUrl(null) // Clear preview to trigger proper mode switch
+    setBackgroundRemoved(false) // Clear background removal flag to restore comparison slider
     setSettings(aiSettings || (stylePreset && enhancementPresets[stylePreset]) || defaultSettings)
     setHasChanges(false)
   }
@@ -236,13 +240,14 @@ export function ImageEditor({
             {/* Image Display */}
             {/*
               Display mode logic:
-              - If previewUrl is PNG (transparent): show single view with checkerboard
+              - If background removal is active: show single view with checkerboard
               - Else if enhancedUrl exists: show comparison slider
               - Else: show single view
             */}
             {(() => {
-              const hasTransparency = previewUrl?.startsWith('data:image/png')
-              const showComparison = enhancedUrl && !hasTransparency
+              // Use explicit backgroundRemoved flag instead of file format detection
+              // This ensures comparison slider works correctly regardless of storage format
+              const showComparison = enhancedUrl && !backgroundRemoved
 
               if (showComparison) {
                 return (
