@@ -14,6 +14,8 @@ interface BeforeAfterSliderProps {
   className?: string
   /** Initial slider position (0-100), default 50 */
   initialPosition?: number
+  /** Callback when slider position changes */
+  onPositionChange?: (position: number) => void
 }
 
 /**
@@ -33,12 +35,18 @@ export function BeforeAfterSlider({
   afterUrl,
   alt = 'Image comparison',
   className,
-  initialPosition = 50
+  initialPosition = 50,
+  onPositionChange
 }: BeforeAfterSliderProps) {
   const [sliderPosition, setSliderPosition] = useState(initialPosition)
   const [isDragging, setIsDragging] = useState(false)
   const [imagesLoaded, setImagesLoaded] = useState({ before: false, after: false })
   const containerRef = useRef<HTMLDivElement>(null)
+
+  // Notify parent of position changes
+  useEffect(() => {
+    onPositionChange?.(sliderPosition)
+  }, [sliderPosition, onPositionChange])
 
   // Handle mouse/touch movement
   const handleMove = useCallback((clientX: number) => {
@@ -100,10 +108,11 @@ export function BeforeAfterSlider({
     <div
       ref={containerRef}
       className={cn(
-        'relative overflow-hidden rounded-lg select-none h-full',
+        'relative overflow-hidden rounded-lg select-none',
         isDragging ? 'cursor-grabbing' : 'cursor-grab',
         className
       )}
+      style={{ aspectRatio: '4/3' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
@@ -182,34 +191,6 @@ export function BeforeAfterSlider({
             />
           </svg>
         </div>
-      </div>
-
-      {/* Labels with smooth fade animation based on slider position */}
-      {/* AI Enhanced (LEFT): Fades out when dragging left (revealing more Original) */}
-      <div
-        className={cn(
-          'absolute bottom-4 left-4 z-20 px-3 py-1.5',
-          'bg-green-600 text-white text-sm font-medium rounded shadow-lg',
-          'transition-opacity duration-300 ease-out pointer-events-none'
-        )}
-        style={{
-          opacity: Math.min(1, sliderPosition / 25)
-        }}
-      >
-        AI Enhanced
-      </div>
-      {/* Original (RIGHT): Fades out when dragging right (revealing more Enhanced) */}
-      <div
-        className={cn(
-          'absolute bottom-4 right-4 z-20 px-3 py-1.5',
-          'bg-black/80 text-white text-sm font-medium rounded shadow-lg',
-          'transition-opacity duration-300 ease-out pointer-events-none'
-        )}
-        style={{
-          opacity: Math.min(1, (100 - sliderPosition) / 25)
-        }}
-      >
-        Original
       </div>
 
       {/* Center indicator when at 50% */}

@@ -77,6 +77,7 @@ export function ImageEditor({
   const [activeTab, setActiveTab] = useState<'adjust' | 'background'>('adjust')
   const [hasChanges, setHasChanges] = useState(false)
   const [showComparison, setShowComparison] = useState(false)
+  const [comparisonSliderPosition, setComparisonSliderPosition] = useState(50)
 
   // Refs
   const previewTimeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -280,7 +281,35 @@ export function ImageEditor({
                   afterUrl={enhancedUrl}
                   alt="Original vs AI Enhanced comparison"
                   className="w-full h-full"
+                  onPositionChange={setComparisonSliderPosition}
                 />
+                {/* Labels with smooth fade animation - positioned in parent container to avoid overflow clipping */}
+                {/* AI Enhanced (LEFT): Fades out when dragging left (revealing more Original) */}
+                <div
+                  className={cn(
+                    'absolute bottom-4 left-4 z-20',
+                    'px-3 py-1.5 rounded-md text-sm font-medium',
+                    'bg-green-600 text-white',
+                    'shadow-lg pointer-events-none',
+                    'transition-opacity duration-200'
+                  )}
+                  style={{ opacity: Math.min(1, comparisonSliderPosition / 25) }}
+                >
+                  AI Enhanced
+                </div>
+                {/* Original (RIGHT): Fades out when dragging right (revealing more Enhanced) */}
+                <div
+                  className={cn(
+                    'absolute bottom-4 right-4 z-20',
+                    'px-3 py-1.5 rounded-md text-sm font-medium',
+                    'bg-gray-800 text-white',
+                    'shadow-lg pointer-events-none',
+                    'transition-opacity duration-200'
+                  )}
+                  style={{ opacity: Math.min(1, (100 - comparisonSliderPosition) / 25) }}
+                >
+                  Original
+                </div>
               </div>
             ) : (
               /* Normal Preview Mode */
