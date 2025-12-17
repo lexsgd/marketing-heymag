@@ -312,18 +312,18 @@ export async function POST(request: NextRequest) {
 
     console.log('[Generate] Prompt length:', fullPrompt.length, 'chars')
 
-    // Use Gemini 2.0 Flash Experimental for image generation
-    // This model supports text-to-image with responseModalities config
-    // Reference: https://ai.google.dev/gemini-api/docs/image-generation
+    // Use Gemini 3 Pro Image Preview (Nano Banana Pro)
+    // State-of-the-art image generation and editing model
+    // Pricing: Image Output $0.134 per image
     const model = getGoogleAI().getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-3-pro-image-preview',
       generationConfig: {
         responseModalities: ['Text', 'Image'] as const,
         temperature: 1.0,
       }
     })
 
-    console.log('[Generate] Calling Gemini 3 Pro Image with retry logic...')
+    console.log('[Generate] Calling Gemini 3 Pro Image (Nano Banana Pro)...')
 
     const masterPrompt = `You are a world-class commercial food photographer creating images for premium food brands.
 
