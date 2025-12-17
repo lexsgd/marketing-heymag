@@ -49,7 +49,10 @@ interface ImageData {
   metadata: Record<string, unknown> | null
   created_at: string
   processed_at: string | null
+  caption_count: number | null
 }
+
+const MAX_CAPTIONS_PER_IMAGE = 10
 
 export default function ImageEditorPage({ params }: { params: { id: string } }) {
   const [image, setImage] = useState<ImageData | null>(null)
@@ -67,6 +70,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [enhancing, setEnhancing] = useState(false)
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
+  const [captionError, setCaptionError] = useState<string | null>(null)
+  const [captionsRemaining, setCaptionsRemaining] = useState<number | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -111,6 +116,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
 
       setImage(imageData)
       setSelectedStyle(imageData.style_preset || 'delivery')
+      // Initialize caption remaining count
+      const currentCount = imageData.caption_count || 0
+      setCaptionsRemaining(MAX_CAPTIONS_PER_IMAGE - currentCount)
     } catch (err) {
       console.error('Error loading image:', err)
       router.push('/gallery')
@@ -208,6 +216,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     if (!image) return
 
     setGenerating(true)
+    setCaptionError(null)
     try {
       const response = await fetch('/api/ai/caption', {
         method: 'POST',
@@ -220,16 +229,31 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         }),
       })
 
+      const data = await response.json()
+
       if (!response.ok) {
-        throw new Error('Caption generation failed')
+        // Handle specific error codes
+        if (response.status === 402) {
+          setCaptionError('Please enhance this image first to unlock caption generation.')
+        } else if (response.status === 429) {
+          setCaptionError(`Caption limit reached. You've used all ${MAX_CAPTIONS_PER_IMAGE} captions for this image.`)
+          setCaptionsRemaining(0)
+        } else {
+          setCaptionError(data.error || 'Caption generation failed')
+        }
+        return
       }
 
-      const data = await response.json()
       setCaption(data.caption || '')
       setHashtags(data.hashtags || [])
       setAlternates(data.alternateVersions || [])
+      // Update remaining captions from API response
+      if (data.captionsRemaining !== undefined) {
+        setCaptionsRemaining(data.captionsRemaining)
+      }
     } catch (err) {
       console.error('Error generating caption:', err)
+      setCaptionError('Failed to generate caption. Please try again.')
     } finally {
       setGenerating(false)
     }
@@ -403,10 +427,23 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             <div className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">AI Caption Generator</CardTitle>
-                  <CardDescription>
-                    Generate engaging captions for your food photo
-                  </CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-lg">AI Caption Generator</CardTitle>
+                      <CardDescription>
+                        Generate engaging captions for your food photo
+                      </CardDescription>
+                    </div>
+                    {/* Caption remaining badge */}
+                    {image.enhanced_url && captionsRemaining !== null && (
+                      <Badge
+                        variant={captionsRemaining > 3 ? "secondary" : captionsRemaining > 0 ? "outline" : "destructive"}
+                        className="text-xs"
+                      >
+                        {captionsRemaining}/{MAX_CAPTIONS_PER_IMAGE} remaining
+                      </Badge>
+                    )}
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Platform Selection */}
@@ -469,15 +506,33 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                     </div>
                   </div>
 
+                  {/* Error message */}
+                  {captionError && (
+                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
+                      {captionError}
+                    </div>
+                  )}
+
+                  {/* Generate button */}
                   <Button
                     onClick={handleGenerateCaption}
-                    disabled={generating}
-                    className="w-full bg-orange-500 hover:bg-orange-600"
+                    disabled={generating || captionsRemaining === 0 || !image.enhanced_url}
+                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50"
                   >
                     {generating ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Generating...
+                      </>
+                    ) : captionsRemaining === 0 ? (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Limit Reached
+                      </>
+                    ) : !image.enhanced_url ? (
+                      <>
+                        <Sparkles className="mr-2 h-4 w-4" />
+                        Enhance Image First
                       </>
                     ) : (
                       <>
@@ -486,6 +541,13 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                       </>
                     )}
                   </Button>
+
+                  {/* Info text for non-enhanced images */}
+                  {!image.enhanced_url && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Enhance your image first to unlock {MAX_CAPTIONS_PER_IMAGE} free caption generations.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
 
