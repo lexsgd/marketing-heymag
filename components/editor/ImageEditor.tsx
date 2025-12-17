@@ -258,8 +258,8 @@ export function ImageEditor({
                   <div
                     className="relative overflow-hidden rounded-lg"
                     style={{
-                      maxHeight: '60vh',
-                      minHeight: '300px'
+                      height: 'calc(100vh - 220px)',
+                      minHeight: '400px'
                     }}
                   >
                     <BeforeAfterSlider
@@ -303,8 +303,8 @@ export function ImageEditor({
               <div
                 className="relative bg-[url('/checkerboard.svg')] bg-repeat overflow-auto rounded-lg"
                 style={{
-                  maxHeight: '60vh',
-                  minHeight: '300px'
+                  height: 'calc(100vh - 220px)',
+                  minHeight: '400px'
                 }}
               >
                 <div
