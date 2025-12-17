@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -26,7 +27,8 @@ import {
   Megaphone,
   BookOpen,
   MessageCircle,
-  Play
+  Play,
+  User
 } from 'lucide-react'
 
 // Animated rotating text hook
@@ -48,13 +50,42 @@ function useRotatingText(texts: string[], intervalMs = 2500) {
   return { text: texts[index], isAnimating }
 }
 
+// Theme-aware Logo component
+function Logo({ className = '', width = 120 }: { className?: string; width?: number }) {
+  const { resolvedTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return <div style={{ width, height: width * 0.4 }} className="bg-muted animate-pulse rounded" />
+  }
+
+  const logoSrc = resolvedTheme === 'dark'
+    ? '/logos/Zazzles-White.png'
+    : '/logos/Zazzles-Black.png'
+
+  return (
+    <Image
+      src={logoSrc}
+      alt="Zazzles"
+      width={width}
+      height={width * 0.4}
+      className={`object-contain ${className}`}
+      priority
+    />
+  )
+}
+
 // SEA Platform Badges
 const platformBadges = [
-  { name: 'Grab', logo: '/badges/grab.svg', color: '#00B14F' },
-  { name: 'Foodpanda', logo: '/badges/foodpanda.svg', color: '#D70F64' },
-  { name: 'Deliveroo', logo: '/badges/deliveroo.svg', color: '#00CCBC' },
-  { name: 'Gojek', logo: '/badges/gojek.svg', color: '#00AA13' },
-  { name: 'ShopeeFood', logo: '/badges/shopee.svg', color: '#EE4D2D' },
+  { name: 'Grab', color: '#00B14F' },
+  { name: 'Foodpanda', color: '#D70F64' },
+  { name: 'Deliveroo', color: '#00CCBC' },
+  { name: 'Gojek', color: '#00AA13' },
+  { name: 'ShopeeFood', color: '#EE4D2D' },
 ]
 
 // Use Case Tabs Data
@@ -70,7 +101,6 @@ const useCases = [
       'Clean backgrounds for menu consistency',
       'Platform-specific size presets'
     ],
-    image: '/demo/delivery-preview.jpg'
   },
   {
     id: 'marketing',
@@ -83,7 +113,6 @@ const useCases = [
       'Multiple aspect ratios for all platforms',
       'A/B test different styles instantly'
     ],
-    image: '/demo/marketing-preview.jpg'
   },
   {
     id: 'menu',
@@ -96,7 +125,6 @@ const useCases = [
       'Menu card templates included',
       'Batch process entire menu'
     ],
-    image: '/demo/menu-preview.jpg'
   },
   {
     id: 'social',
@@ -109,7 +137,6 @@ const useCases = [
       'Bilingual caption generation',
       'Direct posting integration'
     ],
-    image: '/demo/social-preview.jpg'
   },
 ]
 
@@ -118,29 +145,25 @@ const testimonials = [
   {
     name: 'Sarah Chen',
     role: 'Owner, Ming\'s Kitchen Singapore',
-    quote: 'Our GrabFood orders increased 40% after switching to FoodSnap AI photos. The ROI is incredible compared to hiring a photographer.',
-    image: '/testimonials/sarah.jpg',
+    quote: 'Our GrabFood orders increased 40% after switching to Zazzles photos. The ROI is incredible compared to hiring a photographer.',
     rating: 5
   },
   {
     name: 'Raj Patel',
     role: 'Marketing Manager, Spice Route',
-    quote: 'We used to spend $500/month on food photography. Now we get better results for $80/month with FoodSnap AI.',
-    image: '/testimonials/raj.jpg',
+    quote: 'We used to spend $500/month on food photography. Now we get better results for $80/month with Zazzles.',
     rating: 5
   },
   {
     name: 'Lisa Tan',
     role: 'Cafe Owner, Kopi Culture',
     quote: 'The Xiaohongshu integration is a game-changer. My posts get 3x more engagement with the AI-enhanced photos.',
-    image: '/testimonials/lisa.jpg',
     rating: 5
   },
   {
     name: 'Michael Wong',
     role: 'F&B Entrepreneur, 3 Outlets',
-    quote: 'Managing 3 restaurants means 100+ dishes to photograph. FoodSnap AI\'s batch processing saves me hours every week.',
-    image: '/testimonials/michael.jpg',
+    quote: 'Managing 3 restaurants means 100+ dishes to photograph. Zazzles batch processing saves me hours every week.',
     rating: 5
   },
 ]
@@ -153,7 +176,7 @@ const faqs = [
   },
   {
     q: 'What platforms can I post to directly?',
-    a: 'FoodSnap AI supports direct posting to Instagram, Facebook, TikTok, Xiaohongshu (小红书), and WeChat. We also provide optimized exports for all major food delivery apps like Grab, Foodpanda, and Deliveroo.'
+    a: 'Zazzles supports direct posting to Instagram, Facebook, TikTok, Xiaohongshu (小红书), and WeChat. We also provide optimized exports for all major food delivery apps like Grab, Foodpanda, and Deliveroo.'
   },
   {
     q: 'Do credits expire?',
@@ -169,7 +192,7 @@ const faqs = [
   },
   {
     q: 'Is there an API for developers?',
-    a: 'Yes, our Business plan includes API access. You can integrate FoodSnap AI directly into your POS, website, or app.'
+    a: 'Yes, our Business plan includes API access. You can integrate Zazzles directly into your POS, website, or app.'
   },
 ]
 
@@ -193,23 +216,20 @@ export default function HomePage() {
   }, [])
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white dark:from-slate-950 dark:to-slate-900">
+    <div className="min-h-screen bg-background">
       {/* Navigation */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-lg border-b border-border">
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-lg border-b border-border">
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg food-gradient flex items-center justify-center">
-              <Camera className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl">FoodSnap AI</span>
-          </div>
+          <Link href="/" className="flex items-center">
+            <Logo width={100} />
+          </Link>
           <div className="hidden md:flex items-center gap-8">
             <Link
               href="/explore"
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-100 text-orange-700 hover:bg-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:hover:bg-orange-900/50 transition-colors font-medium text-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-orange-500/10 text-orange-500 hover:bg-orange-500/20 transition-colors font-medium text-sm"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Try Free Demo
+              Explore
             </Link>
             <Link href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
               Features
@@ -221,13 +241,13 @@ export default function HomePage() {
               FAQ
             </Link>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" asChild>
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="sm" asChild>
               <Link href="/auth/login">Log in</Link>
             </Button>
-            <Button asChild className="food-gradient border-0">
+            <Button asChild size="sm" className="bg-orange-500 hover:bg-orange-600">
               <Link href="/auth/signup">
-                Start Free Trial
+                Get Started
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -235,16 +255,16 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Hero Section with Rotating Text */}
-      <section className="pt-32 pb-16 px-4">
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4">
         <div className="container mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-orange-500/10 text-orange-500 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Sparkles className="w-4 h-4" />
-            AI-Powered Food Photography for SEA Businesses
+            AI-Powered Food Photography Studio
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 max-w-4xl mx-auto">
-            AI Food Photography for{' '}
+            Transform Food Photos for{' '}
             <span className="relative inline-block min-w-[280px] md:min-w-[400px]">
               <span
                 className={`bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent transition-all duration-300 ${
@@ -261,8 +281,8 @@ export default function HomePage() {
             Generate captions and post to Grab, Foodpanda, Instagram, and Xiaohongshu in just 3 clicks.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-            <Button size="lg" asChild className="food-gradient border-0 h-14 px-8 text-lg">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+            <Button size="lg" asChild className="bg-orange-500 hover:bg-orange-600 h-14 px-8 text-lg">
               <Link href="/explore">
                 <Play className="mr-2 h-5 w-5" />
                 Try It Free
@@ -279,11 +299,11 @@ export default function HomePage() {
           {/* Platform Badges */}
           <div className="mb-12">
             <p className="text-sm text-muted-foreground mb-4">Optimized for leading SEA platforms</p>
-            <div className="flex flex-wrap justify-center gap-6 items-center opacity-60 hover:opacity-100 transition-opacity">
+            <div className="flex flex-wrap justify-center gap-4 items-center">
               {platformBadges.map((platform) => (
                 <div
                   key={platform.name}
-                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg bg-card border border-border"
                 >
                   <div
                     className="w-6 h-6 rounded flex items-center justify-center text-white text-xs font-bold"
@@ -297,30 +317,25 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* Enhanced Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-3xl mx-auto">
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
-              <div className="text-3xl font-bold text-orange-500">10,000+</div>
-              <div className="text-sm text-muted-foreground">Photos Enhanced</div>
-            </div>
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
-              <div className="text-3xl font-bold text-orange-500">95%</div>
-              <div className="text-sm text-muted-foreground">Cost Savings</div>
-            </div>
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
-              <div className="text-3xl font-bold text-orange-500">30s</div>
-              <div className="text-sm text-muted-foreground">Per Enhancement</div>
-            </div>
-            <div className="p-4 rounded-xl bg-white dark:bg-slate-800 shadow-sm">
-              <div className="text-3xl font-bold text-orange-500">6</div>
-              <div className="text-sm text-muted-foreground">Platforms</div>
-            </div>
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+            {[
+              { value: '10,000+', label: 'Photos Enhanced' },
+              { value: '95%', label: 'Cost Savings' },
+              { value: '30s', label: 'Per Enhancement' },
+              { value: '6', label: 'Platforms' },
+            ].map((stat) => (
+              <div key={stat.label} className="p-4 rounded-xl bg-card border border-border">
+                <div className="text-3xl font-bold text-orange-500">{stat.value}</div>
+                <div className="text-sm text-muted-foreground">{stat.label}</div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
       {/* Use Case Tabs */}
-      <section className="py-16 px-4 bg-white dark:bg-slate-900">
+      <section className="py-20 px-4 bg-card/50">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Perfect for Every Use Case
@@ -330,7 +345,7 @@ export default function HomePage() {
           </p>
 
           <Tabs defaultValue="delivery" className="max-w-5xl mx-auto">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-8">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 mb-8 bg-muted">
               {useCases.map((useCase) => (
                 <TabsTrigger
                   key={useCase.id}
@@ -358,16 +373,16 @@ export default function HomePage() {
                         </li>
                       ))}
                     </ul>
-                    <Button asChild className="mt-6 food-gradient border-0">
+                    <Button asChild className="mt-6 bg-orange-500 hover:bg-orange-600">
                       <Link href="/explore">
                         Try {useCase.title.split(' ')[0]} Style
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
                   </div>
-                  <div className="relative aspect-video rounded-xl overflow-hidden bg-gradient-to-br from-orange-100 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/20 flex items-center justify-center">
-                    <useCase.icon className="h-24 w-24 text-orange-500/30" />
-                    <div className="absolute bottom-4 left-4 right-4 bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm rounded-lg p-3">
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-muted flex items-center justify-center border border-border">
+                    <useCase.icon className="h-24 w-24 text-orange-500/20" />
+                    <div className="absolute bottom-4 left-4 right-4 bg-card/90 backdrop-blur-sm rounded-lg p-3 border border-border">
                       <p className="text-sm font-medium">Before → After Preview</p>
                       <p className="text-xs text-muted-foreground">AI enhancement demo</p>
                     </div>
@@ -380,7 +395,7 @@ export default function HomePage() {
       </section>
 
       {/* How It Works */}
-      <section id="how-it-works" className="py-16 px-4">
+      <section id="how-it-works" className="py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             3 Clicks. 30 Seconds. Done.
@@ -410,8 +425,8 @@ export default function HomePage() {
                 description: 'Generate captions and post to all your social platforms instantly.'
               }
             ].map((item) => (
-              <div key={item.step} className="relative p-6 rounded-2xl border bg-card">
-                <div className="absolute -top-4 -left-4 w-10 h-10 rounded-full food-gradient flex items-center justify-center text-white font-bold">
+              <div key={item.step} className="relative p-6 rounded-2xl border border-border bg-card">
+                <div className="absolute -top-4 -left-4 w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold">
                   {item.step}
                 </div>
                 <item.icon className="w-10 h-10 text-orange-500 mb-4 mt-2" />
@@ -424,7 +439,7 @@ export default function HomePage() {
       </section>
 
       {/* Features */}
-      <section id="features" className="py-16 px-4 bg-white dark:bg-slate-900">
+      <section id="features" className="py-20 px-4 bg-card/50">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Everything You Need for Food Marketing
@@ -466,7 +481,7 @@ export default function HomePage() {
                 description: 'CNY, Hari Raya, Christmas - seasonal templates that drive engagement.'
               }
             ].map((feature, i) => (
-              <Card key={i} className="hover:shadow-lg transition-shadow">
+              <Card key={i} className="bg-card border-border hover:border-orange-500/50 transition-colors">
                 <CardContent className="p-6">
                   <feature.icon className="w-8 h-8 text-orange-500 mb-4" />
                   <h3 className="font-semibold text-lg mb-2">{feature.title}</h3>
@@ -479,7 +494,7 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 px-4">
+      <section className="py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Loved by F&B Businesses
@@ -489,18 +504,15 @@ export default function HomePage() {
           </p>
 
           <div className="max-w-3xl mx-auto relative">
-            {/* Testimonial Card */}
-            <Card className="overflow-hidden">
+            <Card className="overflow-hidden bg-card border-border">
               <CardContent className="p-8">
                 <Quote className="h-10 w-10 text-orange-500/30 mb-4" />
                 <p className="text-lg mb-6 min-h-[80px]">
                   &ldquo;{testimonials[activeTestimonial].quote}&rdquo;
                 </p>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 flex items-center justify-center">
-                    <span className="text-lg font-bold text-orange-500">
-                      {testimonials[activeTestimonial].name[0]}
-                    </span>
+                  <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                    <User className="h-6 w-6 text-orange-500" />
                   </div>
                   <div>
                     <p className="font-semibold">{testimonials[activeTestimonial].name}</p>
@@ -515,7 +527,6 @@ export default function HomePage() {
               </CardContent>
             </Card>
 
-            {/* Navigation */}
             <div className="flex justify-center gap-4 mt-6">
               <Button
                 variant="outline"
@@ -548,7 +559,7 @@ export default function HomePage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" className="py-16 px-4 bg-white dark:bg-slate-900">
+      <section id="pricing" className="py-20 px-4 bg-card/50">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Simple, Transparent Pricing
@@ -556,8 +567,8 @@ export default function HomePage() {
           <p className="text-center text-muted-foreground mb-4 max-w-2xl mx-auto">
             Save thousands compared to professional photography. Credits never expire.
           </p>
-          <p className="text-center text-green-600 font-medium mb-12">
-            🎉 Save 40% with annual billing
+          <p className="text-center text-green-500 font-medium mb-12">
+            Save 40% with annual billing
           </p>
 
           <div className="grid md:grid-cols-4 gap-6 max-w-6xl mx-auto">
@@ -567,7 +578,6 @@ export default function HomePage() {
                 price: '$15',
                 credits: '15 images',
                 popular: false,
-                badge: 'Entry',
                 features: [
                   'AI Photo Enhancement',
                   '10 Style Presets',
@@ -618,7 +628,7 @@ export default function HomePage() {
             ].map((plan) => (
               <div
                 key={plan.name}
-                className={`p-6 rounded-2xl border ${
+                className={`p-6 rounded-2xl border bg-card ${
                   plan.popular
                     ? 'border-orange-500 shadow-lg shadow-orange-500/20 relative scale-105'
                     : 'border-border'
@@ -627,11 +637,6 @@ export default function HomePage() {
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500 text-white px-3 py-1 rounded-full text-sm font-medium">
                     Most Popular
-                  </div>
-                )}
-                {plan.badge && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                    {plan.badge}
                   </div>
                 )}
                 <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
@@ -649,7 +654,7 @@ export default function HomePage() {
                   ))}
                 </ul>
                 <Button
-                  className={`w-full ${plan.popular ? 'food-gradient border-0' : ''}`}
+                  className={`w-full ${plan.popular ? 'bg-orange-500 hover:bg-orange-600' : ''}`}
                   variant={plan.popular ? 'default' : 'outline'}
                   asChild
                 >
@@ -666,20 +671,20 @@ export default function HomePage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="py-16 px-4">
+      <section id="faq" className="py-20 px-4">
         <div className="container mx-auto">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Frequently Asked Questions
           </h2>
           <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-            Everything you need to know about FoodSnap AI
+            Everything you need to know about Zazzles
           </p>
 
           <div className="max-w-2xl mx-auto space-y-4">
             {faqs.map((faq, i) => (
               <div
                 key={i}
-                className="border rounded-xl overflow-hidden"
+                className="border border-border rounded-xl overflow-hidden bg-card"
               >
                 <button
                   onClick={() => setOpenFaq(openFaq === i ? null : i)}
@@ -704,9 +709,9 @@ export default function HomePage() {
       </section>
 
       {/* CTA */}
-      <section className="py-16 px-4 bg-white dark:bg-slate-900">
+      <section className="py-20 px-4 bg-card/50">
         <div className="container mx-auto text-center">
-          <div className="max-w-2xl mx-auto p-8 rounded-3xl food-gradient text-white">
+          <div className="max-w-2xl mx-auto p-8 rounded-3xl bg-gradient-to-r from-orange-500 to-amber-500 text-white">
             <h2 className="text-3xl font-bold mb-4">
               Ready to Transform Your Food Marketing?
             </h2>
@@ -720,7 +725,7 @@ export default function HomePage() {
                   Try It Free
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" asChild className="h-14 px-8 bg-white/10 border-white/30 hover:bg-white/20">
+              <Button size="lg" variant="outline" asChild className="h-14 px-8 bg-white/10 border-white/30 hover:bg-white/20 text-white">
                 <Link href="/auth/signup">
                   Start Free Trial
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -732,26 +737,25 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 px-4 border-t">
+      <footer className="py-12 px-4 border-t border-border">
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg food-gradient flex items-center justify-center">
-                <Camera className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-bold">FoodSnap AI</span>
-            </div>
+            <Link href="/" className="flex items-center">
+              <Logo width={80} />
+            </Link>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <Link href="/explore" className="hover:text-foreground transition-colors">Try Free</Link>
+              <Link href="/explore" className="hover:text-foreground transition-colors">Explore</Link>
               <Link href="#pricing" className="hover:text-foreground transition-colors">Pricing</Link>
               <Link href="#faq" className="hover:text-foreground transition-colors">FAQ</Link>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
             </div>
             <div className="text-sm text-muted-foreground">
               Part of the <a href="https://heymag.app" className="text-orange-500 hover:underline">Hey Mag</a> family
             </div>
           </div>
           <div className="text-center text-sm text-muted-foreground mt-8">
-            © 2025 FoodSnap AI. All rights reserved.
+            © 2025 Zazzles. All rights reserved.
           </div>
         </div>
       </footer>
