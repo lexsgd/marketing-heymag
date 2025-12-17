@@ -14,9 +14,7 @@ import {
   Check,
   Sliders,
   Scissors,
-  Save,
-  SplitSquareHorizontal,
-  Eye
+  Save
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -67,8 +65,6 @@ export function ImageEditor({
   const [settings, setSettings] = useState<EnhancementSettings>(
     aiSettings || (stylePreset && enhancementPresets[stylePreset]) || defaultSettings
   )
-  // Track if we're showing AI-enhanced version
-  const [showingAiEnhanced, setShowingAiEnhanced] = useState(!!enhancedUrl)
 
   // UI state
   const [isProcessing, setIsProcessing] = useState(false)
@@ -76,7 +72,7 @@ export function ImageEditor({
   const [zoom, setZoom] = useState(1)
   const [activeTab, setActiveTab] = useState<'adjust' | 'background'>('adjust')
   const [hasChanges, setHasChanges] = useState(false)
-  const [showComparison, setShowComparison] = useState(false)
+  // Default to comparison mode when enhanced URL exists
   const [comparisonSliderPosition, setComparisonSliderPosition] = useState(50)
 
   // Refs
@@ -219,41 +215,6 @@ export function ImageEditor({
                     Processing...
                   </span>
                 )}
-                {/* AI Enhanced vs Original Toggle */}
-                {enhancedUrl && (
-                  <Button
-                    variant={showingAiEnhanced ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      const newShowAi = !showingAiEnhanced
-                      setShowingAiEnhanced(newShowAi)
-                      setCurrentImageUrl(newShowAi ? enhancedUrl : originalUrl)
-                      // Reset settings and preview when switching
-                      setSettings(aiSettings || (stylePreset && enhancementPresets[stylePreset]) || defaultSettings)
-                      setHasChanges(false)
-                    }}
-                    className={cn(
-                      showingAiEnhanced && "bg-green-600 hover:bg-green-700"
-                    )}
-                  >
-                    <Eye className="mr-2 h-4 w-4" />
-                    {showingAiEnhanced ? "AI Enhanced" : "Original"}
-                  </Button>
-                )}
-                {/* Before/After Comparison Toggle */}
-                {enhancedUrl && (
-                  <Button
-                    variant={showComparison ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setShowComparison(!showComparison)}
-                    className={cn(
-                      showComparison && "bg-orange-500 hover:bg-orange-600"
-                    )}
-                  >
-                    <SplitSquareHorizontal className="mr-2 h-4 w-4" />
-                    {showComparison ? "Hide Compare" : "Compare"}
-                  </Button>
-                )}
                 <Button
                   variant="outline"
                   size="sm"
@@ -267,7 +228,7 @@ export function ImageEditor({
             </div>
 
             {/* Image Display */}
-            {showComparison && enhancedUrl ? (
+            {enhancedUrl ? (
               /* Before/After Comparison Mode - Original vs AI Enhanced */
               <div
                 className="relative overflow-hidden rounded-lg"
