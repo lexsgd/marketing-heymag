@@ -154,9 +154,13 @@ export function ImageEditor({
   const handleDownload = () => {
     if (!previewUrl) return
 
+    // Detect format from data URL to use correct extension
+    const isPng = previewUrl.startsWith('data:image/png')
+    const extension = isPng ? 'png' : 'jpg'
+
     const a = document.createElement('a')
     a.href = previewUrl
-    a.download = `foodsnap-enhanced-${Date.now()}.jpg`
+    a.download = `foodsnap-enhanced-${Date.now()}.${extension}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)

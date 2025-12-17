@@ -30,12 +30,16 @@ export async function loadImage(url: string): Promise<HTMLImageElement> {
 /**
  * Apply enhancement settings to an image using Canvas API
  * Returns a data URL of the processed image
+ * Preserves PNG format (with transparency) if input is PNG
  */
 export async function applyEnhancements(
   imageUrl: string,
   settings: EnhancementSettings
 ): Promise<string> {
   const img = await loadImage(imageUrl)
+
+  // Detect if source is PNG (to preserve transparency)
+  const isPng = imageUrl.startsWith('data:image/png') || imageUrl.toLowerCase().endsWith('.png')
 
   const canvas = document.createElement('canvas')
   canvas.width = img.width
@@ -111,7 +115,8 @@ export async function applyEnhancements(
     ctx.putImageData(adjustedData, 0, 0)
   }
 
-  return canvas.toDataURL('image/jpeg', 0.92)
+  // Preserve PNG format for images with transparency, otherwise use JPEG
+  return isPng ? canvas.toDataURL('image/png') : canvas.toDataURL('image/jpeg', 0.92)
 }
 
 /**
