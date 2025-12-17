@@ -425,6 +425,95 @@ TECHNICAL:
 - Sharp focus on main dish
 - Background naturally blurred
 - Square 1:1 aspect ratio
+- Maximum resolution output`,
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SEASONAL/THEMATIC CATEGORIES
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  'christmas': `Generate a premium Christmas-themed food photograph.
+
+CRITICAL REQUIREMENTS:
+- Output resolution: 2048x2048 pixels SQUARE format
+- NO humans, hands, or people in frame
+- Single festive dish as hero subject
+
+SCENE:
+- 45-degree hero angle
+- Premium dark wood OR slate surface
+- Christmas decor props: pine sprigs, cinnamon sticks, star anise, red berries (subtle)
+- Fairy lights bokeh in background (soft warm glow)
+- Elegant, not cluttered - minimal festive touches
+
+FOOD SUBJECT - choose ONE:
+- Glazed roasted turkey leg OR ham with honey glaze, OR
+- Christmas cookies (decorated gingerbread, snowflakes), OR
+- Yule log cake (Bûche de Noël) with chocolate ganache, OR
+- Hot chocolate with whipped cream and cinnamon
+- Beautiful, appetizing presentation
+- Traditional Christmas food
+
+LIGHTING:
+- Warm candlelight quality
+- Soft side lighting with golden tones
+- Fairy light bokeh spots in background
+- Cozy, intimate atmosphere
+- NOT harsh - dreamy warmth
+
+COLOR & MOOD:
+- Rich Christmas palette: deep reds, forest greens, gold, warm browns
+- Warm, cozy, festive feeling
+- Elegant not kitschy
+- Magazine-quality Christmas editorial
+
+TECHNICAL:
+- Shallow depth of field
+- Soft bokeh on fairy lights
+- Sharp focus on food
+- Square 1:1 aspect ratio
+- Maximum resolution output`,
+
+  'chinese-new-year': `Generate a premium Chinese New Year food photograph.
+
+CRITICAL REQUIREMENTS:
+- Output resolution: 2048x2048 pixels SQUARE format
+- NO humans, hands, or people in frame
+- Single festive dish as hero subject
+
+SCENE:
+- Overhead flat-lay OR 45-degree angle
+- Premium surface: red lacquered wood OR dark slate
+- Subtle CNY props: gold coins, red envelopes (angpao), mandarin oranges, cherry blossoms
+- Traditional Chinese ceramics (blue and white OR solid red)
+- Elegant, not cluttered - refined festive touches
+
+FOOD SUBJECT - choose ONE:
+- Yu Sheng (prosperity toss salad) beautifully arranged, OR
+- Whole steamed fish with ginger and scallion, OR
+- Nian gao (glutinous rice cake) sliced on plate, OR
+- Dumplings arranged in lucky pattern (prosperity), OR
+- Pineapple tarts (Taiwanese style)
+- Traditional CNY foods
+- Auspicious presentation
+
+LIGHTING:
+- Warm golden light (prosperity glow)
+- Soft natural window light from side
+- Gentle shadows for depth
+- Festive but not harsh
+- Rich, luxurious atmosphere
+
+COLOR & MOOD:
+- Dominant: red and gold (prosperity colors)
+- Accents: deep jade green, mandarin orange
+- Luxurious, auspicious feeling
+- Celebration and abundance
+- Premium Chinese restaurant quality
+
+TECHNICAL:
+- Sharp focus throughout
+- Rich, deep colors
+- Square 1:1 aspect ratio
 - Maximum resolution output`
 }
 

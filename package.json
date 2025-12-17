@@ -16,7 +16,8 @@
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
     "test:unit:ui": "vitest --ui",
-    "test:all": "npm run test:unit && npm run test"
+    "test:all": "npm run test:unit && npm run test",
+    "generate-templates": "./scripts/generate-templates.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.67.0",
