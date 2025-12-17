@@ -52,13 +52,34 @@ async function upscaleImage(base64Image: string, mimeType: string): Promise<stri
 
     const duration = ((Date.now() - startTime) / 1000).toFixed(1)
     console.log(`[Upscale] Real-ESRGAN completed in ${duration}s`)
+    console.log('[Upscale] Output type:', typeof output, Array.isArray(output) ? 'array' : '')
 
-    // Output is a URL to the upscaled image
+    // Extract URL from various Replicate output formats
+    let outputUrl: string | null = null
+
     if (typeof output === 'string') {
-      console.log('[Upscale] Fetching upscaled image from Replicate...')
+      // Direct string URL
+      outputUrl = output
+    } else if (Array.isArray(output) && output.length > 0) {
+      // Array of URLs - take the first one
+      const firstItem = output[0]
+      if (typeof firstItem === 'string') {
+        outputUrl = firstItem
+      } else if (firstItem && typeof firstItem === 'object' && 'url' in firstItem) {
+        outputUrl = (firstItem as { url: string }).url
+      }
+    } else if (output && typeof output === 'object') {
+      // FileOutput object with url property
+      if ('url' in output) {
+        outputUrl = (output as { url: string }).url
+      }
+    }
+
+    if (outputUrl) {
+      console.log('[Upscale] Fetching upscaled image from:', outputUrl.substring(0, 80) + '...')
 
       // Fetch the upscaled image and convert to base64
-      const response = await fetch(output)
+      const response = await fetch(outputUrl)
       const arrayBuffer = await response.arrayBuffer()
       const upscaledBase64 = Buffer.from(arrayBuffer).toString('base64')
 
@@ -66,6 +87,7 @@ async function upscaleImage(base64Image: string, mimeType: string): Promise<stri
       return upscaledBase64
     }
 
+    console.error('[Upscale] Could not extract URL from output:', JSON.stringify(output).substring(0, 200))
     throw new Error('Unexpected Replicate output format')
   } catch (error) {
     console.error('[Upscale] Error:', error)
