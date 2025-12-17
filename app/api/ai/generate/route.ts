@@ -57,6 +57,9 @@ async function upscaleImage(base64Image: string, mimeType: string): Promise<stri
     // Extract URL from various Replicate output formats
     let outputUrl: string | null = null
 
+    // Log full output for debugging
+    console.log('[Upscale] Raw output:', JSON.stringify(output).substring(0, 300))
+
     if (typeof output === 'string') {
       // Direct string URL
       outputUrl = output
@@ -65,18 +68,29 @@ async function upscaleImage(base64Image: string, mimeType: string): Promise<stri
       const firstItem = output[0]
       if (typeof firstItem === 'string') {
         outputUrl = firstItem
-      } else if (firstItem && typeof firstItem === 'object' && 'url' in firstItem) {
-        outputUrl = (firstItem as { url: string }).url
+      } else if (firstItem && typeof firstItem === 'object') {
+        // FileOutput object - could have url() method or url property
+        if (typeof (firstItem as Record<string, unknown>).url === 'function') {
+          outputUrl = await (firstItem as { url: () => Promise<string> }).url()
+        } else if ('url' in firstItem && typeof (firstItem as Record<string, unknown>).url === 'string') {
+          outputUrl = (firstItem as { url: string }).url
+        } else if ('href' in firstItem && typeof (firstItem as Record<string, unknown>).href === 'string') {
+          outputUrl = (firstItem as { href: string }).href
+        }
       }
     } else if (output && typeof output === 'object') {
-      // FileOutput object with url property
-      if ('url' in output) {
+      // FileOutput object with url property or method
+      if (typeof (output as Record<string, unknown>).url === 'function') {
+        outputUrl = await (output as { url: () => Promise<string> }).url()
+      } else if ('url' in output && typeof (output as Record<string, unknown>).url === 'string') {
         outputUrl = (output as { url: string }).url
+      } else if ('href' in output && typeof (output as Record<string, unknown>).href === 'string') {
+        outputUrl = (output as { href: string }).href
       }
     }
 
-    if (outputUrl) {
-      console.log('[Upscale] Fetching upscaled image from:', outputUrl.substring(0, 80) + '...')
+    if (outputUrl && typeof outputUrl === 'string') {
+      console.log('[Upscale] Fetching upscaled image from:', String(outputUrl).substring(0, 80) + '...')
 
       // Fetch the upscaled image and convert to base64
       const response = await fetch(outputUrl)
