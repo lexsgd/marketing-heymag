@@ -100,11 +100,10 @@ export function BeforeAfterSlider({
     <div
       ref={containerRef}
       className={cn(
-        'relative overflow-hidden rounded-lg select-none',
+        'relative overflow-hidden rounded-lg select-none h-full',
         isDragging ? 'cursor-grabbing' : 'cursor-grab',
         className
       )}
-      style={{ aspectRatio: '4/3' }}
       onMouseDown={handleMouseDown}
       onMouseMove={handleMouseMove}
       onTouchStart={handleTouchStart}
