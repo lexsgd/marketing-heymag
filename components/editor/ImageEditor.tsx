@@ -25,6 +25,7 @@ import {
 import { EnhancementSliders, enhancementPresets } from './EnhancementSliders'
 import { BackgroundRemover } from './BackgroundRemover'
 import { BeforeAfterSlider } from './BeforeAfterSlider'
+import { EnhancementExplanation } from './EnhancementExplanation'
 
 interface ImageEditorProps {
   /** Original image URL */
@@ -376,6 +377,14 @@ export function ImageEditor({
               aiSuggestedSettings={aiSettings}
               disabled={isProcessing || isSaving}
             />
+            {/* AI Explanation Section */}
+            {enhancedUrl && (
+              <EnhancementExplanation
+                stylePreset={stylePreset}
+                settings={settings}
+                aiSettings={aiSettings}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="background" className="mt-4">

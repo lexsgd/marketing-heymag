@@ -192,13 +192,13 @@ export function EnhancementSliders({
  */
 export const enhancementPresets: Record<string, EnhancementSettings> = {
   'delivery': {
-    brightness: 15,
-    contrast: 20,
-    saturation: 25,
-    warmth: 10,
-    sharpness: 40,
+    brightness: 8,
+    contrast: 10,
+    saturation: 16,
+    warmth: 2,
+    sharpness: 52,
     highlights: -5,
-    shadows: 15
+    shadows: 9
   },
   'instagram': {
     brightness: 10,
