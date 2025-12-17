@@ -127,9 +127,9 @@ export function ImageEditor({
     setSettings({ ...settings })
   }
 
-  // Reset to original
+  // Reset to initial state (AI-enhanced if available, otherwise original)
   const handleReset = () => {
-    setCurrentImageUrl(originalUrl)
+    setCurrentImageUrl(enhancedUrl || originalUrl)
     setSettings(aiSettings || (stylePreset && enhancementPresets[stylePreset]) || defaultSettings)
     setHasChanges(false)
   }
