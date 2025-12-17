@@ -56,54 +56,168 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 })
     }
 
-    // Platform-specific guidelines
+    // Platform-specific guidelines (research-backed)
     const platformGuidelines: Record<string, string> = {
-      instagram: 'Keep it concise (under 150 characters for main caption), use 3-5 relevant hashtags, emoji-friendly, casual and engaging tone.',
-      facebook: 'Can be longer and more descriptive, encourage engagement with questions, include a call-to-action.',
-      tiktok: 'Very short and punchy, trend-aware, youth-oriented language, 2-3 hashtags max.',
-      xiaohongshu: 'Write in Chinese, use trendy Chinese internet slang, include emojis, lifestyle-focused, use relevant Chinese hashtags.',
-      wechat: 'Write in Chinese, more formal and informative, suitable for sharing with friends and family.',
+      instagram: `Instagram optimization:
+- CRITICAL: First 125 characters must hook - this is all that shows before "more"
+- Reels captions: Short, punchy, let video speak
+- Feed posts: Can be longer with storytelling
+- Use 5-10 targeted hashtags (mix broad + niche)
+- Emoji placement: Beginning or end as visual breaks
+- Questions drive 2x more comments
+- Posts with location tags get 79% more engagement`,
+
+      facebook: `Facebook optimization:
+- Posts under 80 characters get 66% higher engagement
+- Questions spark conversation and boost algorithm
+- Focus on community and shareability
+- Include clear call-to-action
+- Longer storytelling acceptable for emotional content
+- Tag location for local reach`,
+
+      tiktok: `TikTok optimization:
+- ~100 characters max - video carries the message
+- Trend-aware language and references
+- Use popular sounds/challenges when relevant
+- 3-5 hashtags max (trending + niche)
+- Youth-oriented, authentic voice
+- Hook formats: "POV:", "Wait for it", "This is your sign to..."`,
+
+      xiaohongshu: `小红书 (Xiaohongshu/RED) optimization:
+- Write in Simplified Chinese with trendy internet slang
+- Lifestyle-focused narrative - how food fits daily life
+- Use emojis liberally throughout
+- Include price and location details
+- 8+ hashtags common: #美食分享 #必吃推荐 #探店 etc.
+- Cultural context increases engagement 217%
+- Tutorial/step-by-step style performs best`,
+
+      wechat: `WeChat Moments optimization:
+- Write in Simplified Chinese
+- More formal, informative tone
+- Suitable for sharing with friends and family
+- Include location and practical details
+- Focus on quality and authenticity`,
     }
 
     // Language instructions
     const languageInstructions: Record<string, string> = {
       en: 'Write in English.',
-      zh: 'Write in Simplified Chinese (简体中文).',
+      zh: 'Write in Simplified Chinese (简体中文). Use trendy Chinese internet slang where appropriate.',
       'zh-tw': 'Write in Traditional Chinese (繁體中文).',
     }
 
-    // Tone guidelines
+    // Tone guidelines (research-backed with specific techniques)
     const toneGuidelines: Record<string, string> = {
-      engaging: 'Friendly, inviting, and enthusiastic. Make people want to try this food.',
-      professional: 'Polished, sophisticated, suitable for fine dining or business accounts.',
-      casual: 'Relaxed, conversational, like talking to a friend about great food.',
-      playful: 'Fun, witty, with food puns or creative wordplay.',
-      informative: 'Descriptive, highlighting ingredients, cooking methods, or food story.',
+      engaging: `Friendly and enthusiastic tone:
+- Use sensory trigger words: crispy, sizzling, melt-in-your-mouth, juicy, tender
+- Create FOMO: "You need to try this", "Don't miss out"
+- Ask opinion questions: "Would you try this?", "Rate this 1-10"`,
+
+      professional: `Polished, sophisticated tone:
+- Emphasize craftsmanship and quality
+- Use refined vocabulary: artisanal, curated, exceptional, elevated
+- Highlight provenance and technique
+- Suitable for fine dining and premium brands`,
+
+      casual: `Relaxed, conversational tone:
+- Write like texting a friend about amazing food
+- Use contractions and informal language
+- React naturally: "OMG this was SO good", "Obsessed with this"
+- Keep it real and relatable`,
+
+      playful: `Fun, witty tone with wordplay:
+- Use food puns: "You've stolen a pizza my heart", "Donut worry be happy"
+- Pop culture references
+- Playful challenges: "Tag someone who needs this"
+- High shareability factor`,
+
+      informative: `Educational, descriptive tone:
+- Highlight ingredients, origins, cooking methods
+- Share behind-the-scenes details
+- Include tips or interesting facts
+- Position as food expertise`,
     }
 
-    const systemPrompt = `You are an expert social media copywriter specializing in food and restaurant marketing.
-Your task is to generate engaging captions for food photos.
+    // Sensory language bank for food descriptions
+    const sensoryLanguage = `
+SENSORY LANGUAGE TO USE (increases cravings and engagement):
+- Texture: crispy, crunchy, tender, silky, velvety, flaky, creamy, smooth, gooey, melt-in-your-mouth
+- Temperature: sizzling, steaming, piping hot, chilled, warm
+- Taste: tangy, savory, zesty, rich, bold, sweet, umami, decadent
+- Aroma: fragrant, smoky, fresh-baked, aromatic
+- Visual: golden, caramelized, glazed, vibrant, colorful`
 
-Business: ${business.business_name}
-Style preset used: ${image.style_preset || 'general'}
+    // Hook formulas that work
+    const hookFormulas = `
+HIGH-PERFORMING HOOK FORMULAS (use one of these patterns for opening line):
+1. Curiosity: "Why doesn't anyone talk about [this dish]?"
+2. Challenge: "Bet you can't eat just one"
+3. Revelation: "The secret to [result]..."
+4. FOMO: "This sells out every weekend"
+5. Question: "Have you tried [this] yet?"
+6. Bold claim: "The best [dish] in [city]"
+7. Sensory hook: Start with a texture/taste word
+8. Story hook: "The moment I took my first bite..."`
 
-Guidelines:
-- ${languageInstructions[language] || languageInstructions.en}
-- Platform: ${platform} - ${platformGuidelines[platform] || platformGuidelines.instagram}
-- Tone: ${toneGuidelines[tone] || toneGuidelines.engaging}
+    // CTA formulas
+    const ctaFormulas = `
+CALL-TO-ACTION OPTIONS (include one appropriate CTA):
+- Booking: "Reserve your table - link in bio"
+- Ordering: "Order now, taste heaven in 30 minutes"
+- Engagement: "Tag someone who needs this in their life"
+- Opinion: "What would you pair this with?"
+- UGC: "Show us your plate! Tag us for a feature"
+- Save: "Save this for your next food adventure"
+- Share: "Send this to your foodie bestie"`
 
-Generate a caption that:
-1. Captures attention in the first line
-2. Describes the food appealingly
-3. Includes a call-to-action when appropriate
-4. Uses relevant hashtags
-5. Is optimized for the target platform
+    const systemPrompt = `You are an elite social media copywriter who creates viral food content. Your captions consistently achieve high engagement because you understand the psychology of food marketing.
 
-Respond with JSON in this format:
+BUSINESS: ${business.business_name}
+STYLE: ${image.style_preset || 'general'}
+
+${sensoryLanguage}
+
+${hookFormulas}
+
+${ctaFormulas}
+
+PLATFORM REQUIREMENTS:
+${platformGuidelines[platform] || platformGuidelines.instagram}
+
+LANGUAGE: ${languageInstructions[language] || languageInstructions.en}
+
+TONE STYLE:
+${toneGuidelines[tone] || toneGuidelines.engaging}
+
+YOUR TASK:
+1. ANALYZE the image carefully - identify specific food items, colors, textures, presentation style, setting
+2. CRAFT a caption that:
+   - Opens with an irresistible hook (first 125 chars are critical)
+   - Uses sensory language that triggers cravings
+   - Describes what makes THIS specific dish special (not generic food praise)
+   - Includes emotional connection or storytelling element
+   - Ends with appropriate call-to-action
+3. SELECT hashtags strategically:
+   - Mix of broad reach (#foodporn, #foodie) and niche (#[specific cuisine], #[dish name])
+   - Include trending food hashtags when relevant
+   - Platform-appropriate quantity
+4. PROVIDE 2 alternative versions with different angles:
+   - One more casual/playful
+   - One more descriptive/storytelling
+
+IMPORTANT RULES:
+- NEVER use generic phrases like "culinary masterpiece" or "feast for the eyes"
+- ALWAYS describe the ACTUAL food you see in the image
+- Make it specific: "golden crispy fried chicken" not "delicious food"
+- Keep authenticity - overly polished content underperforms
+- Match the energy to the food (street food = casual, fine dining = elevated)
+
+Respond with JSON:
 {
-  "caption": "The main caption text",
-  "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
-  "alternateVersions": ["Alternative caption 1", "Alternative caption 2"]
+  "caption": "The main caption with hook + body + CTA + emojis",
+  "hashtags": ["hashtag1", "hashtag2", "hashtag3", "hashtag4", "hashtag5"],
+  "alternateVersions": ["Casual/playful version", "Storytelling/descriptive version"]
 }`
 
     // Get the image URL to send to Claude for vision analysis
@@ -116,7 +230,7 @@ Respond with JSON in this format:
     // Use Claude's vision capability to analyze the actual image
     const message = await getAnthropic().messages.create({
       model: 'claude-3-haiku-20240307',
-      max_tokens: 500,
+      max_tokens: 800,
       messages: [
         {
           role: 'user',
@@ -130,7 +244,15 @@ Respond with JSON in this format:
             },
             {
               type: 'text',
-              text: `Analyze this food photo and generate a ${platform} caption. Look at what's actually in the image - describe the specific food items, colors, presentation, and setting you see. The editing style used was "${image.style_preset || 'professional'}".`
+              text: `Generate a high-engagement ${platform} caption for this food photo.
+
+First, analyze what you ACTUALLY see:
+- What specific food items are in the image?
+- What colors, textures, and presentation style?
+- What's the setting/backdrop?
+- What makes this visually appealing?
+
+Then create captions that describe THIS specific food, not generic food content. The photo was styled for "${image.style_preset || 'delivery'}" aesthetic.`
             }
           ],
         }
