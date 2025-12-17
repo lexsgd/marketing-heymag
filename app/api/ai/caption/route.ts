@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { createClient as createServiceClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
 
 // Use Node.js runtime (not Edge) for Anthropic SDK
 export const runtime = 'nodejs'
+
+// Maximum captions per enhanced image
+const MAX_CAPTIONS_PER_IMAGE = 10
 
 // Lazy initialization of Anthropic client
 let anthropicClient: Anthropic | null = null
@@ -15,6 +19,14 @@ function getAnthropic(): Anthropic {
     })
   }
   return anthropicClient
+}
+
+// Service client for bypassing RLS when updating caption count
+function getServiceSupabase() {
+  return createServiceClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  )
 }
 
 export async function POST(request: NextRequest) {
@@ -54,6 +66,31 @@ export async function POST(request: NextRequest) {
 
     if (imageError || !image) {
       return NextResponse.json({ error: 'Image not found' }, { status: 404 })
+    }
+
+    // Check if image has been enhanced (credit was spent)
+    if (!image.enhanced_url) {
+      return NextResponse.json(
+        {
+          error: 'Image must be enhanced first',
+          message: 'Please enhance this image before generating captions. Enhancement uses 1 credit and unlocks 10 free caption generations.'
+        },
+        { status: 402 }
+      )
+    }
+
+    // Check caption count limit
+    const currentCaptionCount = image.caption_count || 0
+    if (currentCaptionCount >= MAX_CAPTIONS_PER_IMAGE) {
+      return NextResponse.json(
+        {
+          error: 'Caption limit reached',
+          message: `You have reached the maximum of ${MAX_CAPTIONS_PER_IMAGE} caption generations for this image. Upload and enhance a new image to generate more captions.`,
+          captionCount: currentCaptionCount,
+          maxCaptions: MAX_CAPTIONS_PER_IMAGE
+        },
+        { status: 429 }
+      )
     }
 
     // Platform-specific guidelines (research-backed)
@@ -284,12 +321,30 @@ Then create captions that describe THIS specific food, not generic food content.
       }
     }
 
+    // Increment caption count after successful generation
+    const newCaptionCount = currentCaptionCount + 1
+    const serviceSupabase = getServiceSupabase()
+    const { error: updateError } = await serviceSupabase
+      .from('images')
+      .update({
+        caption_count: newCaptionCount,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', imageId)
+
+    if (updateError) {
+      console.error('Failed to update caption count:', updateError)
+      // Don't fail the request, just log the error
+    }
+
     return NextResponse.json({
       success: true,
       imageId,
       ...captionData,
       language,
       platform,
+      captionCount: newCaptionCount,
+      captionsRemaining: MAX_CAPTIONS_PER_IMAGE - newCaptionCount
     })
   } catch (error: unknown) {
     console.error('Caption API error:', error)
