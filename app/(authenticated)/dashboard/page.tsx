@@ -14,6 +14,7 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { MainNav } from '@/components/main-nav'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -77,7 +78,9 @@ export default async function DashboardPage() {
     .eq('status', 'posted')
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      <MainNav />
+      <div className="pt-16 p-6 space-y-6">
       {/* Welcome Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -342,6 +345,7 @@ export default async function DashboardPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
       </div>
     </div>
   )

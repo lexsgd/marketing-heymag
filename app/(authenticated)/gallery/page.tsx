@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { GalleryClient } from '@/components/gallery/GalleryClient'
+import { MainNav } from '@/components/main-nav'
 
 export default async function GalleryPage() {
   const supabase = await createClient()
@@ -22,5 +23,12 @@ export default async function GalleryPage() {
     .eq('business_id', business?.id)
     .order('created_at', { ascending: false })
 
-  return <GalleryClient initialImages={images || []} />
+  return (
+    <div className="min-h-screen bg-background">
+      <MainNav />
+      <div className="pt-16">
+        <GalleryClient initialImages={images || []} />
+      </div>
+    </div>
+  )
 }

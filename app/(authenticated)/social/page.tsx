@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Separator } from '@/components/ui/separator'
+import { MainNav } from '@/components/main-nav'
 
 // Platform configurations
 const platforms = [
@@ -117,7 +118,9 @@ export default async function SocialPage() {
   const connectedPlatforms = socialAccounts?.map(a => a.platform) || []
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      <MainNav />
+      <div className="pt-16 p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
@@ -438,6 +441,7 @@ export default async function SocialPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }

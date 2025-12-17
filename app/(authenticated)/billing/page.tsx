@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { MainNav } from '@/components/main-nav'
 
 const plans = [
   {
@@ -138,7 +139,9 @@ export default async function BillingPage() {
   const daysLeftInTrial = trialEndsAt ? Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="min-h-screen bg-background">
+      <MainNav />
+      <div className="pt-16 p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Billing</h1>
@@ -462,6 +465,7 @@ export default async function BillingPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   )
 }
