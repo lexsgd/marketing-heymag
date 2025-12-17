@@ -130,6 +130,7 @@ export function ImageEditor({
   // Reset to initial state (AI-enhanced if available, otherwise original)
   const handleReset = () => {
     setCurrentImageUrl(enhancedUrl || originalUrl)
+    setPreviewUrl(null) // Clear preview to trigger proper mode switch
     setSettings(aiSettings || (stylePreset && enhancementPresets[stylePreset]) || defaultSettings)
     setHasChanges(false)
   }
@@ -325,19 +326,6 @@ export function ImageEditor({
                   </div>
                 )}
 
-                {/* Transparency indicator label */}
-                {hasTransparency && (
-                  <div
-                    className={cn(
-                      'absolute bottom-4 left-4 z-20',
-                      'px-3 py-1.5 rounded-md text-sm font-medium',
-                      'bg-purple-600 text-white',
-                      'shadow-lg pointer-events-none'
-                    )}
-                  >
-                    Background Removed (PNG)
-                  </div>
-                )}
               </div>
               )
             })()}
