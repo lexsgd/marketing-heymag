@@ -19,7 +19,7 @@ const templateImages = [
   { id: 9, src: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=400&h=400&fit=crop', category: 'Delivery & Takeout', theme: null },
   { id: 10, src: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=400&h=350&fit=crop', category: 'Cafe & Coffee', theme: null },
   { id: 11, src: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=400&h=500&fit=crop', category: 'Fine Dining', theme: null },
-  { id: 12, src: 'https://images.unsplash.com/photo-1482049016530-2e8d4c3cde03?w=400&h=400&fit=crop', category: 'Restaurant', theme: 'Christmas' },
+  { id: 12, src: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=400&fit=crop', category: 'Restaurant', theme: 'Christmas' },
 ]
 
 const categories = [
