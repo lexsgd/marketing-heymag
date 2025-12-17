@@ -10,8 +10,8 @@ const nextConfig = {
     // Temporarily ignore to debug Vercel build
     ignoreBuildErrors: true,
   },
-  // Exclude sharp from webpack bundling - it's loaded at runtime if available
-  serverExternalPackages: ['sharp'],
+  // Note: Image optimization now handled by Supabase Storage transformations
+  // + Next.js Image component (no Sharp dependency required)
   images: {
     remotePatterns: [
       {

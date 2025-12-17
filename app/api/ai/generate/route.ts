@@ -541,19 +541,22 @@ OUTPUT: Maximum resolution square image (2048x2048). This must look like a real 
         console.log('[Generate] Skipping upscale - REPLICATE_API_TOKEN not configured')
       }
 
-      // Step 2: Optimize and store in Supabase Storage
-      // Creates: original (2048 PNG), web (1200 WebP), thumb (400 WebP)
+      // Step 2: Upload to Supabase Storage with transformation URLs
+      // Stores original high-res image, provides URLs for web (1200) and thumb (400) sizes
       if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
         try {
-          console.log('[Generate] Step 2: Optimizing and storing images...')
-          storedImages = await optimizeAndStore(finalImageBase64, finalMimeType, category)
-          console.log('[Generate] Optimization complete! Image ID:', storedImages.imageId)
+          console.log('[Generate] Step 2: Uploading to Supabase Storage...')
+          const imageDimensions = wasUpscaled
+            ? { width: 2048, height: 2048 }
+            : { width: 1024, height: 1024 }
+          storedImages = await optimizeAndStore(finalImageBase64, finalMimeType, category, imageDimensions)
+          console.log('[Generate] Upload complete! Image ID:', storedImages.imageId)
         } catch (error) {
-          console.error('[Generate] Optimization/storage failed:', error)
+          console.error('[Generate] Storage failed:', error)
           optimizeError = (error as Error).message
         }
       } else {
-        console.log('[Generate] Skipping optimization - SUPABASE_SERVICE_ROLE_KEY not configured')
+        console.log('[Generate] Skipping storage - SUPABASE_SERVICE_ROLE_KEY not configured')
       }
 
       // Build response with data URL fallback
@@ -578,7 +581,7 @@ OUTPUT: Maximum resolution square image (2048x2048). This must look like a real 
         optimized: !!storedImages,
         upscaleError,
         optimizeError,
-        message: `AI-generated ${category} food photo${wasUpscaled ? ' (2048x2048)' : ''}${storedImages ? ' - optimized & stored' : ''}`
+        message: `AI-generated ${category} food photo${wasUpscaled ? ' (2048x2048)' : ''}${storedImages ? ' - stored in Supabase' : ''}`
       })
     }
 
