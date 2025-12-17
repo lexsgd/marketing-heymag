@@ -1,5 +1,20 @@
-import sharp from 'sharp'
 import { createClient } from '@supabase/supabase-js'
+
+// Dynamic import for Sharp - required for Vercel serverless compatibility
+// Sharp has native binaries that need to load at runtime, not build time
+let sharpModule: typeof import('sharp') | null = null
+
+async function getSharp() {
+  if (!sharpModule) {
+    try {
+      sharpModule = await import('sharp')
+    } catch (error) {
+      console.error('[ImageOptimizer] Failed to load Sharp:', error)
+      throw new Error('Sharp image processing not available')
+    }
+  }
+  return sharpModule.default
+}
 
 // ═══════════════════════════════════════════════════════════════════════════
 // IMAGE OPTIMIZATION PIPELINE
@@ -67,6 +82,9 @@ export async function createOptimizedVersions(
 ): Promise<OptimizedImages> {
   console.log('[ImageOptimizer] Starting optimization pipeline...')
   const startTime = Date.now()
+
+  // Get Sharp instance (dynamic import for Vercel compatibility)
+  const sharp = await getSharp()
 
   // Convert base64 to buffer
   const originalBuffer = Buffer.from(base64Image, 'base64')
