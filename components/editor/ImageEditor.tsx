@@ -187,45 +187,44 @@ export function ImageEditor({
       <div className="flex-1 space-y-4">
         <Card>
           <CardContent className="p-4">
-            {/* Toolbar */}
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                {/* Only show zoom controls in single view mode (where they work) */}
-                {!isComparisonMode && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleZoomOut}
-                      disabled={zoom <= 0.5}
-                      className="h-8 w-8"
-                    >
-                      <ZoomOut className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm text-muted-foreground w-16 text-center">
-                      {Math.round(zoom * 100)}%
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleZoomIn}
-                      disabled={zoom >= 3}
-                      className="h-8 w-8"
-                    >
-                      <ZoomIn className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={handleZoomReset}
-                      className="h-8 w-8"
-                    >
-                      <Maximize2 className="h-4 w-4" />
-                    </Button>
-                  </>
-                )}
-              </div>
+            {/* Toolbar - compact in comparison mode, full in single view */}
+            <div className={`flex items-center mb-3 ${isComparisonMode ? 'justify-end' : 'justify-between'}`}>
+              {/* Zoom controls - only in single view mode */}
+              {!isComparisonMode && (
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleZoomOut}
+                    disabled={zoom <= 0.5}
+                    className="h-8 w-8"
+                  >
+                    <ZoomOut className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm text-muted-foreground w-16 text-center">
+                    {Math.round(zoom * 100)}%
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleZoomIn}
+                    disabled={zoom >= 3}
+                    className="h-8 w-8"
+                  >
+                    <ZoomIn className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleZoomReset}
+                    className="h-8 w-8"
+                  >
+                    <Maximize2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
 
+              {/* Right side controls */}
               <div className="flex items-center gap-2">
                 {isProcessing && (
                   <span className="flex items-center text-sm text-muted-foreground">
