@@ -239,7 +239,7 @@ export function ImageEditor({
               >
                 <BeforeAfterSlider
                   beforeUrl={originalUrl}
-                  afterUrl={enhancedUrl}
+                  afterUrl={previewUrl || enhancedUrl}
                   alt="Original vs AI Enhanced comparison"
                   className="w-full h-full"
                   onPositionChange={setComparisonSliderPosition}
