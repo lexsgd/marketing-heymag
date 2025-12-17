@@ -739,9 +739,9 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="py-12 px-4 border-t border-border">
         <div className="container mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
             <Link href="/" className="flex items-center">
-              <Logo width={80} />
+              <Logo width={140} />
             </Link>
             <div className="flex items-center gap-6 text-sm text-muted-foreground">
               <Link href="/explore" className="hover:text-foreground transition-colors">Explore</Link>
@@ -749,9 +749,6 @@ export default function HomePage() {
               <Link href="#faq" className="hover:text-foreground transition-colors">FAQ</Link>
               <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
               <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              Part of the <a href="https://heymag.app" className="text-orange-500 hover:underline">Hey Mag</a> family
             </div>
           </div>
           <div className="text-center text-sm text-muted-foreground mt-8">
