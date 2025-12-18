@@ -548,7 +548,10 @@ function EditorContent() {
                     </Button>
 
                     {/* Browse templates CTA */}
-                    <div className="mt-6 pt-6 border-t border-border w-full text-center">
+                    <div
+                      className="mt-6 pt-6 border-t border-border w-full text-center"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <p className="text-xs text-muted-foreground mb-2">
                         Or choose from our template gallery
                       </p>
