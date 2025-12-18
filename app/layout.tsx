@@ -11,8 +11,12 @@ export const metadata: Metadata = {
   description: 'Transform your food photos with AI-powered styling. Professional food photography for delivery apps, social media, and marketing in seconds.',
   keywords: ['food photography', 'AI image enhancement', 'restaurant marketing', 'social media', 'F&B', 'Zazzles'],
   icons: {
-    icon: '/favicon.jpg',
-    apple: '/favicon.jpg',
+    icon: [
+      { url: '/favicons/favicon-16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicons/favicon-32.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicons/favicon-48.png', sizes: '48x48', type: 'image/png' },
+    ],
+    apple: '/apple-touch-icon.png',
   },
 }
 
