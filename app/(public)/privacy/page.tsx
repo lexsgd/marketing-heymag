@@ -12,7 +12,7 @@ export default function PrivacyPage() {
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
               <Camera className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-xl">FoodSnap AI</span>
+            <span className="font-bold text-xl">Zazzles</span>
           </Link>
 
           <div className="flex items-center gap-4">
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
             <p>
-              FoodSnap AI (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to protecting your personal data.
+              Zazzles (&quot;we&quot;, &quot;our&quot;, or &quot;us&quot;) respects your privacy and is committed to protecting your personal data.
               This Privacy Policy explains how we collect, use, and safeguard your information when you use our Service.
             </p>
           </section>
@@ -166,7 +166,7 @@ export default function PrivacyPage() {
       {/* Footer */}
       <footer className="border-t py-8 mt-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 FoodSnap AI. All rights reserved.</p>
+          <p>&copy; 2024 Zazzles. All rights reserved.</p>
           <div className="flex items-center justify-center gap-4 mt-2">
             <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="hover:text-foreground">Terms</Link>

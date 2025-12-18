@@ -12,7 +12,7 @@ export default function TermsPage() {
             <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center">
               <Camera className="h-5 w-5 text-white" />
             </div>
-            <span className="font-bold text-xl">FoodSnap AI</span>
+            <span className="font-bold text-xl">Zazzles</span>
           </Link>
 
           <div className="flex items-center gap-4">
@@ -45,7 +45,7 @@ export default function TermsPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">1. Acceptance of Terms</h2>
             <p>
-              By accessing or using FoodSnap AI (&quot;Service&quot;), you agree to be bound by these Terms of Service.
+              By accessing or using Zazzles (&quot;Service&quot;), you agree to be bound by these Terms of Service.
               If you do not agree to these terms, please do not use our Service.
             </p>
           </section>
@@ -53,7 +53,7 @@ export default function TermsPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">2. Description of Service</h2>
             <p>
-              FoodSnap AI provides AI-powered food photography enhancement and social media content generation tools.
+              Zazzles provides AI-powered food photography enhancement and social media content generation tools.
               Our Service allows users to:
             </p>
             <ul className="list-disc pl-6 mt-4 space-y-2">
@@ -114,7 +114,7 @@ export default function TermsPage() {
           <section className="mb-8">
             <h2 className="text-2xl font-semibold mb-4">8. Limitation of Liability</h2>
             <p>
-              FoodSnap AI is provided &quot;as is&quot; without warranties. We are not liable for any indirect,
+              Zazzles is provided &quot;as is&quot; without warranties. We are not liable for any indirect,
               incidental, or consequential damages arising from your use of the Service.
             </p>
           </section>
@@ -142,7 +142,7 @@ export default function TermsPage() {
       {/* Footer */}
       <footer className="border-t py-8 mt-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>&copy; 2024 FoodSnap AI. All rights reserved.</p>
+          <p>&copy; 2024 Zazzles. All rights reserved.</p>
           <div className="flex items-center justify-center gap-4 mt-2">
             <Link href="/privacy" className="hover:text-foreground">Privacy</Link>
             <Link href="/terms" className="hover:text-foreground">Terms</Link>
