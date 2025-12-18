@@ -342,35 +342,35 @@ export const styleCategories: StyleCategory[] = [
         id: 'neon-night',
         name: 'Neon Night',
         description: 'Vibrant neon night market style',
-        thumbnail: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1756713545237-7c97075b71da?w=100&h=100&fit=crop',
         keywords: ['neon', 'night', 'vibrant', 'glow']
       },
       {
         id: 'vintage',
         name: 'Vintage Film',
         description: 'Nostalgic warm film tones',
-        thumbnail: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1737958946719-13dd1573f6bf?w=100&h=100&fit=crop',
         keywords: ['vintage', 'film', 'retro', 'nostalgic']
       },
       {
         id: 'hdr',
         name: 'HDR Enhanced',
         description: 'High dynamic range for maximum pop',
-        thumbnail: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1710887869102-36fd5d1f3352?w=100&h=100&fit=crop',
         keywords: ['hdr', 'enhanced', 'vivid', 'pop']
       },
       {
         id: 'bokeh',
         name: 'Bokeh Background',
         description: 'Beautiful blurred background effect',
-        thumbnail: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1548365327-ba68b3991b34?w=100&h=100&fit=crop',
         keywords: ['bokeh', 'blur', 'depth', 'focus']
       },
       {
         id: 'macro',
         name: 'Macro Close-up',
         description: 'Extreme close-up detail shots',
-        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1531279390331-0db31e853a49?w=100&h=100&fit=crop',
         keywords: ['macro', 'closeup', 'detail', 'texture']
       },
     ]
