@@ -373,13 +373,6 @@ function EditorContent() {
               </Button>
             </div>
 
-            {/* Add Image Button (Side) */}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
-              <Button variant="ghost" size="icon" className="h-12 w-12 bg-card border border-border">
-                <Plus className="h-5 w-5" />
-              </Button>
-            </div>
-
             {/* Two-Panel Layout when template is selected */}
             {template ? (
               <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-stretch">
