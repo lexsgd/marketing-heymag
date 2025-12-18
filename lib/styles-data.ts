@@ -208,42 +208,42 @@ export const styleCategories: StyleCategory[] = [
         id: 'christmas',
         name: 'Christmas',
         description: 'Festive red & green, cozy winter vibes',
-        thumbnail: 'https://source.unsplash.com/7VOyZ0-iO0o/100x100',
+        thumbnail: 'https://images.unsplash.com/photo-1545048702-79362596cdc9?w=100&h=100&fit=crop',
         keywords: ['christmas', 'xmas', 'holiday', 'winter', 'festive']
       },
       {
         id: 'chinese-new-year',
         name: 'Chinese New Year',
         description: 'Prosperous red & gold styling',
-        thumbnail: 'https://source.unsplash.com/NYGbfunlfS8/100x100',
+        thumbnail: 'https://images.unsplash.com/photo-1758183056857-0ce684ebb634?w=100&h=100&fit=crop',
         keywords: ['cny', 'chinese', 'lunar', 'red', 'gold', 'prosperity']
       },
       {
         id: 'valentines',
         name: "Valentine's Day",
         description: 'Romantic pink & red hearts theme',
-        thumbnail: 'https://source.unsplash.com/6b2XZrcqqik/100x100',
+        thumbnail: 'https://images.unsplash.com/photo-1706515056156-845f73bc81f3?w=100&h=100&fit=crop',
         keywords: ['valentine', 'love', 'romantic', 'pink', 'hearts']
       },
       {
         id: 'hari-raya',
         name: 'Hari Raya',
         description: 'Elegant green & gold Eid celebration',
-        thumbnail: 'https://source.unsplash.com/nrDFC5u6q9Y/100x100',
+        thumbnail: 'https://images.unsplash.com/photo-1620795541878-62d9eaf5b56c?w=100&h=100&fit=crop',
         keywords: ['hari raya', 'eid', 'raya', 'green', 'gold', 'ketupat']
       },
       {
         id: 'deepavali',
         name: 'Deepavali',
         description: 'Vibrant colors and festive lights',
-        thumbnail: 'https://source.unsplash.com/8ENrIOM3pdQ/100x100',
+        thumbnail: 'https://images.unsplash.com/photo-1675507324104-19488fba67ff?w=100&h=100&fit=crop',
         keywords: ['deepavali', 'diwali', 'lights', 'colorful', 'indian']
       },
       {
         id: 'mid-autumn',
         name: 'Mid-Autumn Festival',
         description: 'Mooncake season elegant styling',
-        thumbnail: 'https://source.unsplash.com/_UAizk-SZRs/100x100',
+        thumbnail: 'https://images.unsplash.com/photo-1601727175630-f4500cfc1c0e?w=100&h=100&fit=crop',
         keywords: ['mid-autumn', 'mooncake', 'lantern', 'moon']
       },
     ]
