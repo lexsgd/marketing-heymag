@@ -22,6 +22,7 @@ import { CheckoutButton } from '@/components/billing/checkout-button'
 import { CreditsButton } from '@/components/billing/credits-button'
 import { PortalButton } from '@/components/billing/portal-button'
 import { SuccessToast } from '@/components/billing/success-toast'
+import { AutoTopUpSettings } from '@/components/billing/auto-topup-settings'
 
 const plans = [
   {
@@ -94,10 +95,10 @@ const plans = [
 ]
 
 const creditPacks = [
-  { id: 'pack_10', credits: 10, price: 5 },
-  { id: 'pack_25', credits: 25, price: 10 },
-  { id: 'pack_50', credits: 50, price: 18 },
-  { id: 'pack_100', credits: 100, price: 30 },
+  { id: 'pack_4', credits: 4, price: 5, pricePerCredit: 1.25 },
+  { id: 'pack_9', credits: 9, price: 10, pricePerCredit: 1.11 },
+  { id: 'pack_23', credits: 23, price: 25, pricePerCredit: 1.09 },
+  { id: 'pack_48', credits: 48, price: 50, pricePerCredit: 1.04 },
 ]
 
 export default async function BillingPage() {
@@ -363,6 +364,9 @@ export default async function BillingPage() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Auto Top-Up Settings */}
+            <AutoTopUpSettings />
 
             {/* Info Box */}
             <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">

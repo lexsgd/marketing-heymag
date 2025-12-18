@@ -3,6 +3,7 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 import { getMultiStylePrompt, parseStyleIds } from '@/lib/multi-style-prompt-builder'
+import { checkAndExecuteAutoTopUp } from '@/lib/auto-topup'
 // Sharp is dynamically imported to handle platform-specific binary issues on Vercel
 // import sharp from 'sharp'
 
@@ -713,6 +714,18 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
       if (transactionError) {
         console.error('[Enhance] Transaction log error:', transactionError)
       }
+
+      // Check and execute auto top-up if needed
+      const newBalance = credits.credits_remaining - 1
+      checkAndExecuteAutoTopUp(business.id).then(result => {
+        if (result.success && result.creditsAdded) {
+          console.log(`[Enhance] Auto top-up triggered: added ${result.creditsAdded} credits`)
+        } else if (!result.success && result.error) {
+          console.log(`[Enhance] Auto top-up check: ${result.error}`)
+        }
+      }).catch(err => {
+        console.error('[Enhance] Auto top-up error:', err)
+      })
 
       console.log('[Enhance] Enhancement complete! Returning success response', processingSkipped ? '(client-side processing needed)' : '')
       return NextResponse.json({

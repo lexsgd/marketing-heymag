@@ -34,27 +34,31 @@ export const STRIPE_PLANS = {
   },
 } as const
 
-// Credit pack pricing - one-time purchases
+// Credit pack pricing - one-time purchases (premium pricing above subscription rates)
 export const STRIPE_CREDIT_PACKS = {
-  pack_10: {
-    priceId: process.env.STRIPE_CREDITS_10_PRICE_ID || '',
-    credits: 10,
+  pack_4: {
+    priceId: process.env.STRIPE_CREDITS_4_PRICE_ID || '',
+    credits: 4,
     price: 5,
+    pricePerCredit: 1.25,
   },
-  pack_25: {
-    priceId: process.env.STRIPE_CREDITS_25_PRICE_ID || '',
-    credits: 25,
+  pack_9: {
+    priceId: process.env.STRIPE_CREDITS_9_PRICE_ID || '',
+    credits: 9,
     price: 10,
+    pricePerCredit: 1.11,
   },
-  pack_50: {
-    priceId: process.env.STRIPE_CREDITS_50_PRICE_ID || '',
-    credits: 50,
-    price: 18,
+  pack_23: {
+    priceId: process.env.STRIPE_CREDITS_23_PRICE_ID || '',
+    credits: 23,
+    price: 25,
+    pricePerCredit: 1.09,
   },
-  pack_100: {
-    priceId: process.env.STRIPE_CREDITS_100_PRICE_ID || '',
-    credits: 100,
-    price: 30,
+  pack_48: {
+    priceId: process.env.STRIPE_CREDITS_48_PRICE_ID || '',
+    credits: 48,
+    price: 50,
+    pricePerCredit: 1.04,
   },
 } as const
 
