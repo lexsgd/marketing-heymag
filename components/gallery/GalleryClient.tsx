@@ -18,6 +18,9 @@ import {
   Calendar,
   CheckSquare,
   Square,
+  Sparkles,
+  Clock,
+  AlertCircle,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -42,6 +45,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
 import { ImageActions } from './ImageActions'
@@ -178,23 +187,105 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
     })
   }
 
-  // Get status badge
+  // Premium icon-only status indicator (Apple Photos style)
+  const StatusIndicator = ({ status, showTooltip = true }: { status: string; showTooltip?: boolean }) => {
+    const iconClass = "h-3.5 w-3.5"
+
+    const getStatusConfig = () => {
+      switch (status) {
+        case 'completed':
+          return {
+            icon: <Sparkles className={cn(iconClass, "text-amber-300")} />,
+            bg: "bg-black/50 backdrop-blur-sm",
+            tooltip: "AI Enhanced"
+          }
+        case 'processing':
+          return {
+            icon: <Loader2 className={cn(iconClass, "text-white animate-spin")} />,
+            bg: "bg-black/50 backdrop-blur-sm",
+            tooltip: "Processing..."
+          }
+        case 'pending':
+          return {
+            icon: <Clock className={cn(iconClass, "text-white/70")} />,
+            bg: "bg-black/40 backdrop-blur-sm",
+            tooltip: "Pending"
+          }
+        case 'failed':
+          return {
+            icon: <AlertCircle className={cn(iconClass, "text-white")} />,
+            bg: "bg-red-500/80 backdrop-blur-sm",
+            tooltip: "Enhancement Failed"
+          }
+        default:
+          return null
+      }
+    }
+
+    const config = getStatusConfig()
+    if (!config) return null
+
+    const indicator = (
+      <div className={cn(
+        "p-1.5 rounded-full shadow-lg transition-transform hover:scale-110",
+        config.bg
+      )}>
+        {config.icon}
+      </div>
+    )
+
+    if (!showTooltip) return indicator
+
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {indicator}
+        </TooltipTrigger>
+        <TooltipContent side="right" className="text-xs">
+          {config.tooltip}
+        </TooltipContent>
+      </Tooltip>
+    )
+  }
+
+  // List view badge (more visible for table context)
   const StatusBadge = ({ status }: { status: string }) => {
     switch (status) {
       case 'completed':
-        return <Badge className="bg-green-500">Enhanced</Badge>
+        return (
+          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 gap-1">
+            <Sparkles className="h-3 w-3" />
+            Enhanced
+          </Badge>
+        )
       case 'processing':
-        return <Badge className="bg-orange-500">Processing</Badge>
+        return (
+          <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 gap-1">
+            <Loader2 className="h-3 w-3 animate-spin" />
+            Processing
+          </Badge>
+        )
       case 'pending':
-        return <Badge variant="outline">Pending</Badge>
+        return (
+          <Badge variant="outline" className="gap-1">
+            <Clock className="h-3 w-3" />
+            Pending
+          </Badge>
+        )
       case 'failed':
-        return <Badge variant="destructive">Failed</Badge>
+        return (
+          <Badge variant="destructive" className="gap-1">
+            <AlertCircle className="h-3 w-3" />
+            Failed
+          </Badge>
+        )
       default:
         return <Badge variant="outline">{status}</Badge>
     }
   }
 
   return (
+    <TooltipProvider>
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -326,22 +417,27 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
                 <Card
                   key={image.id}
                   className={cn(
-                    "group overflow-hidden transition-all",
+                    "group overflow-hidden transition-all duration-200 hover:shadow-lg",
                     isSelected && "ring-2 ring-orange-500"
                   )}
                 >
                   <div className="relative aspect-square bg-muted">
+                    {/* Status Indicator - Premium icon-only design */}
+                    <div className="absolute top-2 left-2 z-10">
+                      <StatusIndicator status={image.status} />
+                    </div>
+
                     {/* Selection Checkbox */}
                     <div
                       className={cn(
-                        "absolute top-2 right-2 z-10 transition-opacity",
+                        "absolute top-2 right-2 z-10 transition-all duration-200",
                         isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                       )}
                     >
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleSelection(image.id)}
-                        className="h-5 w-5 bg-white border-2 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                        className="h-5 w-5 bg-white/90 backdrop-blur-sm border-0 shadow-sm data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
                       />
                     </div>
 
@@ -350,7 +446,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
                         <img
                           src={image.thumbnail_url || image.enhanced_url || image.original_url}
                           alt={image.original_filename || 'Food photo'}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -358,16 +454,17 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
                         </div>
                       )}
 
-                      {/* Status Badge */}
-                      <div className="absolute top-2 left-2">
-                        <StatusBadge status={image.status} />
-                      </div>
-
-                      {/* Overlay on hover */}
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 pointer-events-none">
-                        <span className="px-4 py-2 bg-white text-black text-sm font-medium rounded-md shadow-sm">
-                          Edit
-                        </span>
+                      {/* Premium gradient overlay on hover */}
+                      <div className={cn(
+                        "absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent",
+                        "opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      )}>
+                        {/* Centered Edit Button - Premium pill style */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="px-5 py-2 bg-white/95 text-black text-sm font-medium rounded-full shadow-lg transform scale-95 group-hover:scale-100 transition-transform duration-200">
+                            Edit Photo
+                          </span>
+                        </div>
                       </div>
                     </Link>
                   </div>
@@ -544,5 +641,6 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+    </TooltipProvider>
   )
 }
