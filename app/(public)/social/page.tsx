@@ -368,19 +368,6 @@ function SocialPageContent() {
                 <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
                 Refresh
               </Button>
-              <Button
-                size="sm"
-                className="w-full justify-start bg-orange-500 hover:bg-orange-600"
-                onClick={handleConnectMeta}
-                disabled={connecting}
-              >
-                {connecting ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Plus className="h-4 w-4 mr-2" />
-                )}
-                Connect Account
-              </Button>
             </div>
           </div>
         </aside>
