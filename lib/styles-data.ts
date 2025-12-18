@@ -261,56 +261,56 @@ export const styleCategories: StyleCategory[] = [
         id: 'minimal-white',
         name: 'Minimal White',
         description: 'Clean white background, product focus',
-        thumbnail: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1490818387583-1baba5e638af?w=100&h=100&fit=crop',
         keywords: ['white', 'clean', 'minimal', 'simple']
       },
       {
         id: 'rustic-wood',
         name: 'Rustic Wood',
         description: 'Warm wooden table backdrop',
-        thumbnail: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1565661833906-f1da5fd3b6ab?w=100&h=100&fit=crop',
         keywords: ['wood', 'rustic', 'warm', 'natural']
       },
       {
         id: 'marble',
         name: 'Marble Surface',
         description: 'Elegant marble for premium feel',
-        thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1517427294546-5aa121f68e8a?w=100&h=100&fit=crop',
         keywords: ['marble', 'elegant', 'premium', 'luxury']
       },
       {
         id: 'dark-moody',
         name: 'Dark & Moody',
         description: 'Dramatic dark backgrounds with accent lighting',
-        thumbnail: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1556761223-4c4282c73f77?w=100&h=100&fit=crop',
         keywords: ['dark', 'moody', 'dramatic', 'contrast']
       },
       {
         id: 'bright-airy',
         name: 'Bright & Airy',
         description: 'Light, fresh, and welcoming',
-        thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1687029968603-904d3833b50f?w=100&h=100&fit=crop',
         keywords: ['bright', 'airy', 'light', 'fresh']
       },
       {
         id: 'tropical',
         name: 'Tropical Vibes',
         description: 'Colorful tropical leaves and fruits',
-        thumbnail: 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop',
         keywords: ['tropical', 'colorful', 'summer', 'fresh']
       },
       {
         id: 'concrete',
         name: 'Industrial Concrete',
         description: 'Modern concrete/cement look',
-        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1690983321815-6438f4850ca3?w=100&h=100&fit=crop',
         keywords: ['concrete', 'industrial', 'modern', 'urban']
       },
       {
         id: 'botanical',
         name: 'Botanical Garden',
         description: 'Lush green plants and leaves',
-        thumbnail: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1679151807240-6f4a038a9a0e?w=100&h=100&fit=crop',
         keywords: ['botanical', 'plants', 'green', 'nature']
       },
     ]
