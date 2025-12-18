@@ -208,42 +208,42 @@ export const styleCategories: StyleCategory[] = [
         id: 'christmas',
         name: 'Christmas',
         description: 'Festive red & green, cozy winter vibes',
-        thumbnail: 'https://images.unsplash.com/photo-1481391319762-47dff72954d9?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1512389142860-9c449e58a814?w=100&h=100&fit=crop',
         keywords: ['christmas', 'xmas', 'holiday', 'winter', 'festive']
       },
       {
         id: 'chinese-new-year',
         name: 'Chinese New Year',
         description: 'Prosperous red & gold styling',
-        thumbnail: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1517315003714-a071486bd9ea?w=100&h=100&fit=crop',
         keywords: ['cny', 'chinese', 'lunar', 'red', 'gold', 'prosperity']
       },
       {
         id: 'valentines',
         name: "Valentine's Day",
         description: 'Romantic pink & red hearts theme',
-        thumbnail: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1518609571773-39b7d303a87b?w=100&h=100&fit=crop',
         keywords: ['valentine', 'love', 'romantic', 'pink', 'hearts']
       },
       {
         id: 'hari-raya',
         name: 'Hari Raya',
         description: 'Elegant green & gold Eid celebration',
-        thumbnail: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1591825729269-caeb344f6df2?w=100&h=100&fit=crop',
         keywords: ['hari raya', 'eid', 'raya', 'green', 'gold', 'ketupat']
       },
       {
         id: 'deepavali',
         name: 'Deepavali',
         description: 'Vibrant colors and festive lights',
-        thumbnail: 'https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1605349774858-5f0c91e6a35f?w=100&h=100&fit=crop',
         keywords: ['deepavali', 'diwali', 'lights', 'colorful', 'indian']
       },
       {
         id: 'mid-autumn',
         name: 'Mid-Autumn Festival',
         description: 'Mooncake season elegant styling',
-        thumbnail: 'https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1601063476271-a159c71ab0b3?w=100&h=100&fit=crop',
         keywords: ['mid-autumn', 'mooncake', 'lantern', 'moon']
       },
     ]
