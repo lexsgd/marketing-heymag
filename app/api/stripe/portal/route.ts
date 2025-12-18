@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 
+// Stripe SDK requires Node.js runtime
+export const runtime = 'nodejs'
+
 export async function POST(request: NextRequest) {
   try {
     // Get authenticated user

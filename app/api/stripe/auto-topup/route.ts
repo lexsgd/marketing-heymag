@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { stripe, STRIPE_CREDIT_PACKS, CreditPackId } from '@/lib/stripe'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 
+// Stripe SDK requires Node.js runtime
+export const runtime = 'nodejs'
+
 // GET: Fetch current auto top-up settings
 export async function GET(request: NextRequest) {
   try {

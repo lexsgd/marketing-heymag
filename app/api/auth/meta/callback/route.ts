@@ -8,6 +8,8 @@ import {
 } from '@/lib/social/meta'
 import { facebookConfig, socialLogger as logger, getEnv } from '@/lib/security'
 
+// Use Node.js runtime for security module compatibility
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const FACEBOOK_APP_ID = facebookConfig.appId
