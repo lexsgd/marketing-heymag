@@ -28,12 +28,12 @@ export function MainNav({ user, credits, subscriptionStatus, loading }: MainNavP
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between relative">
         {/* Logo */}
         <Logo width={100} height={58} />
 
-        {/* Center Navigation Tabs */}
-        <nav className="hidden md:flex items-center">
+        {/* Center Navigation Tabs - Absolutely positioned to prevent shift */}
+        <nav className="hidden md:flex items-center absolute left-1/2 -translate-x-1/2">
           <div className="flex items-center bg-muted/50 rounded-full p-1">
             {navTabs.map((tab) => {
               const isActive = pathname === tab.href ||
