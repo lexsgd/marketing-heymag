@@ -86,16 +86,16 @@ const platformConfig = {
     features: ['Video posts', 'Photo mode'],
     status: 'coming_soon' as const,
     icon: () => (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+      <svg viewBox="0 0 24 24" className="h-10 w-10" fill="currentColor">
         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
       </svg>
     ),
     bgImage: 'https://images.unsplash.com/photo-1596558450268-9c27524ba856?w=400&h=400&fit=crop',
     colors: {
-      bg: 'bg-black/5 dark:bg-white/5',
-      iconBg: 'bg-black dark:bg-white',
-      icon: 'text-white dark:text-black',
-      border: 'border-black/10 dark:border-white/10',
+      bg: 'bg-gradient-to-br from-[#25F4EE]/10 via-black/10 to-[#FE2C55]/10',
+      iconBg: 'bg-gradient-to-br from-[#25F4EE] via-white to-[#FE2C55]',
+      icon: 'text-black',
+      border: 'border-pink-500/20',
     },
   },
   xiaohongshu: {
@@ -105,7 +105,7 @@ const platformConfig = {
     features: ['Notes', 'Photo posts'],
     status: 'coming_soon' as const,
     icon: () => (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+      <svg viewBox="0 0 24 24" className="h-10 w-10" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2v-6h2v6zm0-8H9V7h6v2z"/>
       </svg>
     ),
@@ -124,7 +124,7 @@ const platformConfig = {
     features: ['Moments', 'Official Account'],
     status: 'coming_soon' as const,
     icon: () => (
-      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+      <svg viewBox="0 0 24 24" className="h-10 w-10" fill="currentColor">
         <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.49.49 0 0 1 .176-.553C23.02 18.345 24 16.635 24 14.753c0-3.37-3.212-6.102-7.062-5.895zm-1.834 2.89c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.983.97-.983zm4.857 0c.536 0 .97.44.97.982a.976.976 0 0 1-.97.983.976.976 0 0 1-.969-.983c0-.542.433-.983.97-.983z"/>
       </svg>
     ),
