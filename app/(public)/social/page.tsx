@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 import {
   Instagram,
   Facebook,
@@ -11,20 +12,33 @@ import {
   Plus,
   ExternalLink,
   CheckCircle2,
-  AlertCircle,
   Settings,
   Calendar,
   Send,
   Clock,
   Image as ImageIcon,
-  LogIn
+  LogIn,
+  Loader2,
+  Unlink,
+  RefreshCw,
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MainNavAuth } from '@/components/main-nav-auth'
 import { createClient } from '@/lib/supabase/client'
+import { toast } from 'sonner'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 // Platform configurations
 const platforms = [
@@ -78,6 +92,9 @@ const platforms = [
 interface SocialAccount {
   id: string
   platform: string
+  platform_display_name?: string
+  platform_username?: string
+  is_connected: boolean
   account_info: Record<string, unknown>
 }
 
@@ -99,18 +116,42 @@ interface SocialPost {
 }
 
 export default function SocialPage() {
+  const searchParams = useSearchParams()
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
+  const [connecting, setConnecting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
+  const [disconnecting, setDisconnecting] = useState<string | null>(null)
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([])
   const [recentPosts, setRecentPosts] = useState<SocialPost[]>([])
   const [scheduledPosts, setScheduledPosts] = useState<SocialPost[]>([])
+  const [disconnectDialog, setDisconnectDialog] = useState<string | null>(null)
+
+  // Sync accounts from Ayrshare API
+  const syncAccounts = useCallback(async () => {
+    setSyncing(true)
+    try {
+      const response = await fetch('/api/social/accounts')
+      const data = await response.json()
+
+      if (data.success && data.accounts) {
+        setSocialAccounts(data.accounts.filter((a: SocialAccount) => a.is_connected))
+      }
+    } catch (error) {
+      console.error('Error syncing accounts:', error)
+    } finally {
+      setSyncing(false)
+    }
+  }, [])
 
   useEffect(() => {
     const fetchData = async () => {
       const supabase = createClient()
 
       try {
-        const { data: { user } } = await supabase.auth.getUser()
+        const {
+          data: { user },
+        } = await supabase.auth.getUser()
 
         if (user) {
           setUser({ email: user.email })
@@ -123,21 +164,18 @@ export default function SocialPage() {
             .single()
 
           if (business?.id) {
-            // Get connected social accounts
-            const { data: accounts } = await supabase
-              .from('social_accounts')
-              .select('*')
-              .eq('business_id', business.id)
-
-            setSocialAccounts(accounts || [])
+            // Sync connected social accounts from API
+            await syncAccounts()
 
             // Get recent posts
             const { data: posts } = await supabase
               .from('social_posts')
-              .select(`
+              .select(
+                `
                 *,
                 images (id, thumbnail_url, enhanced_url, original_url, original_filename)
-              `)
+              `
+              )
               .eq('business_id', business.id)
               .order('created_at', { ascending: false })
               .limit(10)
@@ -147,10 +185,12 @@ export default function SocialPage() {
             // Get scheduled posts
             const { data: scheduled } = await supabase
               .from('social_posts')
-              .select(`
+              .select(
+                `
                 *,
                 images (id, thumbnail_url, enhanced_url, original_url, original_filename)
-              `)
+              `
+              )
               .eq('business_id', business.id)
               .eq('status', 'scheduled')
               .order('scheduled_at', { ascending: true })
@@ -167,9 +207,90 @@ export default function SocialPage() {
     }
 
     fetchData()
-  }, [])
+  }, [syncAccounts])
 
-  const connectedPlatforms = socialAccounts.map(a => a.platform)
+  // Check for successful connection redirect
+  useEffect(() => {
+    if (searchParams.get('connected') === 'true' && user) {
+      toast.success('Social account connection completed!')
+      syncAccounts()
+      // Clean up URL
+      window.history.replaceState({}, '', '/social')
+    }
+  }, [searchParams, user, syncAccounts])
+
+  const connectedPlatforms = socialAccounts.map((a) => a.platform)
+
+  // Handle connecting social accounts
+  const handleConnect = async () => {
+    setConnecting(true)
+    try {
+      const response = await fetch('/api/social/connect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          redirectUrl: `${window.location.origin}/social?connected=true`,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start connection')
+      }
+
+      if (data.url) {
+        // Open Ayrshare's social linking page in a new window
+        const popup = window.open(data.url, 'Connect Social Accounts', 'width=600,height=700')
+
+        // Poll to check if popup is closed
+        const checkClosed = setInterval(() => {
+          if (popup?.closed) {
+            clearInterval(checkClosed)
+            // Sync accounts after popup closes
+            syncAccounts()
+          }
+        }, 1000)
+      }
+    } catch (error) {
+      console.error('Error connecting:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to connect social accounts')
+    } finally {
+      setConnecting(false)
+    }
+  }
+
+  // Handle disconnecting a social account
+  const handleDisconnect = async (platform: string) => {
+    setDisconnecting(platform)
+    try {
+      const response = await fetch('/api/social/disconnect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ platform }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to disconnect')
+      }
+
+      toast.success(`${platform} disconnected successfully`)
+      await syncAccounts()
+    } catch (error) {
+      console.error('Error disconnecting:', error)
+      toast.error(error instanceof Error ? error.message : 'Failed to disconnect account')
+    } finally {
+      setDisconnecting(null)
+      setDisconnectDialog(null)
+    }
+  }
+
+  // Get account details for a platform
+  const getAccountDetails = (platformId: string): SocialAccount | undefined => {
+    return socialAccounts.find((a) => a.platform === platformId)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -183,21 +304,29 @@ export default function SocialPage() {
               Connect accounts and post your food photos to social platforms
             </p>
           </div>
-          {user ? (
-            <Button className="bg-orange-500 hover:bg-orange-600" asChild>
-              <Link href="/gallery">
-                <ImageIcon className="mr-2 h-4 w-4" />
-                Select Photos to Post
-              </Link>
-            </Button>
-          ) : (
-            <Button className="bg-orange-500 hover:bg-orange-600" asChild>
-              <Link href="/auth/signup">
-                <LogIn className="mr-2 h-4 w-4" />
-                Sign Up to Get Started
-              </Link>
-            </Button>
-          )}
+          <div className="flex gap-2">
+            {user && (
+              <Button variant="outline" onClick={syncAccounts} disabled={syncing}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                Sync
+              </Button>
+            )}
+            {user ? (
+              <Button className="bg-orange-500 hover:bg-orange-600" asChild>
+                <Link href="/gallery">
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Select Photos to Post
+                </Link>
+              </Button>
+            ) : (
+              <Button className="bg-orange-500 hover:bg-orange-600" asChild>
+                <Link href="/auth/signup">
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Sign Up to Get Started
+                </Link>
+              </Button>
+            )}
+          </div>
         </div>
 
         <Tabs defaultValue="accounts" className="space-y-6">
@@ -233,7 +362,7 @@ export default function SocialPage() {
                   <CardContent>
                     <div className="text-2xl font-bold">{connectedPlatforms.length}</div>
                     <p className="text-xs text-muted-foreground">
-                      of {platforms.filter(p => p.apiStatus === 'available').length} available
+                      of {platforms.filter((p) => p.apiStatus === 'available').length} available
                     </p>
                   </CardContent>
                 </Card>
@@ -244,9 +373,7 @@ export default function SocialPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{recentPosts.length}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Across all platforms
-                    </p>
+                    <p className="text-xs text-muted-foreground">Across all platforms</p>
                   </CardContent>
                 </Card>
                 <Card>
@@ -256,9 +383,7 @@ export default function SocialPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold">{scheduledPosts.length}</div>
-                    <p className="text-xs text-muted-foreground">
-                      Posts queued
-                    </p>
+                    <p className="text-xs text-muted-foreground">Posts queued</p>
                   </CardContent>
                 </Card>
               </div>
@@ -268,6 +393,7 @@ export default function SocialPage() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {platforms.map((platform) => {
                 const isConnected = user && connectedPlatforms.includes(platform.id)
+                const accountDetails = getAccountDetails(platform.id)
 
                 return (
                   <Card key={platform.id} className="overflow-hidden">
@@ -280,15 +406,24 @@ export default function SocialPage() {
                           <div>
                             <h3 className="font-semibold text-white">{platform.name}</h3>
                             {isConnected ? (
-                              <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
+                              <Badge
+                                variant="secondary"
+                                className="bg-white/20 text-white hover:bg-white/30"
+                              >
                                 Connected
                               </Badge>
                             ) : platform.apiStatus === 'coming_soon' ? (
-                              <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
+                              <Badge
+                                variant="secondary"
+                                className="bg-white/20 text-white hover:bg-white/30"
+                              >
                                 Coming Soon
                               </Badge>
                             ) : (
-                              <Badge variant="secondary" className="bg-white/20 text-white hover:bg-white/30">
+                              <Badge
+                                variant="secondary"
+                                className="bg-white/20 text-white hover:bg-white/30"
+                              >
                                 {user ? 'Not Connected' : 'Available'}
                               </Badge>
                             )}
@@ -297,9 +432,23 @@ export default function SocialPage() {
                       </div>
                     </div>
                     <CardContent className="p-4 space-y-4">
-                      <p className="text-sm text-muted-foreground">
-                        {platform.description}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{platform.description}</p>
+
+                      {/* Show connected account info */}
+                      {isConnected && accountDetails && (
+                        <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
+                          <p className="text-sm font-medium text-green-700 dark:text-green-400">
+                            {accountDetails.platform_display_name ||
+                              accountDetails.platform_username ||
+                              'Connected'}
+                          </p>
+                          {accountDetails.platform_username && (
+                            <p className="text-xs text-green-600 dark:text-green-500">
+                              @{accountDetails.platform_username}
+                            </p>
+                          )}
+                        </div>
+                      )}
 
                       <div>
                         <p className="text-xs font-medium mb-2">Features</p>
@@ -314,19 +463,43 @@ export default function SocialPage() {
 
                       {isConnected ? (
                         <div className="flex gap-2">
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <Settings className="mr-2 h-4 w-4" />
-                            Manage
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => setDisconnectDialog(platform.id)}
+                            disabled={disconnecting === platform.id}
+                          >
+                            {disconnecting === platform.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Unlink className="mr-2 h-4 w-4" />
+                            )}
+                            Disconnect
                           </Button>
-                          <Button variant="outline" size="sm" className="flex-1">
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            View Profile
+                          <Button variant="outline" size="sm" className="flex-1" asChild>
+                            <a
+                              href={`https://${platform.id}.com`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              View Profile
+                            </a>
                           </Button>
                         </div>
                       ) : platform.apiStatus === 'available' ? (
                         user ? (
-                          <Button className="w-full bg-orange-500 hover:bg-orange-600">
-                            <Plus className="mr-2 h-4 w-4" />
+                          <Button
+                            className="w-full bg-orange-500 hover:bg-orange-600"
+                            onClick={handleConnect}
+                            disabled={connecting}
+                          >
+                            {connecting ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Plus className="mr-2 h-4 w-4" />
+                            )}
                             Connect {platform.name}
                           </Button>
                         ) : (
@@ -349,21 +522,6 @@ export default function SocialPage() {
               })}
             </div>
 
-            {/* API Integration Notice */}
-            <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
-              <CardContent className="flex items-start gap-4 p-4">
-                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center flex-shrink-0">
-                  <AlertCircle className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <h3 className="font-medium">Social Media Integration</h3>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    We use official APIs (via Ayrshare) to connect to Facebook, Instagram, and TikTok. For Xiaohongshu and WeChat, we're working on partnerships with local API providers. Your credentials are securely encrypted and never shared.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Sign up CTA for anonymous users */}
             {!user && !loading && (
               <Card className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-200 dark:border-orange-900/50">
@@ -380,9 +538,7 @@ export default function SocialPage() {
                     </div>
                   </div>
                   <Button className="bg-orange-500 hover:bg-orange-600" asChild>
-                    <Link href="/auth/signup">
-                      Get Started Free
-                    </Link>
+                    <Link href="/auth/signup">Get Started Free</Link>
                   </Button>
                 </CardContent>
               </Card>
@@ -401,7 +557,11 @@ export default function SocialPage() {
                         <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                           {post.images ? (
                             <img
-                              src={post.images.thumbnail_url || post.images.enhanced_url || post.images.original_url}
+                              src={
+                                post.images.thumbnail_url ||
+                                post.images.enhanced_url ||
+                                post.images.original_url
+                              }
                               alt="Post image"
                               className="w-full h-full object-cover"
                             />
@@ -419,7 +579,7 @@ export default function SocialPage() {
                           </p>
                           <div className="flex items-center gap-2 mt-1">
                             {post.platforms?.map((platformId: string) => {
-                              const p = platforms.find(p => p.id === platformId)
+                              const p = platforms.find((p) => p.id === platformId)
                               if (!p) return null
                               return (
                                 <Badge key={platformId} variant="outline" className="text-xs">
@@ -436,17 +596,14 @@ export default function SocialPage() {
                           {post.status === 'posted' && (
                             <Badge className="bg-green-500">Posted</Badge>
                           )}
-                          {post.status === 'draft' && (
-                            <Badge variant="outline">Draft</Badge>
-                          )}
+                          {post.status === 'draft' && <Badge variant="outline">Draft</Badge>}
                           {post.status === 'failed' && (
                             <Badge variant="destructive">Failed</Badge>
                           )}
                           <p className="text-xs text-muted-foreground mt-1">
                             {post.posted_at
                               ? new Date(post.posted_at).toLocaleDateString()
-                              : new Date(post.created_at).toLocaleDateString()
-                            }
+                              : new Date(post.created_at).toLocaleDateString()}
                           </p>
                         </div>
                       </CardContent>
@@ -487,7 +644,11 @@ export default function SocialPage() {
                         <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
                           {post.images ? (
                             <img
-                              src={post.images.thumbnail_url || post.images.enhanced_url || post.images.original_url}
+                              src={
+                                post.images.thumbnail_url ||
+                                post.images.enhanced_url ||
+                                post.images.original_url
+                              }
                               alt="Post image"
                               className="w-full h-full object-cover"
                             />
@@ -506,7 +667,10 @@ export default function SocialPage() {
                           <div className="flex items-center gap-2 mt-1">
                             <Clock className="h-3 w-3 text-orange-500" />
                             <span className="text-xs text-muted-foreground">
-                              Scheduled for {post.scheduled_at ? new Date(post.scheduled_at).toLocaleString() : 'N/A'}
+                              Scheduled for{' '}
+                              {post.scheduled_at
+                                ? new Date(post.scheduled_at).toLocaleString()
+                                : 'N/A'}
                             </span>
                           </div>
                         </div>
@@ -547,6 +711,31 @@ export default function SocialPage() {
           )}
         </Tabs>
       </div>
+
+      {/* Disconnect Confirmation Dialog */}
+      <AlertDialog
+        open={!!disconnectDialog}
+        onOpenChange={(open) => !open && setDisconnectDialog(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Disconnect {disconnectDialog}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will disconnect your {disconnectDialog} account from Zazzles. You won&apos;t be
+              able to post to this platform until you reconnect.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => disconnectDialog && handleDisconnect(disconnectDialog)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
