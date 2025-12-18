@@ -309,9 +309,9 @@ export const styleCategories: StyleCategory[] = [
       {
         id: 'botanical',
         name: 'Botanical Garden',
-        description: 'Lush green plants and leaves',
-        thumbnail: 'https://images.unsplash.com/photo-1679151807240-6f4a038a9a0e?w=100&h=100&fit=crop',
-        keywords: ['botanical', 'plants', 'green', 'nature']
+        description: 'Food styled with plants and flowers',
+        thumbnail: 'https://images.unsplash.com/photo-1624709953504-b9b4400a3599?w=100&h=100&fit=crop',
+        keywords: ['botanical', 'plants', 'flowers', 'nature']
       },
     ]
   },
