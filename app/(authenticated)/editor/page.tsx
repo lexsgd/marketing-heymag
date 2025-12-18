@@ -14,8 +14,6 @@ import {
   ZoomOut,
   Maximize2,
   Plus,
-  ChevronLeft,
-  ChevronRight,
   ArrowRight,
   Palette,
 } from 'lucide-react'
@@ -27,50 +25,13 @@ import { MainNav } from '@/components/main-nav'
 import { getTemplateById, type TemplateImage } from '@/lib/template-images'
 import { AspectRatioPicker } from '@/components/editor/aspect-ratio-picker'
 import { VariationsPicker } from '@/components/editor/variations-picker'
-
-// Style categories with scrollable tabs
-const styleCategories = [
-  { id: 'delivery', name: 'Delivery Apps', emoji: '🚀' },
-  { id: 'restaurant', name: 'Restaurant', emoji: '🍽️' },
-  { id: 'fine-dining', name: 'Fine Dining', emoji: '✨' },
-  { id: 'cafe', name: 'Cafe', emoji: '☕' },
-  { id: 'social', name: 'Social Media', emoji: '📱' },
-  { id: 'christmas', name: 'Christmas', emoji: '🎄' },
-  { id: 'chinese-new-year', name: 'Chinese New Year', emoji: '🧧' },
-]
-
-// Style presets with thumbnails
-const stylePresets = {
-  delivery: [
-    { id: 'simple-overhead', name: 'Simple Overhead', description: 'Clean overhead shots with minimal styling for menus.', thumbnail: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&h=100&fit=crop' },
-    { id: 'delivery-hero', name: 'Delivery Hero', description: 'App-ready photography with vibrant colors for small screens.', thumbnail: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=100&h=100&fit=crop' },
-    { id: 'pure-shot', name: 'Pure Shot', description: 'Clean honest food photography optimized for delivery apps.', thumbnail: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop' },
-  ],
-  restaurant: [
-    { id: 'warm-ambient', name: 'Warm Ambient', description: 'Cozy restaurant atmosphere with warm lighting.', thumbnail: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=100&h=100&fit=crop' },
-    { id: 'classic-plating', name: 'Classic Plating', description: 'Traditional restaurant presentation style.', thumbnail: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop' },
-  ],
-  'fine-dining': [
-    { id: 'michelin-style', name: 'Michelin Style', description: 'Elegant fine dining presentation.', thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=100&h=100&fit=crop' },
-    { id: 'dark-moody', name: 'Dark Moody', description: 'Dramatic dark backgrounds with accent lighting.', thumbnail: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=100&h=100&fit=crop' },
-  ],
-  cafe: [
-    { id: 'latte-art', name: 'Latte Art', description: 'Perfect for coffee and cafe drinks.', thumbnail: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop' },
-    { id: 'brunch-vibes', name: 'Brunch Vibes', description: 'Bright, airy cafe aesthetic.', thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop' },
-  ],
-  social: [
-    { id: 'instagram-feed', name: 'Instagram Feed', description: 'Optimized for square Instagram posts.', thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop' },
-    { id: 'tiktok-style', name: 'TikTok Style', description: 'Eye-catching vertical format.', thumbnail: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=100&h=100&fit=crop' },
-  ],
-  christmas: [
-    { id: 'festive-warm', name: 'Festive Warm', description: 'Cozy Christmas atmosphere with warm tones.', thumbnail: 'https://images.unsplash.com/photo-1481391319762-47dff72954d9?w=100&h=100&fit=crop' },
-    { id: 'winter-elegance', name: 'Winter Elegance', description: 'Elegant holiday presentation.', thumbnail: 'https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=100&h=100&fit=crop' },
-  ],
-  'chinese-new-year': [
-    { id: 'prosperity-red', name: 'Prosperity Red', description: 'Traditional red and gold styling.', thumbnail: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=100&h=100&fit=crop' },
-    { id: 'reunion-feast', name: 'Reunion Feast', description: 'Festive family gathering style.', thumbnail: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=100&h=100&fit=crop' },
-  ],
-}
+import { StylePicker } from '@/components/editor/style-picker'
+import {
+  type SelectedStyles,
+  emptySelection,
+  selectionToStyleIds,
+  getSelectedCount,
+} from '@/lib/styles-data'
 
 function EditorContent() {
   const searchParams = useSearchParams()
@@ -82,8 +43,7 @@ function EditorContent() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [selectedCategory, setSelectedCategory] = useState('delivery')
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null)
+  const [selectedStyles, setSelectedStyles] = useState<SelectedStyles>(emptySelection)
   const [enhancing, setEnhancing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('1:1')
@@ -97,16 +57,8 @@ function EditorContent() {
       const loadedTemplate = getTemplateById(templateId)
       if (loadedTemplate) {
         setTemplate(loadedTemplate)
-        // Auto-select the category based on template
-        const category = loadedTemplate.category
-        if (styleCategories.find(c => c.id === category)) {
-          setSelectedCategory(category)
-        }
-        // Auto-select a matching style preset if available
-        const presets = stylePresets[category as keyof typeof stylePresets]
-        if (presets && presets.length > 0) {
-          setSelectedStyle(presets[0].id)
-        }
+        // When template is loaded, we don't need to pre-select styles
+        // The template itself defines the style
       }
     }
   }, [templateId])
@@ -158,8 +110,9 @@ function EditorContent() {
   const handleUploadAndEnhance = async () => {
     if (!selectedFile) return
     // When template is selected, use template-based style
-    const styleToUse = template ? `template-${template.id}` : selectedStyle
-    if (!styleToUse) return
+    // Otherwise use the selected styles from the picker
+    const styleIds = template ? [`template-${template.id}`] : selectionToStyleIds(selectedStyles)
+    if (styleIds.length === 0 && !template) return
 
     setUploading(true)
     setUploadProgress(0)
@@ -169,7 +122,8 @@ function EditorContent() {
 
       const formData = new FormData()
       formData.append('file', selectedFile)
-      formData.append('stylePreset', styleToUse)
+      formData.append('stylePreset', styleIds.join(','))
+      formData.append('styleIds', JSON.stringify(styleIds))
       if (template) {
         formData.append('templateId', template.id)
         formData.append('templateUrl', template.webUrl)
@@ -214,7 +168,8 @@ function EditorContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageId: imageRecord.id,
-            stylePreset: styleToUse,
+            stylePreset: styleIds.join(','),
+            styleIds: styleIds,
             templateId: template?.id,
             templateUrl: template?.webUrl,
           }),
@@ -270,10 +225,10 @@ function EditorContent() {
     router.replace('/editor', { scroll: false })
   }
 
-  const currentPresets = stylePresets[selectedCategory as keyof typeof stylePresets] || []
-
   // Determine if the transform button should be enabled
-  const canTransform = selectedFile && (template || selectedStyle)
+  // Need either a template OR at least one style selected (venue is required)
+  const hasStylesSelected = getSelectedCount(selectedStyles) > 0
+  const canTransform = selectedFile && (template || hasStylesSelected)
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -281,79 +236,12 @@ function EditorContent() {
       <MainNav />
 
       <div className="flex-1 flex pt-16">
-        {/* Left Sidebar - Styles */}
+        {/* Left Sidebar - Style Picker */}
         <aside className="w-80 border-r border-border flex flex-col bg-card">
-          {/* Style Tabs */}
-          <div className="p-4 border-b border-border">
-            <div className="flex gap-4 mb-4">
-              <button className="text-sm font-medium text-foreground">Styles</button>
-              <Link href="/explore" className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1">
-                Reference
-                <Badge className="ml-1 text-[10px] bg-pink-500 text-white px-1.5 py-0">BETA</Badge>
-              </Link>
-              <button className="text-sm text-muted-foreground hover:text-foreground">Composition</button>
-            </div>
-
-            {/* Category Tabs */}
-            <div className="relative">
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                <button className="p-1 hover:bg-muted rounded">
-                  <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-                </button>
-                {styleCategories.map((cat) => (
-                  <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
-                    className={cn(
-                      'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors',
-                      selectedCategory === cat.id
-                        ? 'bg-foreground text-background'
-                        : 'bg-muted text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    <span>{cat.emoji}</span>
-                    <span>{cat.name}</span>
-                  </button>
-                ))}
-                <button className="p-1 hover:bg-muted rounded">
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Styles Section */}
-          <div className="flex-1 overflow-y-auto p-4">
-            <h3 className="text-sm font-medium mb-4">Styles</h3>
-            <div className="space-y-3">
-              {currentPresets.map((preset) => (
-                <button
-                  key={preset.id}
-                  onClick={() => setSelectedStyle(preset.id)}
-                  className={cn(
-                    'w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left',
-                    selectedStyle === preset.id
-                      ? 'border-orange-500 bg-orange-500/10'
-                      : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50'
-                  )}
-                >
-                  <div className="w-14 h-14 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-                    <img
-                      src={preset.thumbnail}
-                      alt={preset.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm">{preset.name}</p>
-                    <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                      {preset.description}
-                    </p>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <StylePicker
+            selection={selectedStyles}
+            onSelectionChange={setSelectedStyles}
+          />
         </aside>
 
         {/* Main Canvas Area */}

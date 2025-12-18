@@ -1,0 +1,458 @@
+// Style system with layered categories and conflict prevention
+// Each category has its own selection rules (single vs multiple)
+
+export interface Style {
+  id: string
+  name: string
+  description: string
+  thumbnail: string
+  keywords: string[] // for search
+}
+
+export interface StyleCategory {
+  id: string
+  name: string
+  icon: string
+  emoji: string
+  selectionType: 'single' | 'multiple'
+  required: boolean
+  description: string
+  styles: Style[]
+}
+
+// All style categories with their selection rules
+export const styleCategories: StyleCategory[] = [
+  {
+    id: 'venue',
+    name: 'Venue Type',
+    icon: 'Store',
+    emoji: '🏪',
+    selectionType: 'single',
+    required: true,
+    description: 'What type of food establishment?',
+    styles: [
+      {
+        id: 'fine-dining',
+        name: 'Fine Dining',
+        description: 'Elegant, sophisticated presentation with dark backgrounds',
+        thumbnail: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=100&h=100&fit=crop',
+        keywords: ['elegant', 'upscale', 'michelin', 'gourmet', 'luxury']
+      },
+      {
+        id: 'casual-dining',
+        name: 'Casual Dining',
+        description: 'Warm, inviting atmosphere for everyday restaurants',
+        thumbnail: 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=100&h=100&fit=crop',
+        keywords: ['family', 'comfortable', 'relaxed', 'friendly']
+      },
+      {
+        id: 'fast-food',
+        name: 'Fast Food',
+        description: 'Bold, appetizing, high-energy visuals',
+        thumbnail: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=100&h=100&fit=crop',
+        keywords: ['quick', 'bold', 'vibrant', 'burger', 'fries']
+      },
+      {
+        id: 'cafe',
+        name: 'Cafe & Bakery',
+        description: 'Cozy, artisan aesthetic with warm tones',
+        thumbnail: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=100&h=100&fit=crop',
+        keywords: ['coffee', 'pastry', 'cozy', 'artisan', 'brunch']
+      },
+      {
+        id: 'street-food',
+        name: 'Street Food',
+        description: 'Authentic, vibrant hawker-style presentation',
+        thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=100&h=100&fit=crop',
+        keywords: ['hawker', 'authentic', 'local', 'vibrant']
+      },
+      {
+        id: 'hawker',
+        name: 'Hawker Centre',
+        description: 'Singapore/SEA hawker stall vibes',
+        thumbnail: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=100&h=100&fit=crop',
+        keywords: ['singapore', 'malaysia', 'local', 'kopitiam']
+      },
+      {
+        id: 'dessert',
+        name: 'Dessert & Sweets',
+        description: 'Sweet, colorful, Instagram-worthy treats',
+        thumbnail: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=100&h=100&fit=crop',
+        keywords: ['sweet', 'cake', 'ice cream', 'colorful', 'pretty']
+      },
+    ]
+  },
+  {
+    id: 'delivery',
+    name: 'Delivery Platform',
+    icon: 'Truck',
+    emoji: '🚀',
+    selectionType: 'single',
+    required: false,
+    description: 'Optimize for a delivery app?',
+    styles: [
+      {
+        id: 'grab',
+        name: 'GrabFood',
+        description: 'Optimized for GrabFood app listings',
+        thumbnail: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&h=100&fit=crop',
+        keywords: ['grab', 'delivery', 'app', 'green']
+      },
+      {
+        id: 'foodpanda',
+        name: 'Foodpanda',
+        description: 'Perfect pink-themed Foodpanda menus',
+        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        keywords: ['foodpanda', 'delivery', 'pink', 'app']
+      },
+      {
+        id: 'deliveroo',
+        name: 'Deliveroo',
+        description: 'Deliveroo teal-optimized style',
+        thumbnail: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop',
+        keywords: ['deliveroo', 'delivery', 'teal', 'premium']
+      },
+      {
+        id: 'gojek',
+        name: 'GoFood',
+        description: 'Gojek GoFood green style',
+        thumbnail: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop',
+        keywords: ['gojek', 'gofood', 'indonesia', 'green']
+      },
+      {
+        id: 'shopee',
+        name: 'ShopeeFood',
+        description: 'ShopeeFood marketplace orange style',
+        thumbnail: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=100&h=100&fit=crop',
+        keywords: ['shopee', 'shopeefood', 'orange', 'marketplace']
+      },
+      {
+        id: 'generic-delivery',
+        name: 'Universal Delivery',
+        description: 'Works for any delivery platform',
+        thumbnail: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=100&h=100&fit=crop',
+        keywords: ['delivery', 'universal', 'app', 'general']
+      },
+    ]
+  },
+  {
+    id: 'social',
+    name: 'Social Platform',
+    icon: 'Share2',
+    emoji: '📱',
+    selectionType: 'multiple',
+    required: false,
+    description: 'Where will you post? (pick multiple)',
+    styles: [
+      {
+        id: 'instagram-feed',
+        name: 'Instagram Feed',
+        description: 'Square format, vibrant colors for the grid',
+        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        keywords: ['instagram', 'ig', 'square', 'feed', 'grid']
+      },
+      {
+        id: 'instagram-stories',
+        name: 'Instagram Stories',
+        description: 'Vertical 9:16, trendy and eye-catching',
+        thumbnail: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop',
+        keywords: ['instagram', 'stories', 'vertical', 'trendy']
+      },
+      {
+        id: 'tiktok',
+        name: 'TikTok',
+        description: 'Scroll-stopping vertical visuals',
+        thumbnail: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=100&h=100&fit=crop',
+        keywords: ['tiktok', 'viral', 'vertical', 'trending']
+      },
+      {
+        id: 'facebook',
+        name: 'Facebook',
+        description: 'Optimized for Facebook feed engagement',
+        thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop',
+        keywords: ['facebook', 'fb', 'social', 'share']
+      },
+      {
+        id: 'xiaohongshu',
+        name: 'Xiaohongshu',
+        description: 'Trendy lifestyle aesthetic for Little Red Book',
+        thumbnail: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=100&h=100&fit=crop',
+        keywords: ['xiaohongshu', 'xhs', 'chinese', 'lifestyle', 'red']
+      },
+      {
+        id: 'wechat',
+        name: 'WeChat Moments',
+        description: 'Clean, shareable format for WeChat',
+        thumbnail: 'https://images.unsplash.com/photo-1482049016gy-2d1ec7ab7445?w=100&h=100&fit=crop',
+        keywords: ['wechat', 'moments', 'chinese', 'share']
+      },
+      {
+        id: 'pinterest',
+        name: 'Pinterest',
+        description: 'Tall pins that get saved and shared',
+        thumbnail: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&h=100&fit=crop',
+        keywords: ['pinterest', 'pin', 'tall', 'save']
+      },
+    ]
+  },
+  {
+    id: 'seasonal',
+    name: 'Seasonal & Events',
+    icon: 'Calendar',
+    emoji: '🎉',
+    selectionType: 'single',
+    required: false,
+    description: 'Add a seasonal theme?',
+    styles: [
+      {
+        id: 'christmas',
+        name: 'Christmas',
+        description: 'Festive red & green, cozy winter vibes',
+        thumbnail: 'https://images.unsplash.com/photo-1481391319762-47dff72954d9?w=100&h=100&fit=crop',
+        keywords: ['christmas', 'xmas', 'holiday', 'winter', 'festive']
+      },
+      {
+        id: 'chinese-new-year',
+        name: 'Chinese New Year',
+        description: 'Prosperous red & gold styling',
+        thumbnail: 'https://images.unsplash.com/photo-1563245372-f21724e3856d?w=100&h=100&fit=crop',
+        keywords: ['cny', 'chinese', 'lunar', 'red', 'gold', 'prosperity']
+      },
+      {
+        id: 'valentines',
+        name: "Valentine's Day",
+        description: 'Romantic pink & red hearts theme',
+        thumbnail: 'https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=100&h=100&fit=crop',
+        keywords: ['valentine', 'love', 'romantic', 'pink', 'hearts']
+      },
+      {
+        id: 'hari-raya',
+        name: 'Hari Raya',
+        description: 'Elegant green & gold Eid celebration',
+        thumbnail: 'https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?w=100&h=100&fit=crop',
+        keywords: ['hari raya', 'eid', 'raya', 'green', 'gold', 'ketupat']
+      },
+      {
+        id: 'deepavali',
+        name: 'Deepavali',
+        description: 'Vibrant colors and festive lights',
+        thumbnail: 'https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=100&h=100&fit=crop',
+        keywords: ['deepavali', 'diwali', 'lights', 'colorful', 'indian']
+      },
+      {
+        id: 'mid-autumn',
+        name: 'Mid-Autumn Festival',
+        description: 'Mooncake season elegant styling',
+        thumbnail: 'https://images.unsplash.com/photo-1513128034602-7814ccaddd4e?w=100&h=100&fit=crop',
+        keywords: ['mid-autumn', 'mooncake', 'lantern', 'moon']
+      },
+    ]
+  },
+  {
+    id: 'background',
+    name: 'Background Style',
+    icon: 'Image',
+    emoji: '🖼️',
+    selectionType: 'single',
+    required: false,
+    description: 'What surface/backdrop?',
+    styles: [
+      {
+        id: 'minimal-white',
+        name: 'Minimal White',
+        description: 'Clean white background, product focus',
+        thumbnail: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop',
+        keywords: ['white', 'clean', 'minimal', 'simple']
+      },
+      {
+        id: 'rustic-wood',
+        name: 'Rustic Wood',
+        description: 'Warm wooden table backdrop',
+        thumbnail: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=100&h=100&fit=crop',
+        keywords: ['wood', 'rustic', 'warm', 'natural']
+      },
+      {
+        id: 'marble',
+        name: 'Marble Surface',
+        description: 'Elegant marble for premium feel',
+        thumbnail: 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=100&h=100&fit=crop',
+        keywords: ['marble', 'elegant', 'premium', 'luxury']
+      },
+      {
+        id: 'dark-moody',
+        name: 'Dark & Moody',
+        description: 'Dramatic dark backgrounds with accent lighting',
+        thumbnail: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=100&h=100&fit=crop',
+        keywords: ['dark', 'moody', 'dramatic', 'contrast']
+      },
+      {
+        id: 'bright-airy',
+        name: 'Bright & Airy',
+        description: 'Light, fresh, and welcoming',
+        thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop',
+        keywords: ['bright', 'airy', 'light', 'fresh']
+      },
+      {
+        id: 'tropical',
+        name: 'Tropical Vibes',
+        description: 'Colorful tropical leaves and fruits',
+        thumbnail: 'https://images.unsplash.com/photo-1490474418585-ba9bad8fd0ea?w=100&h=100&fit=crop',
+        keywords: ['tropical', 'colorful', 'summer', 'fresh']
+      },
+      {
+        id: 'concrete',
+        name: 'Industrial Concrete',
+        description: 'Modern concrete/cement look',
+        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        keywords: ['concrete', 'industrial', 'modern', 'urban']
+      },
+      {
+        id: 'botanical',
+        name: 'Botanical Garden',
+        description: 'Lush green plants and leaves',
+        thumbnail: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop',
+        keywords: ['botanical', 'plants', 'green', 'nature']
+      },
+    ]
+  },
+  {
+    id: 'technique',
+    name: 'Photography Style',
+    icon: 'Camera',
+    emoji: '📷',
+    selectionType: 'multiple',
+    required: false,
+    description: 'Photography techniques (pick multiple)',
+    styles: [
+      {
+        id: 'flat-lay',
+        name: 'Flat Lay',
+        description: 'Top-down overhead perspective',
+        thumbnail: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&h=100&fit=crop',
+        keywords: ['flat lay', 'overhead', 'top-down', 'birds eye']
+      },
+      {
+        id: 'natural-light',
+        name: 'Natural Light',
+        description: 'Soft window-lit natural feel',
+        thumbnail: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=100&h=100&fit=crop',
+        keywords: ['natural', 'window', 'soft', 'daylight']
+      },
+      {
+        id: 'neon-night',
+        name: 'Neon Night',
+        description: 'Vibrant neon night market style',
+        thumbnail: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=100&h=100&fit=crop',
+        keywords: ['neon', 'night', 'vibrant', 'glow']
+      },
+      {
+        id: 'vintage',
+        name: 'Vintage Film',
+        description: 'Nostalgic warm film tones',
+        thumbnail: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop',
+        keywords: ['vintage', 'film', 'retro', 'nostalgic']
+      },
+      {
+        id: 'hdr',
+        name: 'HDR Enhanced',
+        description: 'High dynamic range for maximum pop',
+        thumbnail: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop',
+        keywords: ['hdr', 'enhanced', 'vivid', 'pop']
+      },
+      {
+        id: 'bokeh',
+        name: 'Bokeh Background',
+        description: 'Beautiful blurred background effect',
+        thumbnail: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=100&h=100&fit=crop',
+        keywords: ['bokeh', 'blur', 'depth', 'focus']
+      },
+      {
+        id: 'macro',
+        name: 'Macro Close-up',
+        description: 'Extreme close-up detail shots',
+        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        keywords: ['macro', 'closeup', 'detail', 'texture']
+      },
+    ]
+  },
+]
+
+// Helper to get total style count
+export function getTotalStyleCount(): number {
+  return styleCategories.reduce((acc, cat) => acc + cat.styles.length, 0)
+}
+
+// Helper to search styles across all categories
+export function searchStyles(query: string): { category: StyleCategory; style: Style }[] {
+  const lowerQuery = query.toLowerCase()
+  const results: { category: StyleCategory; style: Style }[] = []
+
+  for (const category of styleCategories) {
+    for (const style of category.styles) {
+      const matchesName = style.name.toLowerCase().includes(lowerQuery)
+      const matchesDescription = style.description.toLowerCase().includes(lowerQuery)
+      const matchesKeywords = style.keywords.some(k => k.toLowerCase().includes(lowerQuery))
+
+      if (matchesName || matchesDescription || matchesKeywords) {
+        results.push({ category, style })
+      }
+    }
+  }
+
+  return results
+}
+
+// Type for selected styles state
+export interface SelectedStyles {
+  venue?: string           // single
+  delivery?: string        // single
+  social: string[]         // multiple
+  seasonal?: string        // single
+  background?: string      // single
+  technique: string[]      // multiple
+}
+
+// Default empty selection
+export const emptySelection: SelectedStyles = {
+  venue: undefined,
+  delivery: undefined,
+  social: [],
+  seasonal: undefined,
+  background: undefined,
+  technique: [],
+}
+
+// Get selected count
+export function getSelectedCount(selection: SelectedStyles): number {
+  let count = 0
+  if (selection.venue) count++
+  if (selection.delivery) count++
+  if (selection.seasonal) count++
+  if (selection.background) count++
+  count += selection.social.length
+  count += selection.technique.length
+  return count
+}
+
+// Convert selection to array of style IDs for API
+export function selectionToStyleIds(selection: SelectedStyles): string[] {
+  const ids: string[] = []
+  if (selection.venue) ids.push(selection.venue)
+  if (selection.delivery) ids.push(selection.delivery)
+  if (selection.seasonal) ids.push(selection.seasonal)
+  if (selection.background) ids.push(selection.background)
+  ids.push(...selection.social)
+  ids.push(...selection.technique)
+  return ids
+}
+
+// Get style by ID
+export function getStyleById(styleId: string): { category: StyleCategory; style: Style } | null {
+  for (const category of styleCategories) {
+    const style = category.styles.find(s => s.id === styleId)
+    if (style) {
+      return { category, style }
+    }
+  }
+  return null
+}

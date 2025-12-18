@@ -1,0 +1,165 @@
+╔══════════════════════════════════════════════════════════════╗
+║     TEMPLATE IMAGE GENERATION                                 ║
+║     Gemini 3 Pro Image + Real-ESRGAN 2x                       ║
+╚══════════════════════════════════════════════════════════════╝
+
+API URL: https://marketing.heymag.app/api/ai/generate
+Output: ./data/generated-templates
+Started: Wed Dec 17 22:33:42 +08 2025
+
+
+════════════════════════════════════════════════════════════════
+DELIVERY & TAKEOUT (8 images)
+════════════════════════════════════════════════════════════════
+[delivery] Generating #0: Fresh poke bowl with salmon, avocado, edamame, ses...
+  ✓ Success: delivery-1765982048515-pehu01
+[delivery] Generating #1: Colorful acai bowl with granola, fresh berries, ba...
+  ✓ Success: delivery-1765982080147-bnhb6e
+[delivery] Generating #2: Asian grain bowl with teriyaki chicken, brown rice...
+  ✓ Success: delivery-1765982121731-0rere6
+[delivery] Generating #3: Mediterranean bowl with hummus, falafel, tahini...
+  ✓ Success: delivery-1765982150574-0n7yk3
+[delivery] Generating #4: Sushi burrito with fresh tuna and spicy mayo...
+  ✓ Success: delivery-1765982185052-kb571m
+[delivery] Generating #5: Buddha bowl with quinoa, roasted chickpeas, tahini...
+  ✓ Success: delivery-1765982226683-uij512
+[delivery] Generating #6: Thai basil chicken rice bowl with fried egg...
+  ✓ Success: delivery-1765982269748-vuxazj
+[delivery] Generating #7: Korean bibimbap with beef and gochujang...
+  ✓ Success: delivery-1765982306540-gllj8h
+
+════════════════════════════════════════════════════════════════
+RESTAURANT (8 images)
+════════════════════════════════════════════════════════════════
+[restaurant] Generating #0: Pan-seared salmon with crispy skin and lemon butte...
+  ✓ Success: restaurant-1765982353836-sp97l9
+[restaurant] Generating #1: Avocado toast with perfectly poached egg...
+  ✓ Success: restaurant-1765982403666-e5b4s3
+[restaurant] Generating #2: Wagyu beef burger with truffle aioli...
+  ✓ Success: restaurant-1765982451132-6wtc1n
+[restaurant] Generating #3: Grilled lobster tail with garlic herb butter...
+  ✓ Success: restaurant-1765982490280-r14mfs
+[restaurant] Generating #4: Creamy mushroom risotto with truffle oil...
+  ✓ Success: restaurant-1765982538667-ogmppp
+[restaurant] Generating #5: Herb-crusted lamb chops with mint sauce...
+  ✓ Success: restaurant-1765982610075-4tezbk
+[restaurant] Generating #6: Roasted duck breast with orange glaze...
+  ✓ Success: restaurant-1765982649062-u7z93m
+[restaurant] Generating #7: Seafood linguine with clams in white wine...
+  ✓ Success: restaurant-1765982695556-0e1prv
+
+════════════════════════════════════════════════════════════════
+FINE DINING (8 images)
+════════════════════════════════════════════════════════════════
+[fine-dining] Generating #0: Seared duck breast with cherry reduction...
+  ✓ Success: fine-dining-1765982732784-zzc44t
+[fine-dining] Generating #1: Beef tenderloin with foie gras and truffle...
+  ✓ Success: fine-dining-1765982768993-4wfk64
+[fine-dining] Generating #2: Pan-seared scallop with cauliflower puree...
+  ✓ Success: fine-dining-1765982808553-rjqudi
+[fine-dining] Generating #3: Venison loin with blackberry jus...
+  ✓ Success: fine-dining-1765982866802-dsvfe5
+[fine-dining] Generating #4: Butter-poached lobster with champagne foam...
+  ✓ Success: fine-dining-1765982925370-2nglxw
+[fine-dining] Generating #5: Wagyu tataki with ponzu and shiso...
+  ✓ Success: fine-dining-1765982974293-zx3al1
+[fine-dining] Generating #6: Turbot fillet with saffron beurre blanc...
+  ✓ Success: fine-dining-1765983020302-t74e7n
+[fine-dining] Generating #7: Deconstructed tiramisu with espresso gel...
+  ✓ Success: fine-dining-1765983059974-n0t4u7
+
+════════════════════════════════════════════════════════════════
+CAFE & COFFEE (8 images)
+════════════════════════════════════════════════════════════════
+[cafe] Generating #0: Artisan butter croissant with flaky layers...
+  ✓ Success: cafe-1765983087990-dkmfe0
+[cafe] Generating #1: Matcha latte with leaf foam art...
+  ✓ Success: cafe-1765983127818-aw5u7l
+[cafe] Generating #2: French chocolate eclair with glossy glaze...
+  ✓ Success: cafe-1765983155833-60jubw
+[cafe] Generating #3: Avocado toast on sourdough bread...
+  ✓ Success: cafe-1765983163904-tvwbav
+[cafe] Generating #4: Mixed berry tart with vanilla custard...
+  ✓ Success: cafe-1765983258297-t9caeq
+[cafe] Generating #5: Warm cinnamon roll with cream cheese frosting...
+  ✓ Success: cafe-1765983292563-pqss61
+[cafe] Generating #6: Perfect cappuccino with rosetta art...
+  ✓ Success: cafe-1765983330814-qt22ag
+[cafe] Generating #7: Eggs Benedict with hollandaise sauce...
+  ✓ Success: cafe-1765983369103-m0z0co
+
+════════════════════════════════════════════════════════════════
+CHRISTMAS (4 images)
+════════════════════════════════════════════════════════════════
+[christmas] Generating #0: Glazed Christmas ham with honey and cloves...
+  ✓ Success: christmas-1765983402576-y9i0mw
+[christmas] Generating #1: Decorated gingerbread cookies with icing...
+  ✓ Success: christmas-1765983429727-lrause
+[christmas] Generating #2: Yule log cake with chocolate ganache...
+  ✓ Success: christmas-1765983456523-sqdtn1
+[christmas] Generating #3: Festive hot chocolate with whipped cream...
+  ✓ Success: christmas-1765983492004-pmnxfn
+
+════════════════════════════════════════════════════════════════
+CHINESE NEW YEAR (4 images)
+════════════════════════════════════════════════════════════════
+[chinese-new-year] Generating #0: Yu Sheng prosperity toss salad with salmon...
+  ✓ Success: chinese-new-year-1765983517129-nce0s2
+[chinese-new-year] Generating #1: Steamed whole fish with ginger and scallion...
+  ✓ Success: chinese-new-year-1765983543413-jacjac
+[chinese-new-year] Generating #2: Golden pineapple tarts on red plate...
+  ✓ Success: chinese-new-year-1765983580512-gc254s
+[chinese-new-year] Generating #3: Chinese dumplings in lucky pattern...
+  ✓ Success: chinese-new-year-1765983624080-9epy9v
+
+╔══════════════════════════════════════════════════════════════╗
+║                    GENERATION COMPLETE                        ║
+╚══════════════════════════════════════════════════════════════╝
+
+Total: 40/40 images generated
+Finished: Wed Dec 17 23:00:30 +08 2025
+
+Results saved to: ./data/generated-templates
+
+Generated files:
+      40
+./data/generated-templates/cafe_0.json
+./data/generated-templates/cafe_1.json
+./data/generated-templates/cafe_2.json
+./data/generated-templates/cafe_3.json
+./data/generated-templates/cafe_4.json
+./data/generated-templates/cafe_5.json
+./data/generated-templates/cafe_6.json
+./data/generated-templates/cafe_7.json
+./data/generated-templates/chinese-new-year_0.json
+./data/generated-templates/chinese-new-year_1.json
+./data/generated-templates/chinese-new-year_2.json
+./data/generated-templates/chinese-new-year_3.json
+./data/generated-templates/christmas_0.json
+./data/generated-templates/christmas_1.json
+./data/generated-templates/christmas_2.json
+./data/generated-templates/christmas_3.json
+./data/generated-templates/delivery_0.json
+./data/generated-templates/delivery_1.json
+./data/generated-templates/delivery_2.json
+./data/generated-templates/delivery_3.json
+./data/generated-templates/delivery_4.json
+./data/generated-templates/delivery_5.json
+./data/generated-templates/delivery_6.json
+./data/generated-templates/delivery_7.json
+./data/generated-templates/fine-dining_0.json
+./data/generated-templates/fine-dining_1.json
+./data/generated-templates/fine-dining_2.json
+./data/generated-templates/fine-dining_3.json
+./data/generated-templates/fine-dining_4.json
+./data/generated-templates/fine-dining_5.json
+./data/generated-templates/fine-dining_6.json
+./data/generated-templates/fine-dining_7.json
+./data/generated-templates/restaurant_0.json
+./data/generated-templates/restaurant_1.json
+./data/generated-templates/restaurant_2.json
+./data/generated-templates/restaurant_3.json
+./data/generated-templates/restaurant_4.json
+./data/generated-templates/restaurant_5.json
+./data/generated-templates/restaurant_6.json
+./data/generated-templates/restaurant_7.json
