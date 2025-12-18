@@ -26,11 +26,13 @@ import { getTemplateById, type TemplateImage } from '@/lib/template-images'
 import { AspectRatioPicker } from '@/components/editor/aspect-ratio-picker'
 import { VariationsPicker } from '@/components/editor/variations-picker'
 import { StylePicker } from '@/components/editor/style-picker'
+import { SelectedStylesSummary } from '@/components/editor/selected-styles-summary'
 import {
   type SelectedStyles,
   emptySelection,
   selectionToStyleIds,
   getSelectedCount,
+  styleCategories,
 } from '@/lib/styles-data'
 
 function EditorContent() {
@@ -225,6 +227,26 @@ function EditorContent() {
     router.replace('/editor', { scroll: false })
   }
 
+  // Remove a selected style (used by SelectedStylesSummary)
+  const removeStyle = (categoryId: string, styleId: string) => {
+    const category = styleCategories.find(c => c.id === categoryId)
+    if (!category) return
+
+    const newSelection = { ...selectedStyles }
+
+    if (category.selectionType === 'single') {
+      const key = categoryId as keyof SelectedStyles
+      if (!category.required) {
+        (newSelection[key] as string | undefined) = undefined
+      }
+    } else {
+      const key = categoryId as 'social' | 'technique'
+      newSelection[key] = (newSelection[key] || []).filter(id => id !== styleId)
+    }
+
+    setSelectedStyles(newSelection)
+  }
+
   // Determine if the transform button should be enabled
   // Need either a template OR at least one style selected (venue is required)
   const hasStylesSelected = getSelectedCount(selectedStyles) > 0
@@ -245,7 +267,17 @@ function EditorContent() {
         </aside>
 
         {/* Main Canvas Area */}
-        <main className="flex-1 flex flex-col">
+        <main className="flex-1 flex flex-col overflow-auto">
+          {/* Selected Styles Summary - shows above canvas when styles are selected and no template */}
+          {!template && hasStylesSelected && (
+            <div className="p-4 pb-0">
+              <SelectedStylesSummary
+                selection={selectedStyles}
+                onRemoveStyle={removeStyle}
+              />
+            </div>
+          )}
+
           {/* Canvas */}
           <div className="flex-1 flex items-center justify-center p-8 relative">
             {/* Zoom Controls */}
