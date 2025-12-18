@@ -130,7 +130,7 @@ export const styleCategories: StyleCategory[] = [
         id: 'generic-delivery',
         name: 'Universal Delivery',
         description: 'Works for any delivery platform',
-        thumbnail: 'https://cdn.simpleicons.org/ubereats/06C167',
+        thumbnail: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 24 24' fill='none' stroke='%23888888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 18V6a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2v11a1 1 0 0 0 1 1h2'/%3E%3Cpath d='M15 18H9'/%3E%3Cpath d='M19 18h2a1 1 0 0 0 1-1v-3.65a1 1 0 0 0-.22-.624l-3.48-4.35A1 1 0 0 0 17.52 8H14'/%3E%3Ccircle cx='17' cy='18' r='2'/%3E%3Ccircle cx='7' cy='18' r='2'/%3E%3C/svg%3E",
         keywords: ['delivery', 'universal', 'app', 'general']
       },
     ]
