@@ -74,12 +74,12 @@ export function MainNav({ user, credits, subscriptionStatus }: MainNavProps) {
             Library
           </Link>
 
-          {/* Pricing Link */}
+          {/* Pricing/Billing Link - goes to /billing when logged in */}
           <Link
-            href="/#pricing"
+            href={user ? "/billing" : "/#pricing"}
             className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
-            Pricing
+            {user ? "Billing" : "Pricing"}
           </Link>
 
           {user ? (
