@@ -57,12 +57,13 @@ export function MainNavAuth() {
     fetchUserData()
   }, [])
 
-  // Show nav immediately, data will populate when ready
+  // Show nav immediately, pass loading state to prevent auth UI flash
   return (
     <MainNav
-      user={loading ? undefined : user}
+      user={user}
       credits={credits}
       subscriptionStatus={subscriptionStatus}
+      loading={loading}
     />
   )
 }

@@ -14,6 +14,7 @@ interface MainNavProps {
   } | null
   credits?: number
   subscriptionStatus?: string | null
+  loading?: boolean
 }
 
 const navTabs = [
@@ -22,7 +23,7 @@ const navTabs = [
   { name: 'Social', href: '/social', badge: null },
 ]
 
-export function MainNav({ user, credits, subscriptionStatus }: MainNavProps) {
+export function MainNav({ user, credits, subscriptionStatus, loading }: MainNavProps) {
   const pathname = usePathname()
 
   return (
@@ -82,7 +83,11 @@ export function MainNav({ user, credits, subscriptionStatus }: MainNavProps) {
             {user ? "Billing" : "Pricing"}
           </Link>
 
-          {user ? (
+          {/* Hide auth UI while loading to prevent flash */}
+          {loading ? (
+            /* Placeholder to maintain layout while loading */
+            <div className="w-9 h-9" />
+          ) : user ? (
             <>
               {/* Plan Badge */}
               {subscriptionStatus && (
