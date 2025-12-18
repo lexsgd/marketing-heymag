@@ -479,7 +479,13 @@ function SocialPageContent() {
                           </Button>
                           <Button variant="outline" size="sm" className="flex-1" asChild>
                             <a
-                              href={`https://${platform.id}.com`}
+                              href={
+                                platform.id === 'instagram' && accountDetails?.platform_username
+                                  ? `https://instagram.com/${accountDetails.platform_username}`
+                                  : platform.id === 'facebook' && accountDetails?.platform_id
+                                    ? `https://facebook.com/${accountDetails.platform_id}`
+                                    : `https://${platform.id}.com`
+                              }
                               target="_blank"
                               rel="noopener noreferrer"
                             >
