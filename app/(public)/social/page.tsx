@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { Suspense, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import {
@@ -115,7 +115,7 @@ interface SocialPost {
   } | null
 }
 
-export default function SocialPage() {
+function SocialPageContent() {
   const searchParams = useSearchParams()
   const [user, setUser] = useState<{ email?: string } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -737,5 +737,13 @@ export default function SocialPage() {
         </AlertDialogContent>
       </AlertDialog>
     </div>
+  )
+}
+
+export default function SocialPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
+      <SocialPageContent />
+    </Suspense>
   )
 }
