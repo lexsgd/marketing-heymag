@@ -517,7 +517,7 @@ export default function SignupPage() {
                     <div className="flex gap-3">
                       <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
                       <div className="text-sm text-muted-foreground">
-                        <strong>30 free image credits</strong> to enhance your food photos
+                        <strong>5 free image credits</strong> to enhance your food photos
                       </div>
                     </div>
                     <div className="flex gap-3">

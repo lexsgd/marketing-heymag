@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
+import { config } from '@/lib/config'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -62,7 +63,7 @@ export async function GET(request: Request) {
                   .from('credits')
                   .insert({
                     business_id: newBusiness.id,
-                    credits_remaining: 30, // Free trial credits
+                    credits_remaining: config.freeTrialCredits, // Free trial credits (5)
                     credits_used: 0,
                   })
               }
