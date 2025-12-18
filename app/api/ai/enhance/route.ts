@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
+import { getMultiStylePrompt, parseStyleIds } from '@/lib/multi-style-prompt-builder'
 // Sharp is dynamically imported to handle platform-specific binary issues on Vercel
 // import sharp from 'sharp'
 
@@ -282,14 +283,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    const { imageId, stylePreset, customPrompt } = body
+    const { imageId, stylePreset, styleIds, customPrompt } = body
 
     if (!imageId) {
       console.log('[Enhance] Missing imageId')
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 })
     }
 
-    console.log('[Enhance] Processing imageId:', imageId, 'stylePreset:', stylePreset, 'hasCustomPrompt:', !!customPrompt)
+    // Log style selection details
+    const styleIdsArray = styleIds || (stylePreset ? stylePreset.split(',') : [])
+    console.log('[Enhance] Processing imageId:', imageId)
+    console.log('[Enhance] Style selection:', {
+      stylePreset,
+      styleIds: styleIdsArray,
+      hasCustomPrompt: !!customPrompt
+    })
 
     // Get authenticated user
     const supabase = await createClient()
@@ -378,10 +386,26 @@ export async function POST(request: NextRequest) {
     let currentStep = 'initialization'
 
     try {
-      // Get the style prompt (custom prompt takes priority if provided)
+      // Get the style prompt using multi-style builder (custom prompt takes priority if provided)
       currentStep = 'getting style prompt'
-      const stylePrompt = getStylePrompt(stylePreset, customPrompt)
-      console.log('[Enhance] Using style preset:', stylePreset, customPrompt ? '(with custom prompt)' : '')
+      let stylePrompt: string
+      if (customPrompt) {
+        // Custom prompt overrides everything
+        stylePrompt = customPrompt
+        console.log('[Enhance] Using custom prompt (user override)')
+      } else if (styleIds && Array.isArray(styleIds) && styleIds.length > 0) {
+        // Use multi-style prompt builder for array of style IDs
+        stylePrompt = getMultiStylePrompt(stylePreset, JSON.stringify(styleIds))
+        console.log('[Enhance] Using multi-style prompt for', styleIds.length, 'styles:', styleIds.slice(0, 3).join(', '), styleIds.length > 3 ? '...' : '')
+      } else if (stylePreset && stylePreset.includes(',')) {
+        // Fallback: Parse comma-separated stylePreset
+        stylePrompt = getMultiStylePrompt(stylePreset)
+        console.log('[Enhance] Using multi-style prompt from comma-separated:', stylePreset.split(',').length, 'styles')
+      } else {
+        // Single style or template - use legacy method
+        stylePrompt = getStylePrompt(stylePreset, undefined)
+        console.log('[Enhance] Using single style prompt:', stylePreset)
+      }
 
       // Fetch the original image
       currentStep = 'fetching original image'
@@ -442,8 +466,15 @@ export async function POST(request: NextRequest) {
       console.log('[Enhance] STEP 2: Applying Gemini 3 Pro Image AI polish')
 
       // Get platform-specific image configuration
-      const platformConfig = getPlatformConfig(stylePreset)
-      console.log('[Enhance] Platform config:', platformConfig.aspectRatio, platformConfig.imageSize, platformConfig.description)
+      // For multi-style, use delivery platform if set, otherwise first social platform, otherwise first style
+      let primaryStyleForConfig = stylePreset
+      if (styleIds && Array.isArray(styleIds) && styleIds.length > 0) {
+        // Parse to find delivery or social platform for config
+        const selection = parseStyleIds(styleIds.join(','))
+        primaryStyleForConfig = selection.delivery || selection.social?.[0] || styleIds[0]
+      }
+      const platformConfig = getPlatformConfig(primaryStyleForConfig)
+      console.log('[Enhance] Platform config (from', primaryStyleForConfig, '):', platformConfig.aspectRatio, platformConfig.imageSize, platformConfig.description)
 
       try {
         // Use Gemini 3 Pro Image (Nano Banana Pro) - premium image generation
