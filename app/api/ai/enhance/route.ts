@@ -4,6 +4,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 import { getMultiStylePrompt, parseStyleIds } from '@/lib/multi-style-prompt-builder'
 import { checkAndExecuteAutoTopUp } from '@/lib/auto-topup'
+import {
+  checkRateLimit,
+  rateLimitedResponse,
+  getRateLimitHeaders,
+  aiLogger as logger,
+  enhanceRequestSchema,
+  validateInput,
+  validationErrorResponse,
+} from '@/lib/security'
 // Sharp is dynamically imported to handle platform-specific binary issues on Vercel
 // import sharp from 'sharp'
 
@@ -16,13 +25,14 @@ export const runtime = 'nodejs'
 // This ensures original food content is ALWAYS preserved while adding professional quality
 
 // Lazy Sharp initialization to handle Vercel deployment issues
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let sharpInstance: any = null
+// Sharp type - using dynamic import type
+type SharpModule = typeof import('sharp')
+let sharpInstance: SharpModule | null = null
 let sharpLoadError: Error | null = null
 
-async function getSharp() {
+async function getSharp(): Promise<SharpModule | null> {
   if (sharpLoadError) {
-    console.warn('[Enhance] Sharp previously failed to load:', sharpLoadError.message)
+    logger.debug('Sharp previously failed to load', { error: sharpLoadError.message })
     return null
   }
   if (sharpInstance) {
@@ -31,12 +41,12 @@ async function getSharp() {
   try {
     // Use require with try-catch to avoid webpack resolution errors
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    sharpInstance = require('sharp')
-    console.log('[Enhance] Sharp loaded successfully')
+    sharpInstance = require('sharp') as SharpModule
+    logger.info('Sharp loaded successfully')
     return sharpInstance
   } catch (error) {
     sharpLoadError = error as Error
-    console.error('[Enhance] Failed to load Sharp (platform binary issue):', sharpLoadError.message)
+    logger.warn('Failed to load Sharp (platform binary issue)', { error: sharpLoadError.message })
     return null
   }
 }
@@ -46,7 +56,7 @@ export const maxDuration = 60
 
 // Simple GET handler to test if route is loaded
 export async function GET() {
-  console.log('[Enhance] GET called - route is loaded')
+  logger.debug('GET health check called')
   return NextResponse.json({
     status: 'ok',
     message: 'Enhance API route is loaded',
@@ -62,10 +72,10 @@ function getGoogleAI(): GoogleGenerativeAI {
   if (!genAI) {
     const apiKey = process.env.GOOGLE_AI_API_KEY
     if (!apiKey) {
-      console.error('[Enhance] CRITICAL: GOOGLE_AI_API_KEY is not set!')
+      logger.error('CRITICAL: GOOGLE_AI_API_KEY is not set!')
       throw new Error('Google AI API key is not configured')
     }
-    console.log('[Enhance] Initializing Google AI with API key:', apiKey.substring(0, 8) + '...')
+    logger.info('Initializing Google AI client')
     genAI = new GoogleGenerativeAI(apiKey)
   }
   return genAI
@@ -150,25 +160,24 @@ async function retryWithBackoff<T>(
 
   for (let attempt = 1; attempt <= config.maxRetries; attempt++) {
     try {
-      console.log(`[Enhance] ${operationName}: Attempt ${attempt}/${config.maxRetries}`)
+      logger.debug(`${operationName}: Attempt ${attempt}/${config.maxRetries}`)
       const startTime = Date.now()
       const result = await operation()
       const duration = ((Date.now() - startTime) / 1000).toFixed(1)
-      console.log(`[Enhance] ${operationName}: SUCCESS after ${duration}s on attempt ${attempt}`)
+      logger.info(`${operationName}: SUCCESS`, { duration: `${duration}s`, attempt })
       return result
     } catch (error) {
       lastError = error
-      const errorMessage = String(error)
-      console.error(`[Enhance] ${operationName}: Attempt ${attempt} FAILED - ${errorMessage.substring(0, 200)}`)
+      logger.warn(`${operationName}: Attempt ${attempt} FAILED`, { attempt })
 
       // Only retry on specific error types
       if (!isRetryableError(error)) {
-        console.error(`[Enhance] ${operationName}: Non-retryable error, failing immediately`)
+        logger.error(`${operationName}: Non-retryable error, failing immediately`, error as Error)
         throw error
       }
 
       if (attempt < config.maxRetries) {
-        console.log(`[Enhance] ${operationName}: Waiting ${(delayMs / 1000).toFixed(1)}s before retry...`)
+        logger.debug(`${operationName}: Waiting before retry`, { delay: `${(delayMs / 1000).toFixed(1)}s` })
         await sleep(delayMs)
         // Calculate next delay with exponential backoff
         delayMs = Math.min(delayMs * config.backoffMultiplier, config.maxDelayMs)
@@ -176,7 +185,7 @@ async function retryWithBackoff<T>(
     }
   }
 
-  console.error(`[Enhance] ${operationName}: All ${config.maxRetries} attempts failed`)
+  logger.error(`${operationName}: All ${config.maxRetries} attempts failed`, lastError as Error)
   throw lastError
 }
 
@@ -198,7 +207,7 @@ async function applyEnhancements(
 ): Promise<Buffer | null> {
   const sharp = await getSharp()
   if (!sharp) {
-    console.warn('[Enhance] Sharp not available, skipping image processing')
+    logger.warn('Sharp not available, skipping image processing')
     return null // Return null to indicate processing was skipped
   }
 
@@ -271,43 +280,59 @@ async function applyEnhancements(
 }
 
 export async function POST(request: NextRequest) {
-  console.log('[Enhance] API called')
+  logger.info('API called')
 
   try {
-    // Parse request body
+    // Rate limiting check
+    const identifier = request.headers.get('x-forwarded-for') || 'anonymous'
+    const rateLimitResult = await checkRateLimit(identifier, 'ai-enhance')
+    if (!rateLimitResult.success) {
+      logger.warn('Rate limit exceeded', { identifier })
+      return rateLimitedResponse(rateLimitResult)
+    }
+
+    // Parse and validate request body
     let body
     try {
       body = await request.json()
-      console.log('[Enhance] Request body:', JSON.stringify(body))
+      logger.debug('Request body received', { hasImageId: !!body?.imageId, hasStylePreset: !!body?.stylePreset })
     } catch (parseError) {
-      console.error('[Enhance] Failed to parse request body:', parseError)
+      logger.warn('Failed to parse request body')
       return NextResponse.json({ error: 'Invalid request body' }, { status: 400 })
     }
 
-    const { imageId, stylePreset, styleIds, customPrompt } = body
+    // Validate input with Zod schema
+    const validation = validateInput(enhanceRequestSchema, body)
+    if (!validation.success) {
+      logger.warn('Input validation failed', { errors: validation.error?.details })
+      return validationErrorResponse(validation.error!)
+    }
 
+    const { imageId, stylePreset, styleIds, customPrompt } = validation.data!
+
+    // imageId is required by schema, but double-check for safety
     if (!imageId) {
-      console.log('[Enhance] Missing imageId')
+      logger.warn('Missing imageId after validation')
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 })
     }
 
     // Log style selection details
     const styleIdsArray = styleIds || (stylePreset ? stylePreset.split(',') : [])
-    console.log('[Enhance] Processing imageId:', imageId)
-    console.log('[Enhance] Style selection:', {
+    logger.info('Processing image', {
+      imageId,
       stylePreset,
-      styleIds: styleIdsArray,
+      styleCount: styleIdsArray.length,
       hasCustomPrompt: !!customPrompt
     })
 
     // Get authenticated user
     const supabase = await createClient()
-    console.log('[Enhance] Supabase client created')
+    logger.debug('Supabase client created')
 
     const { data: { user }, error: authError } = await supabase.auth.getUser()
 
     if (authError) {
-      console.error('[Enhance] Auth error:', authError)
+      logger.error('Auth error', authError)
     }
 
     if (!user) {
@@ -315,7 +340,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get business
-    console.log('[Enhance] Looking up business for user:', user.id)
+    logger.debug('Looking up business')
     const { data: business, error: businessError } = await supabase
       .from('businesses')
       .select('id')
@@ -323,17 +348,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (businessError) {
-      console.error('[Enhance] Business lookup error:', businessError)
+      logger.error('Business lookup error', businessError)
     }
 
     if (!business) {
-      console.log('[Enhance] Business not found for user')
+      logger.warn('Business not found')
       return NextResponse.json({ error: 'Business not found' }, { status: 404 })
     }
-    console.log('[Enhance] Found business:', business.id)
+    logger.debug('Found business')
 
     // Get image record
-    console.log('[Enhance] Fetching image record:', imageId)
+    logger.debug('Fetching image record')
     const { data: image, error: imageError } = await supabase
       .from('images')
       .select('*')
@@ -342,17 +367,17 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (imageError) {
-      console.error('[Enhance] Image fetch error:', imageError)
+      logger.error('Image fetch error', imageError)
     }
 
     if (imageError || !image) {
-      console.log('[Enhance] Image not found')
+      logger.warn('Image not found')
       return NextResponse.json({ error: 'Image not found' }, { status: 404 })
     }
-    console.log('[Enhance] Found image, original_url:', image.original_url?.substring(0, 80))
+    logger.debug('Found image')
 
     // Check credits
-    console.log('[Enhance] Checking credits for business:', business.id)
+    logger.debug('Checking credits')
     const { data: credits, error: creditsError } = await supabase
       .from('credits')
       .select('credits_remaining, credits_used')
@@ -360,26 +385,26 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (creditsError) {
-      console.error('[Enhance] Credits lookup error:', creditsError)
+      logger.error('Credits lookup error', creditsError)
     }
 
     if (!credits || credits.credits_remaining < 1) {
-      console.log('[Enhance] Insufficient credits:', credits?.credits_remaining || 0)
+      logger.warn('Insufficient credits', { remaining: credits?.credits_remaining || 0 })
       return NextResponse.json({ error: 'Insufficient credits' }, { status: 402 })
     }
-    console.log('[Enhance] Credits available:', credits.credits_remaining)
+    logger.debug('Credits available', { remaining: credits.credits_remaining })
 
     // Update image status to processing
-    console.log('[Enhance] Updating status to processing')
+    logger.debug('Updating status to processing')
     const { error: updateError } = await supabase
       .from('images')
       .update({ status: 'processing' })
       .eq('id', imageId)
 
     if (updateError) {
-      console.error('[Enhance] Failed to update status:', updateError)
+      logger.error('Failed to update status', updateError)
     } else {
-      console.log('[Enhance] Status updated to processing')
+      logger.debug('Status updated to processing')
     }
 
     // Use service role for storage and credit operations
@@ -393,41 +418,41 @@ export async function POST(request: NextRequest) {
       if (customPrompt) {
         // Custom prompt overrides everything
         stylePrompt = customPrompt
-        console.log('[Enhance] Using custom prompt (user override)')
+        logger.debug('Using custom prompt (user override)')
       } else if (styleIds && Array.isArray(styleIds) && styleIds.length > 0) {
         // Use multi-style prompt builder for array of style IDs
-        stylePrompt = getMultiStylePrompt(stylePreset, JSON.stringify(styleIds))
-        console.log('[Enhance] Using multi-style prompt for', styleIds.length, 'styles:', styleIds.slice(0, 3).join(', '), styleIds.length > 3 ? '...' : '')
+        stylePrompt = getMultiStylePrompt(stylePreset || 'delivery', JSON.stringify(styleIds))
+        logger.debug('Using multi-style prompt', { count: styleIds.length })
       } else if (stylePreset && stylePreset.includes(',')) {
         // Fallback: Parse comma-separated stylePreset
         stylePrompt = getMultiStylePrompt(stylePreset)
-        console.log('[Enhance] Using multi-style prompt from comma-separated:', stylePreset.split(',').length, 'styles')
+        logger.debug('Using comma-separated multi-style prompt', { count: stylePreset.split(',').length })
       } else {
         // Single style or template - use legacy method
-        stylePrompt = getStylePrompt(stylePreset, undefined)
-        console.log('[Enhance] Using single style prompt:', stylePreset)
+        stylePrompt = getStylePrompt(stylePreset || 'delivery', undefined)
+        logger.debug('Using single style prompt', { style: stylePreset || 'delivery' })
       }
 
       // Fetch the original image
       currentStep = 'fetching original image'
-      console.log('[Enhance] Fetching original image from:', image.original_url?.substring(0, 80))
+      logger.debug('Fetching original image')
       const imageResponse = await fetch(image.original_url)
 
       if (!imageResponse.ok) {
-        console.error('[Enhance] Failed to fetch image, status:', imageResponse.status)
+        logger.error('Failed to fetch image', undefined, { status: imageResponse.status })
         throw new Error(`Failed to fetch image: ${imageResponse.status}`)
       }
-      console.log('[Enhance] Image fetched successfully, status:', imageResponse.status)
+      logger.debug('Image fetched successfully')
 
       currentStep = 'converting image to buffer'
       const imageArrayBuffer = await imageResponse.arrayBuffer()
       const imageBuffer = Buffer.from(imageArrayBuffer)
-      console.log('[Enhance] Image buffer size:', imageBuffer.length, 'bytes')
+      logger.debug('Image buffer ready', { size: imageBuffer.length })
 
       currentStep = 'encoding image to base64'
       const base64Image = imageBuffer.toString('base64')
       const mimeType = image.mime_type || 'image/jpeg'
-      console.log('[Enhance] Image prepared for AI, mime:', mimeType)
+      logger.debug('Image prepared for AI', { mimeType })
 
       // HYBRID ENHANCEMENT PIPELINE
       // Step 1: Sharp base enhancement (100% content preservation guaranteed)
@@ -437,13 +462,13 @@ export async function POST(request: NextRequest) {
       let processingSkipped = false
       let aiSuggestions: string[] = []
       let enhancementMethod = 'unknown'
-      const defaultEnhancements = getDefaultEnhancements(stylePreset)
+      const defaultEnhancements = getDefaultEnhancements(stylePreset || 'delivery')
 
       // ═══════════════════════════════════════════════════════════════════════════
       // STEP 1: Sharp Base Enhancement (Guaranteed Content Preservation)
       // ═══════════════════════════════════════════════════════════════════════════
       currentStep = 'applying Sharp base enhancement'
-      console.log('[Enhance] STEP 1: Applying Sharp base enhancement (guaranteed preservation)')
+      logger.info('STEP 1: Applying Sharp base enhancement')
 
       let sharpEnhancedBuffer: Buffer | null = null
       let sharpEnhancedBase64: string | null = null
@@ -452,19 +477,19 @@ export async function POST(request: NextRequest) {
 
       if (sharpEnhancedBuffer) {
         sharpEnhancedBase64 = sharpEnhancedBuffer.toString('base64')
-        console.log('[Enhance] Sharp base enhancement complete, buffer size:', sharpEnhancedBuffer.length)
+        logger.debug('Sharp enhancement complete', { size: sharpEnhancedBuffer.length })
         enhancementMethod = 'sharp'
       } else {
         // If Sharp fails, use original image for next step
         sharpEnhancedBase64 = base64Image
-        console.log('[Enhance] Sharp unavailable, using original for AI step')
+        logger.debug('Sharp unavailable, using original for AI step')
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
       // STEP 2: Gemini 3 Pro Image AI Polish (Professional Enhancement)
       // ═══════════════════════════════════════════════════════════════════════════
       currentStep = 'initializing Gemini 3 Pro Image'
-      console.log('[Enhance] STEP 2: Applying Gemini 3 Pro Image AI polish')
+      logger.info('STEP 2: Applying Gemini 3 Pro Image AI polish')
 
       // Get platform-specific image configuration
       // For multi-style, use delivery platform if set, otherwise first social platform, otherwise first style
@@ -474,8 +499,8 @@ export async function POST(request: NextRequest) {
         const selection = parseStyleIds(styleIds.join(','))
         primaryStyleForConfig = selection.delivery || selection.social?.[0] || styleIds[0]
       }
-      const platformConfig = getPlatformConfig(primaryStyleForConfig)
-      console.log('[Enhance] Platform config (from', primaryStyleForConfig, '):', platformConfig.aspectRatio, platformConfig.imageSize, platformConfig.description)
+      const platformConfig = getPlatformConfig(primaryStyleForConfig || 'delivery')
+      logger.debug('Platform config', { from: primaryStyleForConfig, aspectRatio: platformConfig.aspectRatio })
 
       try {
         // Use Gemini 3 Pro Image (Nano Banana Pro) - premium image generation
@@ -484,15 +509,15 @@ export async function POST(request: NextRequest) {
         // Required config per docs: temperature=1.0, responseModalities=['Text', 'Image']
         const model = getGoogleAI().getGenerativeModel({
           model: 'gemini-3-pro-image-preview', // Nano Banana Pro - premium quality
+          // Gemini 3 Pro Image requires responseModalities - cast to bypass SDK types
           generationConfig: {
-            responseModalities: ['Text', 'Image'] as const,
+            responseModalities: ['Text', 'Image'],
             temperature: 1.0, // Required for Gemini 3 Pro Image generation
-          }
+          } as unknown as import('@google/generative-ai').GenerationConfig
         })
 
         currentStep = 'calling Gemini API with preservation prompt'
-        console.log('[Enhance] Calling Gemini with strict preservation prompt...')
-        console.log('[Enhance] Output format: ', platformConfig.aspectRatio, '@', platformConfig.imageSize)
+        logger.debug('Calling Gemini with strict preservation prompt', { aspectRatio: platformConfig.aspectRatio })
 
         // CRITICAL: Research-backed prompt for maximum content preservation
         // Based on Google's official documentation and best practices for Nano Banana Pro
@@ -574,16 +599,16 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         for (const candidate of response.candidates || []) {
           for (const part of candidate.content?.parts || []) {
             if (part.text) {
-              console.log('[Enhance] AI response:', part.text.substring(0, 200))
+              logger.debug('AI text response received')
               const suggestionsMatch = part.text.match(/SUGGESTIONS:\s*(.+)/i)
               if (suggestionsMatch) {
                 aiSuggestions = suggestionsMatch[1].split('|').map((s: string) => s.trim()).filter((s: string) => s)
               }
             }
             if (part.inlineData?.data) {
-              console.log('[Enhance] AI returned image, mime:', part.inlineData.mimeType)
+              logger.debug('AI returned image', { mime: part.inlineData.mimeType })
               aiEnhancedBuffer = Buffer.from(part.inlineData.data, 'base64')
-              console.log('[Enhance] AI enhanced buffer size:', aiEnhancedBuffer.length)
+              logger.debug('AI enhanced buffer ready', { size: aiEnhancedBuffer.length })
             }
           }
         }
@@ -592,7 +617,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           // Upload AI-polished image
           currentStep = 'uploading AI-enhanced image'
           const enhancedFileName = `${business.id}/enhanced/${Date.now()}.png`
-          console.log('[Enhance] Uploading hybrid-enhanced image to:', enhancedFileName)
+          logger.debug('Uploading hybrid-enhanced image')
 
           const { error: uploadError } = await serviceSupabase.storage
             .from('images')
@@ -606,14 +631,14 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
             const urlData = serviceSupabase.storage.from('images').getPublicUrl(enhancedFileName)
             enhancedUrl = urlData.data.publicUrl
             enhancementMethod = 'hybrid-sharp-gemini'
-            console.log('[Enhance] Hybrid enhancement successful!')
+            logger.info('Hybrid enhancement successful')
           } else {
-            console.error('[Enhance] Upload error:', uploadError)
+            logger.error('Upload error', uploadError)
           }
         }
       } catch (aiError) {
-        console.error('[Enhance] Gemini API error:', aiError)
-        console.log('[Enhance] Using Sharp-only enhancement as fallback')
+        logger.error('Gemini API error', aiError as Error)
+        logger.debug('Using Sharp-only enhancement as fallback')
       }
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -621,7 +646,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
       // ═══════════════════════════════════════════════════════════════════════════
       if (!enhancedUrl && sharpEnhancedBuffer) {
         currentStep = 'uploading Sharp-only enhancement'
-        console.log('[Enhance] Using Sharp-only enhancement (AI unavailable)')
+        logger.debug('Using Sharp-only enhancement (AI unavailable)')
 
         const fileExt = image.original_filename?.split('.').pop() || 'jpg'
         const enhancedFileName = `${business.id}/enhanced/${Date.now()}.${fileExt}`
@@ -638,7 +663,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           const urlData = serviceSupabase.storage.from('images').getPublicUrl(enhancedFileName)
           enhancedUrl = urlData.data.publicUrl
           enhancementMethod = 'sharp-only'
-          console.log('[Enhance] Sharp-only enhancement uploaded successfully')
+          logger.info('Sharp-only enhancement uploaded successfully')
         }
       }
 
@@ -647,7 +672,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         enhancedUrl = image.original_url
         processingSkipped = true
         enhancementMethod = 'skipped'
-        console.log('[Enhance] Using original image (all processing skipped)')
+        logger.debug('Using original image (all processing skipped)')
       }
 
       // Build enhancement data for database
@@ -663,7 +688,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
       // Update image record with enhanced URL (or original if processing skipped)
       currentStep = 'updating image record'
-      console.log('[Enhance] Updating image record...')
+      logger.debug('Updating image record')
       const { error: imageUpdateError } = await supabase
         .from('images')
         .update({
@@ -678,14 +703,14 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         .eq('id', imageId)
 
       if (imageUpdateError) {
-        console.error('[Enhance] Image update error:', imageUpdateError)
+        logger.error('Image update error', imageUpdateError)
       } else {
-        console.log('[Enhance] Image record updated successfully')
+        logger.debug('Image record updated successfully')
       }
 
       // Deduct credit
       currentStep = 'deducting credits'
-      console.log('[Enhance] Deducting credit...')
+      logger.debug('Deducting credit')
       const { error: creditUpdateError } = await serviceSupabase
         .from('credits')
         .update({
@@ -696,7 +721,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         .eq('business_id', business.id)
 
       if (creditUpdateError) {
-        console.error('[Enhance] Credit update error:', creditUpdateError)
+        logger.error('Credit update error', creditUpdateError)
       }
 
       // Log credit transaction
@@ -712,22 +737,22 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         })
 
       if (transactionError) {
-        console.error('[Enhance] Transaction log error:', transactionError)
+        logger.error('Transaction log error', transactionError)
       }
 
       // Check and execute auto top-up if needed
       const newBalance = credits.credits_remaining - 1
       checkAndExecuteAutoTopUp(business.id).then(result => {
         if (result.success && result.creditsAdded) {
-          console.log(`[Enhance] Auto top-up triggered: added ${result.creditsAdded} credits`)
+          logger.info('Auto top-up triggered', { creditsAdded: result.creditsAdded })
         } else if (!result.success && result.error) {
-          console.log(`[Enhance] Auto top-up check: ${result.error}`)
+          logger.debug('Auto top-up check', { reason: result.error })
         }
       }).catch(err => {
-        console.error('[Enhance] Auto top-up error:', err)
+        logger.error('Auto top-up error', err)
       })
 
-      console.log('[Enhance] Enhancement complete! Returning success response', processingSkipped ? '(client-side processing needed)' : '')
+      logger.info('Enhancement complete', { method: enhancementMethod, processingSkipped })
       return NextResponse.json({
         success: true,
         imageId,
@@ -738,10 +763,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
       })
     } catch (aiError: unknown) {
       const errorMessage = (aiError as Error).message || 'Unknown error'
-      const errorStack = (aiError as Error).stack || ''
-      console.error('[Enhance] AI Enhancement error at step:', currentStep)
-      console.error('[Enhance] Error message:', errorMessage)
-      console.error('[Enhance] Error stack:', errorStack)
+      logger.error('AI Enhancement error', aiError as Error, { step: currentStep })
 
       // Update image status to failed
       await supabase
@@ -752,22 +774,27 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         })
         .eq('id', imageId)
 
-      // Return detailed error for debugging (in production, would hide some details)
+      // In production, hide technical details from response
+      const isProduction = process.env.NODE_ENV === 'production'
       return NextResponse.json(
         {
           error: 'AI enhancement failed',
-          failedAtStep: currentStep,
-          details: errorMessage,
-          // Include partial stack for debugging
-          debugHint: errorStack.split('\n').slice(0, 3).join(' | ')
+          ...(isProduction
+            ? { message: 'Please try again or contact support if the issue persists.' }
+            : { failedAtStep: currentStep, details: errorMessage })
         },
         { status: 500 }
       )
     }
   } catch (error: unknown) {
-    console.error('Enhance API error:', error)
+    logger.error('Enhance API error', error as Error)
+    const isProduction = process.env.NODE_ENV === 'production'
     return NextResponse.json(
-      { error: (error as Error).message || 'Internal server error' },
+      {
+        error: isProduction
+          ? 'Internal server error'
+          : (error as Error).message || 'Internal server error'
+      },
       { status: 500 }
     )
   }

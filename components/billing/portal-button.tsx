@@ -1,10 +1,12 @@
 'use client'
 
 import { useState } from 'react'
-import { Button } from '@/components/ui/button'
+import { Button, type ButtonProps } from '@/components/ui/button'
 import { Loader2 } from 'lucide-react'
 
-export function PortalButton() {
+interface PortalButtonProps extends Omit<ButtonProps, 'onClick' | 'disabled'> {}
+
+export function PortalButton({ variant = 'outline', ...props }: PortalButtonProps) {
   const [loading, setLoading] = useState(false)
 
   const handlePortal = async () => {
@@ -36,9 +38,10 @@ export function PortalButton() {
 
   return (
     <Button
-      variant="outline"
+      variant={variant}
       disabled={loading}
       onClick={handlePortal}
+      {...props}
     >
       {loading ? (
         <Loader2 className="h-4 w-4 animate-spin" />

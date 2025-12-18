@@ -184,7 +184,7 @@ export async function deductCreditsWithAutoTopUp(
     // Get current credits
     const { data: credits, error: creditsError } = await supabase
       .from('credits')
-      .select('id, credits_remaining')
+      .select('id, credits_remaining, credits_used')
       .eq('business_id', businessId)
       .single()
 
@@ -199,11 +199,14 @@ export async function deductCreditsWithAutoTopUp(
     // Deduct credits
     const newBalance = credits.credits_remaining - amount
 
+    // First get current credits_used for proper increment
+    const newCreditsUsed = (credits.credits_used || 0) + amount
+
     await supabase
       .from('credits')
       .update({
         credits_remaining: newBalance,
-        credits_used: supabase.sql`credits_used + ${amount}`,
+        credits_used: newCreditsUsed,
       })
       .eq('id', credits.id)
 

@@ -550,10 +550,11 @@ export async function POST(request: NextRequest) {
     // Pricing: Image Output $0.134 per image
     const model = getGoogleAI().getGenerativeModel({
       model: 'gemini-3-pro-image-preview',
+      // Gemini 3 Pro Image requires responseModalities - cast to bypass SDK types
       generationConfig: {
-        responseModalities: ['Text', 'Image'] as const,
+        responseModalities: ['Text', 'Image'],
         temperature: 1.0,
-      }
+      } as unknown as import('@google/generative-ai').GenerationConfig
     })
 
     console.log('[Generate] Calling Gemini 3 Pro Image (Nano Banana Pro)...')

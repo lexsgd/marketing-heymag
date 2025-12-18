@@ -1,7 +1,8 @@
 import Stripe from 'stripe'
+import { stripeConfig } from '@/lib/security'
 
-// Initialize Stripe with secret key
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Initialize Stripe with secret key (validated via env-validator)
+export const stripe = new Stripe(stripeConfig.secretKey, {
   apiVersion: '2025-08-27.basil',
   typescript: true,
 })

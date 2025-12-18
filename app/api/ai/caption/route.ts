@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createClient as createServiceClient } from '@supabase/supabase-js'
 import Anthropic from '@anthropic-ai/sdk'
+import { supabaseConfig, aiConfig, aiLogger as logger } from '@/lib/security'
 
 // Use Node.js runtime (not Edge) for Anthropic SDK
 export const runtime = 'nodejs'
@@ -15,7 +16,7 @@ let anthropicClient: Anthropic | null = null
 function getAnthropic(): Anthropic {
   if (!anthropicClient) {
     anthropicClient = new Anthropic({
-      apiKey: process.env.ANTHROPIC_API_KEY,
+      apiKey: aiConfig.anthropicApiKey,
     })
   }
   return anthropicClient
@@ -24,8 +25,8 @@ function getAnthropic(): Anthropic {
 // Service client for bypassing RLS when updating caption count
 function getServiceSupabase() {
   return createServiceClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    supabaseConfig.url,
+    supabaseConfig.serviceRoleKey
   )
 }
 
@@ -333,7 +334,7 @@ Then create captions that describe THIS specific food, not generic food content.
       .eq('id', imageId)
 
     if (updateError) {
-      console.error('Failed to update caption count:', updateError)
+      logger.error('Failed to update caption count', updateError)
       // Don't fail the request, just log the error
     }
 
@@ -347,9 +348,10 @@ Then create captions that describe THIS specific food, not generic food content.
       captionsRemaining: MAX_CAPTIONS_PER_IMAGE - newCaptionCount
     })
   } catch (error: unknown) {
-    console.error('Caption API error:', error)
+    logger.error('Caption API error', error as Error)
+    const isProduction = process.env.NODE_ENV === 'production'
     return NextResponse.json(
-      { error: (error as Error).message || 'Internal server error' },
+      { error: isProduction ? 'Internal server error' : (error as Error).message || 'Internal server error' },
       { status: 500 }
     )
   }

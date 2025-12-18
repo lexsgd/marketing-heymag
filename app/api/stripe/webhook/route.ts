@@ -3,6 +3,7 @@ import { headers } from 'next/headers'
 import Stripe from 'stripe'
 import { stripe, getPlanByPriceId, getPlanCredits, getCreditPackByPriceId } from '@/lib/stripe'
 import { createServiceRoleClient } from '@/lib/supabase/server'
+import { stripeConfig, billingLogger as logger } from '@/lib/security'
 
 // Disable body parsing - we need raw body for signature verification
 export const runtime = 'nodejs'
@@ -13,7 +14,7 @@ export async function POST(request: NextRequest) {
   const signature = headersList.get('stripe-signature')
 
   if (!signature) {
-    console.error('[Stripe Webhook] No signature found')
+    logger.warn('No signature found in webhook request')
     return NextResponse.json(
       { error: 'No signature' },
       { status: 400 }
@@ -26,10 +27,10 @@ export async function POST(request: NextRequest) {
     event = stripe.webhooks.constructEvent(
       body,
       signature,
-      process.env.STRIPE_WEBHOOK_SECRET!
+      stripeConfig.webhookSecret
     )
   } catch (err) {
-    console.error('[Stripe Webhook] Signature verification failed:', err)
+    logger.error('Signature verification failed', err as Error)
     return NextResponse.json(
       { error: 'Webhook signature verification failed' },
       { status: 400 }
@@ -85,12 +86,12 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        console.log(`[Stripe Webhook] Unhandled event type: ${event.type}`)
+        logger.debug('Unhandled event type', { type: event.type })
     }
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('[Stripe Webhook] Error processing event:', error)
+    logger.error('Error processing webhook event', error as Error)
     return NextResponse.json(
       { error: 'Webhook handler failed' },
       { status: 500 }
@@ -110,11 +111,11 @@ async function handleSubscriptionCheckout(
   const planId = session.metadata?.plan_id
 
   if (!businessId || !planId) {
-    console.error('[Stripe Webhook] Missing metadata in checkout session')
+    logger.warn('Missing metadata in checkout session')
     return
   }
 
-  console.log(`[Stripe Webhook] Subscription checkout completed for business: ${businessId}, plan: ${planId}`)
+  logger.info('Subscription checkout completed', { businessId, planId })
 
   // Update business subscription status
   await supabase
@@ -140,7 +141,7 @@ async function handleSubscriptionUpdate(
     .single()
 
   if (!business) {
-    console.error(`[Stripe Webhook] No business found for customer: ${customerId}`)
+    logger.warn('No business found for customer')
     return
   }
 
@@ -200,7 +201,7 @@ async function handleSubscriptionUpdate(
       onConflict: 'stripe_subscription_id',
     })
 
-  console.log(`[Stripe Webhook] Subscription updated for business: ${business.id}, status: ${subscriptionStatus}`)
+  logger.info('Subscription updated', { businessId: business.id, status: subscriptionStatus })
 }
 
 async function handleSubscriptionCanceled(
@@ -217,7 +218,7 @@ async function handleSubscriptionCanceled(
     .single()
 
   if (!business) {
-    console.error(`[Stripe Webhook] No business found for customer: ${customerId}`)
+    logger.warn('No business found for customer')
     return
   }
 
@@ -238,7 +239,7 @@ async function handleSubscriptionCanceled(
     })
     .eq('stripe_subscription_id', subscription.id)
 
-  console.log(`[Stripe Webhook] Subscription canceled for business: ${business.id}`)
+  logger.info('Subscription canceled', { businessId: business.id })
 }
 
 async function handleInvoicePaid(
@@ -259,7 +260,7 @@ async function handleInvoicePaid(
     .single()
 
   if (!business) {
-    console.error(`[Stripe Webhook] No business found for customer: ${customerId}`)
+    logger.warn('No business found for customer')
     return
   }
 
@@ -320,7 +321,7 @@ async function handleInvoicePaid(
       })
   }
 
-  console.log(`[Stripe Webhook] Invoice paid, credits reset for business: ${business.id}, credits: ${planCredits}`)
+  logger.info('Invoice paid, credits reset', { businessId: business.id, credits: planCredits })
 }
 
 async function handleInvoicePaymentFailed(
@@ -337,7 +338,7 @@ async function handleInvoicePaymentFailed(
     .single()
 
   if (!business) {
-    console.error(`[Stripe Webhook] No business found for customer: ${customerId}`)
+    logger.warn('No business found for customer')
     return
   }
 
@@ -349,7 +350,7 @@ async function handleInvoicePaymentFailed(
     })
     .eq('id', business.id)
 
-  console.log(`[Stripe Webhook] Invoice payment failed for business: ${business.id}`)
+  logger.warn('Invoice payment failed', { businessId: business.id })
 }
 
 async function handleCreditPurchase(
@@ -360,7 +361,7 @@ async function handleCreditPurchase(
   const credits = parseInt(session.metadata?.credits || '0', 10)
 
   if (!businessId || !credits) {
-    console.error('[Stripe Webhook] Missing metadata in credit purchase session')
+    logger.warn('Missing metadata in credit purchase session')
     return
   }
 
@@ -417,5 +418,5 @@ async function handleCreditPurchase(
       })
   }
 
-  console.log(`[Stripe Webhook] Credit purchase completed for business: ${businessId}, credits: ${credits}`)
+  logger.info('Credit purchase completed', { businessId, credits })
 }

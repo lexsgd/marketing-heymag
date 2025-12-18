@@ -6,12 +6,13 @@ import {
   getUserPages,
   getInstagramAccount,
 } from '@/lib/social/meta'
+import { facebookConfig, socialLogger as logger, getEnv } from '@/lib/security'
 
 export const dynamic = 'force-dynamic'
 
-const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID!
-const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET!
-const REDIRECT_URI = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/meta/callback`
+const FACEBOOK_APP_ID = facebookConfig.appId
+const FACEBOOK_APP_SECRET = facebookConfig.appSecret
+const REDIRECT_URI = `${getEnv('NEXT_PUBLIC_APP_URL', '')}/api/auth/meta/callback`
 
 /**
  * GET /api/auth/meta/callback
@@ -28,14 +29,14 @@ export async function GET(request: NextRequest) {
 
   // Handle OAuth errors (user denied, etc.)
   if (error) {
-    console.error('[Meta OAuth Callback] Error:', error, errorDescription)
+    logger.warn('OAuth error', { error, description: errorDescription })
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/social?error=oauth_denied&message=${encodeURIComponent(errorDescription || error)}`
     )
   }
 
   if (!code || !state) {
-    console.error('[Meta OAuth Callback] Missing code or state')
+    logger.warn('Missing code or state in callback')
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/social?error=missing_params`
     )
@@ -52,7 +53,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (stateError || !stateRecord) {
-      console.error('[Meta OAuth Callback] Invalid or expired state:', stateError)
+      logger.warn('Invalid or expired state', { error: stateError })
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/social?error=invalid_state`
       )
@@ -70,7 +71,7 @@ export async function GET(request: NextRequest) {
     )
 
     if (tokenData.error) {
-      console.error('[Meta OAuth Callback] Token exchange error:', tokenData.error)
+      logger.error('Token exchange error', undefined, { error: tokenData.error })
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/social?error=token_exchange_failed`
       )
@@ -86,7 +87,7 @@ export async function GET(request: NextRequest) {
     )
 
     if (longLivedData.error) {
-      console.error('[Meta OAuth Callback] Long-lived token error:', longLivedData.error)
+      logger.warn('Long-lived token error, using short-lived', { error: longLivedData.error })
       // Continue with short-lived token if long-lived fails
     }
 
@@ -97,7 +98,7 @@ export async function GET(request: NextRequest) {
     const pages = await getUserPages(userAccessToken)
 
     if (pages.length === 0) {
-      console.error('[Meta OAuth Callback] No pages found')
+      logger.warn('No Facebook pages found for user')
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/social?error=no_pages&message=${encodeURIComponent('No Facebook Pages found. Please make sure you have admin access to at least one Facebook Page.')}`
       )
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (businessError || !business) {
-      console.error('[Meta OAuth Callback] Business not found:', businessError)
+      logger.warn('Business not found', { error: businessError })
       return NextResponse.redirect(
         `${process.env.NEXT_PUBLIC_APP_URL}/social?error=no_business`
       )
@@ -155,7 +156,7 @@ export async function GET(request: NextRequest) {
       )
 
       if (fbError) {
-        console.error('[Meta OAuth Callback] Failed to store Facebook page:', fbError)
+        logger.error('Failed to store Facebook page', fbError)
       } else {
         connectedCount++
       }
@@ -191,7 +192,7 @@ export async function GET(request: NextRequest) {
           )
 
           if (igError) {
-            console.error('[Meta OAuth Callback] Failed to store Instagram account:', igError)
+            logger.error('Failed to store Instagram account', igError)
           } else {
             connectedCount++
           }
@@ -199,14 +200,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    console.log(`[Meta OAuth Callback] Connected ${connectedCount} accounts for business ${business.id}`)
+    logger.info('OAuth callback completed', { connectedCount, businessId: business.id })
 
     // Redirect back to social page with success
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/social?connected=true&count=${connectedCount}`
     )
   } catch (error) {
-    console.error('[Meta OAuth Callback] Exception:', error)
+    logger.error('OAuth callback exception', error as Error)
     return NextResponse.redirect(
       `${process.env.NEXT_PUBLIC_APP_URL}/social?error=callback_error`
     )

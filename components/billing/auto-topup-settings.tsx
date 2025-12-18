@@ -38,7 +38,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!)
+// Stripe publishable key - safe to be empty string (loadStripe handles gracefully)
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null
 
 interface PaymentMethod {
   id: string
