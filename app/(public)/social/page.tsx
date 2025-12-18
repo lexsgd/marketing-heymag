@@ -41,6 +41,7 @@ import {
 } from '@/components/ui/alert-dialog'
 
 // Platform configurations
+// Note: Instagram and Facebook use the same Meta OAuth flow
 const platforms = [
   {
     id: 'instagram',
@@ -50,6 +51,7 @@ const platforms = [
     description: 'Connect your Instagram Business account to post photos and stories',
     features: ['Feed posts', 'Stories', 'Reels thumbnail'],
     apiStatus: 'available',
+    oauthProvider: 'meta', // Uses Meta OAuth
   },
   {
     id: 'facebook',
@@ -59,6 +61,7 @@ const platforms = [
     description: 'Connect your Facebook Page to share food photos with followers',
     features: ['Page posts', 'Albums', 'Stories'],
     apiStatus: 'available',
+    oauthProvider: 'meta', // Uses Meta OAuth
   },
   {
     id: 'tiktok',
@@ -67,7 +70,7 @@ const platforms = [
     color: 'bg-black',
     description: 'Connect your TikTok Business account for posting',
     features: ['Video thumbnails', 'Cover images'],
-    apiStatus: 'available',
+    apiStatus: 'coming_soon', // Changed to coming_soon until TikTok API is implemented
   },
   {
     id: 'xiaohongshu',
@@ -92,10 +95,12 @@ const platforms = [
 interface SocialAccount {
   id: string
   platform: string
+  platform_id: string
   platform_display_name?: string
   platform_username?: string
   is_connected: boolean
   account_info: Record<string, unknown>
+  facebook_page_id?: string // For Instagram accounts linked to Facebook pages
 }
 
 interface SocialPost {
@@ -209,11 +214,31 @@ function SocialPageContent() {
     fetchData()
   }, [syncAccounts])
 
-  // Check for successful connection redirect
+  // Check for successful connection redirect from Meta OAuth
   useEffect(() => {
-    if (searchParams.get('connected') === 'true' && user) {
-      toast.success('Social account connection completed!')
+    const connected = searchParams.get('connected')
+    const count = searchParams.get('count')
+    const error = searchParams.get('error')
+    const message = searchParams.get('message')
+
+    if (connected === 'true' && user) {
+      const accountCount = count ? parseInt(count, 10) : 1
+      toast.success(`Successfully connected ${accountCount} account${accountCount > 1 ? 's' : ''}!`)
       syncAccounts()
+      // Clean up URL
+      window.history.replaceState({}, '', '/social')
+    } else if (error) {
+      const errorMessages: Record<string, string> = {
+        oauth_denied: 'You declined the connection. Please try again.',
+        missing_params: 'Connection failed due to missing parameters.',
+        invalid_state: 'Connection expired. Please try again.',
+        token_exchange_failed: 'Failed to complete authentication. Please try again.',
+        no_pages: message || 'No Facebook Pages found. Please make sure you have admin access to at least one Facebook Page.',
+        no_business: 'Business profile not found.',
+        callback_error: 'Connection failed. Please try again.',
+        config_error: 'Social media connection is not configured.',
+      }
+      toast.error(errorMessages[error] || 'Connection failed. Please try again.')
       // Clean up URL
       window.history.replaceState({}, '', '/social')
     }
@@ -221,53 +246,27 @@ function SocialPageContent() {
 
   const connectedPlatforms = socialAccounts.map((a) => a.platform)
 
-  // Handle connecting social accounts
-  const handleConnect = async () => {
+  // Handle connecting social accounts via Meta OAuth
+  // This connects both Facebook and Instagram in one flow
+  const handleConnectMeta = () => {
     setConnecting(true)
-    try {
-      const response = await fetch('/api/social/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          redirectUrl: `${window.location.origin}/social?connected=true`,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to start connection')
-      }
-
-      if (data.url) {
-        // Open Ayrshare's social linking page in a new window
-        const popup = window.open(data.url, 'Connect Social Accounts', 'width=600,height=700')
-
-        // Poll to check if popup is closed
-        const checkClosed = setInterval(() => {
-          if (popup?.closed) {
-            clearInterval(checkClosed)
-            // Sync accounts after popup closes
-            syncAccounts()
-          }
-        }, 1000)
-      }
-    } catch (error) {
-      console.error('Error connecting:', error)
-      toast.error(error instanceof Error ? error.message : 'Failed to connect social accounts')
-    } finally {
-      setConnecting(false)
-    }
+    // Redirect to Meta OAuth endpoint - this will handle the full OAuth flow
+    // and redirect back to /social with success/error params
+    window.location.href = '/api/auth/meta'
   }
 
   // Handle disconnecting a social account
-  const handleDisconnect = async (platform: string) => {
+  const handleDisconnect = async (platform: string, platformId?: string) => {
     setDisconnecting(platform)
     try {
-      const response = await fetch('/api/social/disconnect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ platform }),
+      // Build query params
+      const params = new URLSearchParams({ platform })
+      if (platformId) {
+        params.append('platformId', platformId)
+      }
+
+      const response = await fetch(`/api/social/accounts?${params.toString()}`, {
+        method: 'DELETE',
       })
 
       const data = await response.json()
@@ -276,7 +275,8 @@ function SocialPageContent() {
         throw new Error(data.error || 'Failed to disconnect')
       }
 
-      toast.success(`${platform} disconnected successfully`)
+      const platformName = platform.charAt(0).toUpperCase() + platform.slice(1)
+      toast.success(`${platformName} disconnected successfully`)
       await syncAccounts()
     } catch (error) {
       console.error('Error disconnecting:', error)
@@ -488,11 +488,11 @@ function SocialPageContent() {
                             </a>
                           </Button>
                         </div>
-                      ) : platform.apiStatus === 'available' ? (
+                      ) : platform.apiStatus === 'available' && platform.oauthProvider === 'meta' ? (
                         user ? (
                           <Button
                             className="w-full bg-orange-500 hover:bg-orange-600"
-                            onClick={handleConnect}
+                            onClick={handleConnectMeta}
                             disabled={connecting}
                           >
                             {connecting ? (
@@ -500,7 +500,7 @@ function SocialPageContent() {
                             ) : (
                               <Plus className="mr-2 h-4 w-4" />
                             )}
-                            Connect {platform.name}
+                            Connect with Meta
                           </Button>
                         ) : (
                           <Button className="w-full bg-orange-500 hover:bg-orange-600" asChild>
@@ -721,14 +721,24 @@ function SocialPageContent() {
           <AlertDialogHeader>
             <AlertDialogTitle>Disconnect {disconnectDialog}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will disconnect your {disconnectDialog} account from Zazzles. You won&apos;t be
+              This will disconnect your {disconnectDialog} account from FoodSnap. You won&apos;t be
               able to post to this platform until you reconnect.
+              {disconnectDialog === 'facebook' && (
+                <span className="block mt-2 text-orange-600 dark:text-orange-400">
+                  Note: Disconnecting Facebook will also disconnect any linked Instagram accounts.
+                </span>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => disconnectDialog && handleDisconnect(disconnectDialog)}
+              onClick={() => {
+                if (disconnectDialog) {
+                  const account = getAccountDetails(disconnectDialog)
+                  handleDisconnect(disconnectDialog, account?.platform_id)
+                }
+              }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Disconnect

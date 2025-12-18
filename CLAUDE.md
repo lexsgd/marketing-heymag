@@ -29,8 +29,8 @@ F&B SMEs who need professional food photography but can't afford traditional pho
 | **AI (Images)** | Google Gemini API (Nano Banana Pro) | Photo enhancement |
 | **AI (Captions)** | Anthropic Claude | Caption generation |
 | **Background** | Remove.bg API | Background removal |
-| **Social Posting** | Ayrshare API | FB/IG/TikTok |
-| **China Platforms** | KAWO or Just One API | Xiaohongshu/WeChat |
+| **Social Posting** | Meta Graph API v22.0 | Facebook/Instagram (direct) |
+| **China Platforms** | KAWO or Just One API | Xiaohongshu/WeChat (coming soon) |
 | **Hosting** | Vercel | Deployment |
 | **Storage** | Supabase Storage | Image uploads |
 
@@ -123,13 +123,18 @@ F&B SMEs who need professional food photography but can't afford traditional pho
 - Cost: ~$0.003/caption
 - Used for: Multilingual caption generation
 
-### Ayrshare
-- Endpoint: `app.ayrshare.com/api`
-- Used for: Facebook, Instagram, TikTok posting
+### Meta Graph API (Facebook + Instagram)
+- Endpoint: `graph.facebook.com/v22.0`
+- OAuth: Facebook Login for Business
+- Used for: Facebook Page posts, Instagram Business posts
+- Features: Feed posts, photo posts, carousel posts
+- Token: Page access tokens (never expire)
+- Note: Instagram requires linked Facebook Page
 
-### KAWO/Just One API
+### KAWO/Just One API (Coming Soon)
 - Used for: Xiaohongshu, WeChat posting
 - Note: Xiaohongshu has strict external link policies
+- Status: Phase 2 implementation
 
 ---
 
@@ -211,9 +216,13 @@ GOOGLE_AI_API_KEY=
 ANTHROPIC_API_KEY=
 REMOVEBG_API_KEY=
 
-# Social Posting
-AYRSHARE_API_KEY=
-KAWO_API_KEY=
+# Social Posting - Meta (Facebook + Instagram)
+# Create app at https://developers.facebook.com/apps
+FACEBOOK_APP_ID=
+FACEBOOK_APP_SECRET=
+
+# Social Posting - China Platforms (Coming Soon)
+# KAWO_API_KEY=
 ```
 
 ---
