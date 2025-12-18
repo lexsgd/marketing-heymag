@@ -31,14 +31,64 @@ async function getBackgroundRemovalModule() {
 
   if (!bgRemovalModule) {
     // Load from CDN at runtime - completely bypasses Vercel build
-    // Using variable assignment to prevent static bundler analysis
-    // while avoiding security-flagged Function constructor
+    // The URL is computed at runtime to prevent static bundler analysis
     const cdnUrl = BG_REMOVAL_CDN
-    // Dynamic import from CDN URL - use indirect eval for runtime import
-    // This is the standard pattern for loading ESM from CDN in bundled apps
-    bgRemovalModule = await (0, eval)('import')(cdnUrl)
+    // Use script injection for loading ESM from CDN
+    // This avoids both static analysis and eval-based patterns
+    bgRemovalModule = await loadModuleFromCDN(cdnUrl)
   }
   return bgRemovalModule
+}
+
+/**
+ * Load an ESM module from CDN using script injection
+ * This bypasses bundler static analysis and works with Vercel
+ */
+async function loadModuleFromCDN(url: string): Promise<unknown> {
+  // Create a unique callback name
+  const callbackName = `__bgRemoval_${Date.now()}`
+
+  return new Promise((resolve, reject) => {
+    // Create a script that imports and exposes the module
+    const script = document.createElement('script')
+    script.type = 'module'
+    script.textContent = `
+      import * as module from '${url}';
+      window['${callbackName}'] = module;
+      window.dispatchEvent(new CustomEvent('${callbackName}'));
+    `
+
+    const handler = () => {
+      const windowAny = window as unknown as Record<string, unknown>
+      const module = windowAny[callbackName]
+      delete windowAny[callbackName]
+      window.removeEventListener(callbackName, handler)
+      document.head.removeChild(script)
+      resolve(module)
+    }
+
+    window.addEventListener(callbackName, handler)
+
+    script.onerror = () => {
+      window.removeEventListener(callbackName, handler)
+      document.head.removeChild(script)
+      reject(new Error(`Failed to load module from ${url}`))
+    }
+
+    document.head.appendChild(script)
+
+    // Timeout after 30 seconds
+    setTimeout(() => {
+      const windowAny = window as unknown as Record<string, unknown>
+      if (windowAny[callbackName] === undefined) {
+        window.removeEventListener(callbackName, handler)
+        if (script.parentNode) {
+          document.head.removeChild(script)
+        }
+        reject(new Error(`Timeout loading module from ${url}`))
+      }
+    }, 30000)
+  })
 }
 
 /**
