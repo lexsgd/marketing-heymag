@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { MainNav } from '@/components/main-nav'
+import { MainNavAuth } from '@/components/main-nav-auth'
 import { CreditsButton } from '@/components/billing/credits-button'
 import { PortalButton } from '@/components/billing/portal-button'
 import { SuccessToast } from '@/components/billing/success-toast'
@@ -34,7 +34,7 @@ export default async function BillingPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
-  // Get business with subscription and credits
+  // Get business data
   const { data: business } = await supabase
     .from('businesses')
     .select(`
@@ -44,13 +44,16 @@ export default async function BillingPage() {
       subscription_tier,
       subscription_ends_at,
       trial_ends_at,
-      stripe_customer_id,
-      credits (
-        credits_remaining,
-        credits_used
-      )
+      stripe_customer_id
     `)
     .eq('auth_user_id', user.id)
+    .single()
+
+  // Get credits separately (more reliable than join)
+  const { data: creditsData } = await supabase
+    .from('credits')
+    .select('credits_remaining, credits_used')
+    .eq('business_id', business?.id)
     .single()
 
   // Get credit transactions
@@ -61,8 +64,8 @@ export default async function BillingPage() {
     .order('created_at', { ascending: false })
     .limit(20)
 
-  const creditsRemaining = business?.credits?.[0]?.credits_remaining || 0
-  const creditsUsed = business?.credits?.[0]?.credits_used || 0
+  const creditsRemaining = creditsData?.credits_remaining || 0
+  const creditsUsed = creditsData?.credits_used || 0
   const currentPlan = business?.subscription_tier || 'trial'
   const isTrialing = business?.subscription_status === 'trial'
   const isActive = business?.subscription_status === 'active'
@@ -72,7 +75,7 @@ export default async function BillingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
+      <MainNavAuth />
 
       {/* Success Toast Handler */}
       <Suspense fallback={null}>
