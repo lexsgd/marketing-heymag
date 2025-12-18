@@ -16,13 +16,11 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
-  Crown,
   ArrowRight,
   Palette,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
-import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { MainNav } from '@/components/main-nav'
@@ -90,7 +88,6 @@ function EditorContent() {
   const [error, setError] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('1:1')
   const [variations, setVariations] = useState(1)
-  const [ultraRealistic, setUltraRealistic] = useState(false)
 
   const router = useRouter()
 
@@ -650,16 +647,6 @@ function EditorContent() {
                   value={variations}
                   onChange={setVariations}
                 />
-
-                {/* Ultra-Realistic Toggle */}
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-yellow-500" />
-                  <span className="text-sm">Ultra-Realistic</span>
-                  <Switch
-                    checked={ultraRealistic}
-                    onCheckedChange={setUltraRealistic}
-                  />
-                </div>
 
                 {/* Enhance Button */}
                 <Button
