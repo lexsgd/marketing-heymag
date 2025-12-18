@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { MainNav } from '@/components/main-nav'
+import { MainNavAuth } from '@/components/main-nav-auth'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -151,7 +151,7 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNav />
+      <MainNavAuth />
 
       <div className="pt-16 flex">
         {/* Left Sidebar */}
