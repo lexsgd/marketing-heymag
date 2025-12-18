@@ -6,12 +6,7 @@ import { useSearchParams } from 'next/navigation'
 import {
   Instagram,
   Facebook,
-  MessageCircle,
-  Sparkles,
-  Smartphone,
-  Plus,
   ExternalLink,
-  CheckCircle2,
   Settings,
   Calendar,
   Send,
@@ -19,16 +14,29 @@ import {
   Image as ImageIcon,
   LogIn,
   Loader2,
-  Unlink,
   RefreshCw,
+  MoreHorizontal,
+  Link2,
+  Plus,
+  Unlink,
+  CheckCircle2,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Separator } from '@/components/ui/separator'
 import { MainNavAuth } from '@/components/main-nav-auth'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from 'sonner'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,58 +47,97 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { cn } from '@/lib/utils'
 
-// Platform configurations
-// Note: Instagram and Facebook use the same Meta OAuth flow
-const platforms = [
-  {
+// Platform configurations with proper brand colors
+const platformConfig = {
+  instagram: {
     id: 'instagram',
     name: 'Instagram',
+    description: 'Share photos to your Instagram Business account',
+    features: ['Feed posts', 'Stories', 'Reels'],
+    status: 'available' as const,
+    oauthProvider: 'meta',
     icon: Instagram,
-    color: 'bg-gradient-to-br from-purple-500 to-pink-500',
-    description: 'Connect your Instagram Business account to post photos and stories',
-    features: ['Feed posts', 'Stories', 'Reels thumbnail'],
-    apiStatus: 'available',
-    oauthProvider: 'meta', // Uses Meta OAuth
+    colors: {
+      bg: 'bg-gradient-to-br from-pink-500/10 via-purple-500/10 to-orange-500/10',
+      iconBg: 'bg-gradient-to-br from-pink-500 via-purple-500 to-orange-500',
+      icon: 'text-white',
+      border: 'border-pink-500/20',
+    },
   },
-  {
+  facebook: {
     id: 'facebook',
     name: 'Facebook',
-    icon: Facebook,
-    color: 'bg-blue-600',
-    description: 'Connect your Facebook Page to share food photos with followers',
+    description: 'Post to your Facebook Page',
     features: ['Page posts', 'Albums', 'Stories'],
-    apiStatus: 'available',
-    oauthProvider: 'meta', // Uses Meta OAuth
+    status: 'available' as const,
+    oauthProvider: 'meta',
+    icon: Facebook,
+    colors: {
+      bg: 'bg-blue-500/10',
+      iconBg: 'bg-[#1877f2]',
+      icon: 'text-white',
+      border: 'border-blue-500/20',
+    },
   },
-  {
+  tiktok: {
     id: 'tiktok',
     name: 'TikTok',
-    icon: MessageCircle,
-    color: 'bg-black',
-    description: 'Connect your TikTok Business account for posting',
-    features: ['Video thumbnails', 'Cover images'],
-    apiStatus: 'coming_soon', // Changed to coming_soon until TikTok API is implemented
+    description: 'Share video content to TikTok',
+    features: ['Video posts', 'Photo mode'],
+    status: 'coming_soon' as const,
+    icon: () => (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+      </svg>
+    ),
+    colors: {
+      bg: 'bg-black/5 dark:bg-white/5',
+      iconBg: 'bg-black dark:bg-white',
+      icon: 'text-white dark:text-black',
+      border: 'border-black/10 dark:border-white/10',
+    },
   },
-  {
+  xiaohongshu: {
     id: 'xiaohongshu',
-    name: 'Xiaohongshu (RED)',
-    icon: Sparkles,
-    color: 'bg-red-500',
-    description: 'Connect your Xiaohongshu account to reach Chinese consumers',
-    features: ['Photo posts', 'Notes'],
-    apiStatus: 'coming_soon',
+    name: 'Xiaohongshu',
+    description: 'Reach Chinese consumers on RED',
+    features: ['Notes', 'Photo posts'],
+    status: 'coming_soon' as const,
+    icon: () => (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-6h2v6zm4 0h-2v-6h2v6zm0-8H9V7h6v2z"/>
+      </svg>
+    ),
+    colors: {
+      bg: 'bg-red-500/10',
+      iconBg: 'bg-[#ff2741]',
+      icon: 'text-white',
+      border: 'border-red-500/20',
+    },
   },
-  {
+  wechat: {
     id: 'wechat',
     name: 'WeChat',
-    icon: Smartphone,
-    color: 'bg-green-500',
-    description: 'Share to WeChat Moments via official account',
+    description: 'Share to WeChat Official Account',
     features: ['Moments', 'Official Account'],
-    apiStatus: 'coming_soon',
+    status: 'coming_soon' as const,
+    icon: () => (
+      <svg viewBox="0 0 24 24" className="h-5 w-5" fill="currentColor">
+        <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 0 1 .213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 0 0 .167-.054l1.903-1.114a.864.864 0 0 1 .717-.098 10.16 10.16 0 0 0 2.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178A1.17 1.17 0 0 1 4.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 0 1-1.162 1.178 1.17 1.17 0 0 1-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 0 1 .598.082l1.584.926a.272.272 0 0 0 .14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.49.49 0 0 1 .176-.553C23.02 18.345 24 16.635 24 14.753c0-3.37-3.212-6.102-7.062-5.895zm-1.834 2.89c.535 0 .969.44.969.982a.976.976 0 0 1-.969.983.976.976 0 0 1-.969-.983c0-.542.434-.983.97-.983zm4.857 0c.536 0 .97.44.97.982a.976.976 0 0 1-.97.983.976.976 0 0 1-.969-.983c0-.542.433-.983.97-.983z"/>
+      </svg>
+    ),
+    colors: {
+      bg: 'bg-green-500/10',
+      iconBg: 'bg-[#07c160]',
+      icon: 'text-white',
+      border: 'border-green-500/20',
+    },
   },
-]
+} as const
+
+type PlatformId = keyof typeof platformConfig
 
 interface SocialAccount {
   id: string
@@ -100,7 +147,8 @@ interface SocialAccount {
   platform_username?: string
   is_connected: boolean
   account_info: Record<string, unknown>
-  facebook_page_id?: string // For Instagram accounts linked to Facebook pages
+  facebook_page_id?: string
+  connected_at?: string
 }
 
 interface SocialPost {
@@ -120,6 +168,220 @@ interface SocialPost {
   } | null
 }
 
+// Connected Account Card Component
+function ConnectedAccountCard({
+  account,
+  onDisconnect,
+  isDisconnecting,
+}: {
+  account: SocialAccount
+  onDisconnect: () => void
+  isDisconnecting: boolean
+}) {
+  const platform = platformConfig[account.platform as PlatformId]
+  if (!platform) return null
+
+  const Icon = platform.icon
+  const profileUrl =
+    account.platform === 'instagram' && account.platform_username
+      ? `https://instagram.com/${account.platform_username}`
+      : account.platform === 'facebook' && account.platform_id
+        ? `https://facebook.com/${account.platform_id}`
+        : null
+
+  return (
+    <Card className={cn(
+      "group transition-all duration-200 hover:shadow-md",
+      platform.colors.border
+    )}>
+      <CardContent className="flex items-center gap-4 p-4">
+        {/* Platform Icon */}
+        <div className={cn(
+          "h-12 w-12 rounded-xl flex items-center justify-center shrink-0",
+          platform.colors.iconBg
+        )}>
+          <Icon className={cn("h-6 w-6", platform.colors.icon)} />
+        </div>
+
+        {/* Account Info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="font-medium truncate">
+              {account.platform_display_name || platform.name}
+            </span>
+            <Badge variant="secondary" className="bg-green-500/10 text-green-600 dark:text-green-400 border-0 shrink-0">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Connected
+            </Badge>
+          </div>
+          {account.platform_username && (
+            <p className="text-sm text-muted-foreground truncate">
+              @{account.platform_username}
+            </p>
+          )}
+        </div>
+
+        {/* Actions Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+            >
+              <MoreHorizontal className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            {profileUrl && (
+              <>
+                <DropdownMenuItem asChild>
+                  <a href={profileUrl} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    View Profile
+                  </a>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
+            )}
+            <DropdownMenuItem
+              onClick={onDisconnect}
+              disabled={isDisconnecting}
+              className="text-destructive focus:text-destructive"
+            >
+              {isDisconnecting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Unlink className="mr-2 h-4 w-4" />
+              )}
+              Disconnect
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Available Platform Card Component
+function AvailablePlatformCard({
+  platformId,
+  onConnect,
+  isConnecting,
+}: {
+  platformId: PlatformId
+  onConnect: () => void
+  isConnecting: boolean
+}) {
+  const platform = platformConfig[platformId]
+  const Icon = platform.icon
+  const isComingSoon = platform.status === 'coming_soon'
+
+  return (
+    <Card className={cn(
+      "group transition-all duration-200 overflow-hidden",
+      !isComingSoon && "hover:shadow-md hover:scale-[1.02] cursor-pointer",
+      isComingSoon && "opacity-60",
+      platform.colors.border
+    )}>
+      <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
+        {/* Platform Icon */}
+        <div className={cn(
+          "h-14 w-14 rounded-2xl flex items-center justify-center transition-transform",
+          !isComingSoon && "group-hover:scale-110",
+          platform.colors.iconBg
+        )}>
+          <Icon className={cn("h-7 w-7", platform.colors.icon)} />
+        </div>
+
+        {/* Platform Name */}
+        <div>
+          <h3 className="font-semibold">{platform.name}</h3>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+            {platform.description}
+          </p>
+        </div>
+
+        {/* Action */}
+        {isComingSoon ? (
+          <Badge variant="outline" className="text-xs">
+            <Clock className="h-3 w-3 mr-1" />
+            Coming Soon
+          </Badge>
+        ) : (
+          <Button
+            size="sm"
+            onClick={onConnect}
+            disabled={isConnecting}
+            className="w-full bg-primary/90 hover:bg-primary"
+          >
+            {isConnecting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <>
+                <Plus className="h-4 w-4 mr-1" />
+                Connect
+              </>
+            )}
+          </Button>
+        )}
+      </CardContent>
+    </Card>
+  )
+}
+
+// Empty State Component
+function EmptyState({ onConnect, isConnecting }: { onConnect: () => void; isConnecting: boolean }) {
+  return (
+    <Card className="border-dashed border-2">
+      <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+        <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-500/10 to-pink-500/10 flex items-center justify-center mb-6">
+          <Link2 className="h-10 w-10 text-orange-500" />
+        </div>
+        <h3 className="text-xl font-semibold mb-2">No accounts connected</h3>
+        <p className="text-muted-foreground max-w-sm mb-6">
+          Connect your social media accounts to start publishing your enhanced food photos directly to your audience.
+        </p>
+        <Button onClick={onConnect} disabled={isConnecting} size="lg">
+          {isConnecting ? (
+            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+          ) : (
+            <Plus className="h-4 w-4 mr-2" />
+          )}
+          Connect Your First Account
+        </Button>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Stats Card Component
+function StatsCard({
+  title,
+  value,
+  subtitle,
+  icon: Icon,
+  iconColor,
+}: {
+  title: string
+  value: number
+  subtitle: string
+  icon: React.ElementType
+  iconColor: string
+}) {
+  return (
+    <div className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+      <div className={cn("h-10 w-10 rounded-lg flex items-center justify-center", iconColor)}>
+        <Icon className="h-5 w-5 text-white" />
+      </div>
+      <div>
+        <p className="text-2xl font-bold">{value}</p>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
+      </div>
+    </div>
+  )
+}
+
 function SocialPageContent() {
   const searchParams = useSearchParams()
   const [user, setUser] = useState<{ email?: string } | null>(null)
@@ -130,15 +392,13 @@ function SocialPageContent() {
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([])
   const [recentPosts, setRecentPosts] = useState<SocialPost[]>([])
   const [scheduledPosts, setScheduledPosts] = useState<SocialPost[]>([])
-  const [disconnectDialog, setDisconnectDialog] = useState<string | null>(null)
+  const [disconnectDialog, setDisconnectDialog] = useState<SocialAccount | null>(null)
 
-  // Sync accounts from Ayrshare API
   const syncAccounts = useCallback(async () => {
     setSyncing(true)
     try {
       const response = await fetch('/api/social/accounts')
       const data = await response.json()
-
       if (data.success && data.accounts) {
         setSocialAccounts(data.accounts.filter((a: SocialAccount) => a.is_connected))
       }
@@ -152,16 +412,10 @@ function SocialPageContent() {
   useEffect(() => {
     const fetchData = async () => {
       const supabase = createClient()
-
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-
+        const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           setUser({ email: user.email })
-
-          // Get business
           const { data: business } = await supabase
             .from('businesses')
             .select('id')
@@ -169,38 +423,22 @@ function SocialPageContent() {
             .single()
 
           if (business?.id) {
-            // Sync connected social accounts from API
             await syncAccounts()
-
-            // Get recent posts
             const { data: posts } = await supabase
               .from('social_posts')
-              .select(
-                `
-                *,
-                images (id, thumbnail_url, enhanced_url, original_url, original_filename)
-              `
-              )
+              .select(`*, images (id, thumbnail_url, enhanced_url, original_url, original_filename)`)
               .eq('business_id', business.id)
               .order('created_at', { ascending: false })
               .limit(10)
-
             setRecentPosts(posts || [])
 
-            // Get scheduled posts
             const { data: scheduled } = await supabase
               .from('social_posts')
-              .select(
-                `
-                *,
-                images (id, thumbnail_url, enhanced_url, original_url, original_filename)
-              `
-              )
+              .select(`*, images (id, thumbnail_url, enhanced_url, original_url, original_filename)`)
               .eq('business_id', business.id)
               .eq('status', 'scheduled')
               .order('scheduled_at', { ascending: true })
               .limit(10)
-
             setScheduledPosts(scheduled || [])
           }
         }
@@ -210,11 +448,9 @@ function SocialPageContent() {
         setLoading(false)
       }
     }
-
     fetchData()
   }, [syncAccounts])
 
-  // Check for successful connection redirect from Meta OAuth
   useEffect(() => {
     const connected = searchParams.get('connected')
     const count = searchParams.get('count')
@@ -225,7 +461,6 @@ function SocialPageContent() {
       const accountCount = count ? parseInt(count, 10) : 1
       toast.success(`Successfully connected ${accountCount} account${accountCount > 1 ? 's' : ''}!`)
       syncAccounts()
-      // Clean up URL
       window.history.replaceState({}, '', '/social')
     } else if (error) {
       const errorMessages: Record<string, string> = {
@@ -233,53 +468,39 @@ function SocialPageContent() {
         missing_params: 'Connection failed due to missing parameters.',
         invalid_state: 'Connection expired. Please try again.',
         token_exchange_failed: 'Failed to complete authentication. Please try again.',
-        no_pages: message || 'No Facebook Pages found. Please make sure you have admin access to at least one Facebook Page.',
+        no_pages: message || 'No Facebook Pages found.',
         no_business: 'Business profile not found.',
         callback_error: 'Connection failed. Please try again.',
         config_error: 'Social media connection is not configured.',
       }
       toast.error(errorMessages[error] || 'Connection failed. Please try again.')
-      // Clean up URL
       window.history.replaceState({}, '', '/social')
     }
   }, [searchParams, user, syncAccounts])
 
-  const connectedPlatforms = socialAccounts.map((a) => a.platform)
+  const connectedPlatformIds = socialAccounts.map((a) => a.platform)
+  const availablePlatforms = Object.keys(platformConfig).filter(
+    (id) => !connectedPlatformIds.includes(id)
+  ) as PlatformId[]
 
-  // Handle connecting social accounts via Meta OAuth
-  // This connects both Facebook and Instagram in one flow
   const handleConnectMeta = () => {
     setConnecting(true)
-    // Redirect to Meta OAuth endpoint - this will handle the full OAuth flow
-    // and redirect back to /social with success/error params
     window.location.href = '/api/auth/meta'
   }
 
-  // Handle disconnecting a social account
-  const handleDisconnect = async (platform: string, platformId?: string) => {
-    setDisconnecting(platform)
+  const handleDisconnect = async (account: SocialAccount) => {
+    setDisconnecting(account.platform)
     try {
-      // Build query params
-      const params = new URLSearchParams({ platform })
-      if (platformId) {
-        params.append('platformId', platformId)
+      const params = new URLSearchParams({ platform: account.platform })
+      if (account.platform_id) {
+        params.append('platformId', account.platform_id)
       }
-
-      const response = await fetch(`/api/social/accounts?${params.toString()}`, {
-        method: 'DELETE',
-      })
-
+      const response = await fetch(`/api/social/accounts?${params.toString()}`, { method: 'DELETE' })
       const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to disconnect')
-      }
-
-      const platformName = platform.charAt(0).toUpperCase() + platform.slice(1)
-      toast.success(`${platformName} disconnected successfully`)
+      if (!response.ok) throw new Error(data.error || 'Failed to disconnect')
+      toast.success(`${platformConfig[account.platform as PlatformId]?.name || account.platform} disconnected`)
       await syncAccounts()
     } catch (error) {
-      console.error('Error disconnecting:', error)
       toast.error(error instanceof Error ? error.message : 'Failed to disconnect account')
     } finally {
       setDisconnecting(null)
@@ -287,451 +508,173 @@ function SocialPageContent() {
     }
   }
 
-  // Get account details for a platform
-  const getAccountDetails = (platformId: string): SocialAccount | undefined => {
-    return socialAccounts.find((a) => a.platform === platformId)
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavAuth />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-background">
       <MainNavAuth />
-      <div className="pt-16 p-6 space-y-6">
+
+      <div className="container max-w-4xl py-8 px-4 space-y-8">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Social Media</h1>
-            <p className="text-muted-foreground">
-              Connect accounts and post your food photos to social platforms
+            <h1 className="text-3xl font-bold tracking-tight">Social Connections</h1>
+            <p className="text-muted-foreground mt-1">
+              Connect your accounts to publish content directly to social media.
             </p>
           </div>
-          <div className="flex gap-2">
-            {user && (
-              <Button variant="outline" onClick={syncAccounts} disabled={syncing}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                Sync
-              </Button>
-            )}
-            {user ? (
-              <Button className="bg-orange-500 hover:bg-orange-600" asChild>
-                <Link href="/gallery">
-                  <ImageIcon className="mr-2 h-4 w-4" />
-                  Select Photos to Post
-                </Link>
-              </Button>
-            ) : (
-              <Button className="bg-orange-500 hover:bg-orange-600" asChild>
-                <Link href="/auth/signup">
-                  <LogIn className="mr-2 h-4 w-4" />
-                  Sign Up to Get Started
-                </Link>
-              </Button>
-            )}
-          </div>
+          {user && socialAccounts.length > 0 && (
+            <Button variant="outline" size="sm" onClick={syncAccounts} disabled={syncing}>
+              <RefreshCw className={cn("h-4 w-4 mr-2", syncing && "animate-spin")} />
+              Refresh
+            </Button>
+          )}
         </div>
 
-        <Tabs defaultValue="accounts" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="accounts">
-              <Settings className="mr-2 h-4 w-4" />
-              {user ? 'Connected Accounts' : 'Platforms'}
-            </TabsTrigger>
-            {user && (
-              <>
-                <TabsTrigger value="posts">
-                  <Send className="mr-2 h-4 w-4" />
-                  Recent Posts
-                </TabsTrigger>
-                <TabsTrigger value="scheduled">
-                  <Calendar className="mr-2 h-4 w-4" />
-                  Scheduled
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-
-          {/* Connected Accounts / Platforms Tab */}
-          <TabsContent value="accounts" className="space-y-6">
-            {/* Stats - Only show for logged in users */}
-            {user && (
-              <div className="grid gap-4 md:grid-cols-3">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Connected</CardTitle>
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{connectedPlatforms.length}</div>
-                    <p className="text-xs text-muted-foreground">
-                      of {platforms.filter((p) => p.apiStatus === 'available').length} available
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Posts This Month</CardTitle>
-                    <Send className="h-4 w-4 text-blue-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{recentPosts.length}</div>
-                    <p className="text-xs text-muted-foreground">Across all platforms</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Scheduled</CardTitle>
-                    <Clock className="h-4 w-4 text-orange-500" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{scheduledPosts.length}</div>
-                    <p className="text-xs text-muted-foreground">Posts queued</p>
-                  </CardContent>
-                </Card>
+        {!user ? (
+          /* Not Logged In State */
+          <Card className="bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/20 dark:to-amber-950/20 border-orange-200/50 dark:border-orange-900/50">
+            <CardContent className="flex flex-col md:flex-row items-center gap-6 p-8">
+              <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center shrink-0">
+                <Sparkles className="h-8 w-8 text-white" />
+              </div>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-xl font-semibold mb-2">Ready to start posting?</h3>
+                <p className="text-muted-foreground">
+                  Sign up for free to connect your social media accounts and start publishing your enhanced food photos.
+                </p>
+              </div>
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 shrink-0" asChild>
+                <Link href="/auth/signup">
+                  Get Started Free
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <>
+            {/* Stats Row */}
+            {socialAccounts.length > 0 && (
+              <div className="grid grid-cols-3 gap-4">
+                <StatsCard
+                  title="Connected"
+                  value={socialAccounts.length}
+                  subtitle="accounts"
+                  icon={CheckCircle2}
+                  iconColor="bg-green-500"
+                />
+                <StatsCard
+                  title="Posts"
+                  value={recentPosts.filter(p => p.status === 'posted').length}
+                  subtitle="this month"
+                  icon={Send}
+                  iconColor="bg-blue-500"
+                />
+                <StatsCard
+                  title="Scheduled"
+                  value={scheduledPosts.length}
+                  subtitle="queued"
+                  icon={Calendar}
+                  iconColor="bg-orange-500"
+                />
               </div>
             )}
 
-            {/* Platform Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {platforms.map((platform) => {
-                const isConnected = user && connectedPlatforms.includes(platform.id)
-                const accountDetails = getAccountDetails(platform.id)
+            {socialAccounts.length === 0 ? (
+              /* Empty State */
+              <EmptyState onConnect={handleConnectMeta} isConnecting={connecting} />
+            ) : (
+              <>
+                {/* Connected Accounts Section */}
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                      Connected Accounts
+                    </h2>
+                  </div>
+                  <div className="space-y-3">
+                    {socialAccounts.map((account) => (
+                      <ConnectedAccountCard
+                        key={account.id}
+                        account={account}
+                        onDisconnect={() => setDisconnectDialog(account)}
+                        isDisconnecting={disconnecting === account.platform}
+                      />
+                    ))}
+                  </div>
+                </section>
 
-                return (
-                  <Card key={platform.id} className="overflow-hidden">
-                    <div className={`${platform.color} p-4`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-white/20 flex items-center justify-center">
-                            <platform.icon className="h-6 w-6 text-white" />
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-white">{platform.name}</h3>
-                            {isConnected ? (
-                              <Badge
-                                variant="secondary"
-                                className="bg-white/20 text-white hover:bg-white/30"
-                              >
-                                Connected
-                              </Badge>
-                            ) : platform.apiStatus === 'coming_soon' ? (
-                              <Badge
-                                variant="secondary"
-                                className="bg-white/20 text-white hover:bg-white/30"
-                              >
-                                Coming Soon
-                              </Badge>
-                            ) : (
-                              <Badge
-                                variant="secondary"
-                                className="bg-white/20 text-white hover:bg-white/30"
-                              >
-                                {user ? 'Not Connected' : 'Available'}
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <CardContent className="p-4 space-y-4">
-                      <p className="text-sm text-muted-foreground">{platform.description}</p>
+                <Separator />
 
-                      {/* Show connected account info */}
-                      {isConnected && accountDetails && (
-                        <div className="bg-green-50 dark:bg-green-950/20 rounded-lg p-3">
-                          <p className="text-sm font-medium text-green-700 dark:text-green-400">
-                            {accountDetails.platform_display_name ||
-                              accountDetails.platform_username ||
-                              'Connected'}
-                          </p>
-                          {accountDetails.platform_username && (
-                            <p className="text-xs text-green-600 dark:text-green-500">
-                              @{accountDetails.platform_username}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                {/* Available Platforms Section */}
+                <section className="space-y-4">
+                  <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                    Add More Accounts
+                  </h2>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {availablePlatforms.map((platformId) => (
+                      <AvailablePlatformCard
+                        key={platformId}
+                        platformId={platformId}
+                        onConnect={handleConnectMeta}
+                        isConnecting={connecting}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </>
+            )}
 
-                      <div>
-                        <p className="text-xs font-medium mb-2">Features</p>
-                        <div className="flex flex-wrap gap-1">
-                          {platform.features.map((feature) => (
-                            <Badge key={feature} variant="outline" className="text-xs">
-                              {feature}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-
-                      {isConnected ? (
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => setDisconnectDialog(platform.id)}
-                            disabled={disconnecting === platform.id}
-                          >
-                            {disconnecting === platform.id ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Unlink className="mr-2 h-4 w-4" />
-                            )}
-                            Disconnect
-                          </Button>
-                          <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <a
-                              href={
-                                platform.id === 'instagram' && accountDetails?.platform_username
-                                  ? `https://instagram.com/${accountDetails.platform_username}`
-                                  : platform.id === 'facebook' && accountDetails?.platform_id
-                                    ? `https://facebook.com/${accountDetails.platform_id}`
-                                    : `https://${platform.id}.com`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <ExternalLink className="mr-2 h-4 w-4" />
-                              View Profile
-                            </a>
-                          </Button>
-                        </div>
-                      ) : platform.apiStatus === 'available' && platform.oauthProvider === 'meta' ? (
-                        user ? (
-                          <Button
-                            className="w-full bg-orange-500 hover:bg-orange-600"
-                            onClick={handleConnectMeta}
-                            disabled={connecting}
-                          >
-                            {connecting ? (
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                              <Plus className="mr-2 h-4 w-4" />
-                            )}
-                            Connect with Meta
-                          </Button>
-                        ) : (
-                          <Button className="w-full bg-orange-500 hover:bg-orange-600" asChild>
-                            <Link href="/auth/signup">
-                              <LogIn className="mr-2 h-4 w-4" />
-                              Sign Up to Connect
-                            </Link>
-                          </Button>
-                        )
-                      ) : (
-                        <Button disabled className="w-full">
-                          <Clock className="mr-2 h-4 w-4" />
-                          Coming Soon
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
-
-            {/* Sign up CTA for anonymous users */}
-            {!user && !loading && (
-              <Card className="bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 border-orange-200 dark:border-orange-900/50">
-                <CardContent className="flex flex-col md:flex-row items-center justify-between gap-4 p-6">
+            {/* Quick Action */}
+            {socialAccounts.length > 0 && (
+              <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
+                <CardContent className="flex flex-col sm:flex-row items-center justify-between gap-4 p-6">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
-                      <Sparkles className="h-6 w-6 text-orange-500" />
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                      <ImageIcon className="h-6 w-6 text-primary" />
                     </div>
                     <div>
-                      <h3 className="font-semibold">Ready to start posting?</h3>
+                      <h3 className="font-semibold">Ready to post?</h3>
                       <p className="text-sm text-muted-foreground">
-                        Sign up for free and connect your social media accounts
+                        Select photos from your library to publish
                       </p>
                     </div>
                   </div>
-                  <Button className="bg-orange-500 hover:bg-orange-600" asChild>
-                    <Link href="/auth/signup">Get Started Free</Link>
+                  <Button asChild>
+                    <Link href="/gallery">
+                      Select Photos
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Link>
                   </Button>
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          {/* Recent Posts Tab - Only for logged in users */}
-          {user && (
-            <TabsContent value="posts" className="space-y-4">
-              {recentPosts.length > 0 ? (
-                <div className="space-y-4">
-                  {recentPosts.map((post) => (
-                    <Card key={post.id}>
-                      <CardContent className="flex items-center gap-4 p-4">
-                        {/* Thumbnail */}
-                        <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                          {post.images ? (
-                            <img
-                              src={
-                                post.images.thumbnail_url ||
-                                post.images.enhanced_url ||
-                                post.images.original_url
-                              }
-                              alt="Post image"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium line-clamp-2">
-                            {post.caption || 'No caption'}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            {post.platforms?.map((platformId: string) => {
-                              const p = platforms.find((p) => p.id === platformId)
-                              if (!p) return null
-                              return (
-                                <Badge key={platformId} variant="outline" className="text-xs">
-                                  <p.icon className="mr-1 h-3 w-3" />
-                                  {p.name}
-                                </Badge>
-                              )
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Status */}
-                        <div className="text-right">
-                          {post.status === 'posted' && (
-                            <Badge className="bg-green-500">Posted</Badge>
-                          )}
-                          {post.status === 'draft' && <Badge variant="outline">Draft</Badge>}
-                          {post.status === 'failed' && (
-                            <Badge variant="destructive">Failed</Badge>
-                          )}
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {post.posted_at
-                              ? new Date(post.posted_at).toLocaleDateString()
-                              : new Date(post.created_at).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                      <Send className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-medium mb-1">No posts yet</h3>
-                    <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm">
-                      Connect your social accounts and start posting your enhanced food photos
-                    </p>
-                    <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                      <Link href="/gallery">
-                        <ImageIcon className="mr-2 h-4 w-4" />
-                        Select Photos to Post
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          )}
-
-          {/* Scheduled Tab - Only for logged in users */}
-          {user && (
-            <TabsContent value="scheduled" className="space-y-4">
-              {scheduledPosts.length > 0 ? (
-                <div className="space-y-4">
-                  {scheduledPosts.map((post) => (
-                    <Card key={post.id}>
-                      <CardContent className="flex items-center gap-4 p-4">
-                        {/* Thumbnail */}
-                        <div className="h-16 w-16 rounded-lg bg-muted overflow-hidden flex-shrink-0">
-                          {post.images ? (
-                            <img
-                              src={
-                                post.images.thumbnail_url ||
-                                post.images.enhanced_url ||
-                                post.images.original_url
-                              }
-                              alt="Post image"
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <ImageIcon className="h-6 w-6 text-muted-foreground" />
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium line-clamp-2">
-                            {post.caption || 'No caption'}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Clock className="h-3 w-3 text-orange-500" />
-                            <span className="text-xs text-muted-foreground">
-                              Scheduled for{' '}
-                              {post.scheduled_at
-                                ? new Date(post.scheduled_at).toLocaleString()
-                                : 'N/A'}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
-                            Edit
-                          </Button>
-                          <Button variant="outline" size="sm" className="text-destructive">
-                            Cancel
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <div className="h-16 w-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                      <Calendar className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="font-medium mb-1">No scheduled posts</h3>
-                    <p className="text-sm text-muted-foreground mb-4 text-center max-w-sm">
-                      Schedule posts to be published at the best times for engagement
-                    </p>
-                    <Button asChild className="bg-orange-500 hover:bg-orange-600">
-                      <Link href="/gallery">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Schedule a Post
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </TabsContent>
-          )}
-        </Tabs>
+          </>
+        )}
       </div>
 
       {/* Disconnect Confirmation Dialog */}
-      <AlertDialog
-        open={!!disconnectDialog}
-        onOpenChange={(open) => !open && setDisconnectDialog(null)}
-      >
+      <AlertDialog open={!!disconnectDialog} onOpenChange={(open) => !open && setDisconnectDialog(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disconnect {disconnectDialog}?</AlertDialogTitle>
+            <AlertDialogTitle>
+              Disconnect {disconnectDialog && platformConfig[disconnectDialog.platform as PlatformId]?.name}?
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              This will disconnect your {disconnectDialog} account from FoodSnap. You won&apos;t be
-              able to post to this platform until you reconnect.
-              {disconnectDialog === 'facebook' && (
+              You won&apos;t be able to post to this platform until you reconnect.
+              {disconnectDialog?.platform === 'facebook' && (
                 <span className="block mt-2 text-orange-600 dark:text-orange-400">
-                  Note: Disconnecting Facebook will also disconnect any linked Instagram accounts.
+                  Note: This will also disconnect any linked Instagram accounts.
                 </span>
               )}
             </AlertDialogDescription>
@@ -739,12 +682,7 @@ function SocialPageContent() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => {
-                if (disconnectDialog) {
-                  const account = getAccountDetails(disconnectDialog)
-                  handleDisconnect(disconnectDialog, account?.platform_id)
-                }
-              }}
+              onClick={() => disconnectDialog && handleDisconnect(disconnectDialog)}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Disconnect
@@ -758,7 +696,13 @@ function SocialPageContent() {
 
 export default function SocialPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><div className="animate-pulse text-muted-foreground">Loading...</div></div>}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
       <SocialPageContent />
     </Suspense>
   )
