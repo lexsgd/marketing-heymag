@@ -8,7 +8,6 @@ import {
   LayoutDashboard,
   Image as ImageIcon,
   Wand2,
-  Palette,
   Share2,
   Settings,
   CreditCard,
@@ -78,11 +77,6 @@ const mainNavItems = [
     title: 'Editor',
     href: '/editor',
     icon: Wand2,
-  },
-  {
-    title: 'Templates',
-    href: '/templates',
-    icon: Palette,
   },
   {
     title: 'Social',

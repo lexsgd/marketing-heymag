@@ -105,14 +105,18 @@ function BillingPageContent() {
         setBusiness(businessData)
 
         // Get credits
-        const { data: credits } = await supabase
+        const { data: credits, error: creditsError } = await supabase
           .from('credits')
           .select('credits_remaining, credits_used')
           .eq('business_id', businessData.id)
           .single()
 
+        console.log('[Billing] Credits query result:', { credits, creditsError, businessId: businessData.id })
+
         if (credits) {
           setCreditsData(credits)
+        } else if (creditsError) {
+          console.error('[Billing] Credits error:', creditsError)
         }
 
         // Get transactions
