@@ -95,42 +95,42 @@ export const styleCategories: StyleCategory[] = [
         id: 'grab',
         name: 'GrabFood',
         description: 'Optimized for GrabFood app listings',
-        thumbnail: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/grab/00B14F',
         keywords: ['grab', 'delivery', 'app', 'green']
       },
       {
         id: 'foodpanda',
         name: 'Foodpanda',
         description: 'Perfect pink-themed Foodpanda menus',
-        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/foodpanda/D70F64',
         keywords: ['foodpanda', 'delivery', 'pink', 'app']
       },
       {
         id: 'deliveroo',
         name: 'Deliveroo',
         description: 'Deliveroo teal-optimized style',
-        thumbnail: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/deliveroo/00CCBC',
         keywords: ['deliveroo', 'delivery', 'teal', 'premium']
       },
       {
         id: 'gojek',
         name: 'GoFood',
         description: 'Gojek GoFood green style',
-        thumbnail: 'https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/gojek/00AA13',
         keywords: ['gojek', 'gofood', 'indonesia', 'green']
       },
       {
         id: 'shopee',
         name: 'ShopeeFood',
         description: 'ShopeeFood marketplace orange style',
-        thumbnail: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/shopee/EE4D2D',
         keywords: ['shopee', 'shopeefood', 'orange', 'marketplace']
       },
       {
         id: 'generic-delivery',
         name: 'Universal Delivery',
         description: 'Works for any delivery platform',
-        thumbnail: 'https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/ubereats/06C167',
         keywords: ['delivery', 'universal', 'app', 'general']
       },
     ]
@@ -148,49 +148,49 @@ export const styleCategories: StyleCategory[] = [
         id: 'instagram-feed',
         name: 'Instagram Feed',
         description: 'Square format, vibrant colors for the grid',
-        thumbnail: 'https://images.unsplash.com/photo-1565958011703-44f9829ba187?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/instagram/E4405F',
         keywords: ['instagram', 'ig', 'square', 'feed', 'grid']
       },
       {
         id: 'instagram-stories',
         name: 'Instagram Stories',
         description: 'Vertical 9:16, trendy and eye-catching',
-        thumbnail: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/instagram/C13584',
         keywords: ['instagram', 'stories', 'vertical', 'trendy']
       },
       {
         id: 'tiktok',
         name: 'TikTok',
         description: 'Scroll-stopping vertical visuals',
-        thumbnail: 'https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/tiktok/000000',
         keywords: ['tiktok', 'viral', 'vertical', 'trending']
       },
       {
         id: 'facebook',
         name: 'Facebook',
         description: 'Optimized for Facebook feed engagement',
-        thumbnail: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/facebook/1877F2',
         keywords: ['facebook', 'fb', 'social', 'share']
       },
       {
         id: 'xiaohongshu',
         name: 'Xiaohongshu',
         description: 'Trendy lifestyle aesthetic for Little Red Book',
-        thumbnail: 'https://images.unsplash.com/photo-1473093295043-cdd812d0e601?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/xiaohongshu/FE2C55',
         keywords: ['xiaohongshu', 'xhs', 'chinese', 'lifestyle', 'red']
       },
       {
         id: 'wechat',
         name: 'WeChat Moments',
         description: 'Clean, shareable format for WeChat',
-        thumbnail: 'https://images.unsplash.com/photo-1482049016gy-2d1ec7ab7445?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/wechat/07C160',
         keywords: ['wechat', 'moments', 'chinese', 'share']
       },
       {
         id: 'pinterest',
         name: 'Pinterest',
         description: 'Tall pins that get saved and shared',
-        thumbnail: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=100&h=100&fit=crop',
+        thumbnail: 'https://cdn.simpleicons.org/pinterest/BD081C',
         keywords: ['pinterest', 'pin', 'tall', 'save']
       },
     ]
