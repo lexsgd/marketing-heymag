@@ -65,30 +65,29 @@ export function MainNav({ user, credits, subscriptionStatus, loading }: MainNavP
           </div>
         </nav>
 
-        {/* Right Side Actions */}
+        {/* Right Side Actions - Hide entire section while loading to prevent flash */}
         <div className="flex items-center gap-4">
-          {/* Library Link */}
-          <Link
-            href="/gallery"
-            className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Library
-          </Link>
-
-          {/* Pricing/Billing Link - goes to /billing when logged in */}
-          <Link
-            href={user ? "/billing" : "/#pricing"}
-            className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            {user ? "Billing" : "Pricing"}
-          </Link>
-
-          {/* Hide auth UI while loading to prevent flash */}
           {loading ? (
-            /* Placeholder to maintain layout while loading */
+            /* Empty placeholder while checking auth */
             <div className="w-9 h-9" />
           ) : user ? (
             <>
+              {/* Library Link */}
+              <Link
+                href="/gallery"
+                className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Library
+              </Link>
+
+              {/* Billing Link */}
+              <Link
+                href="/billing"
+                className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Billing
+              </Link>
+
               {/* Plan Badge */}
               {subscriptionStatus && (
                 <Badge
@@ -120,6 +119,22 @@ export function MainNav({ user, credits, subscriptionStatus, loading }: MainNavP
             </>
           ) : (
             <>
+              {/* Library Link */}
+              <Link
+                href="/gallery"
+                className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Library
+              </Link>
+
+              {/* Pricing Link */}
+              <Link
+                href="/#pricing"
+                className="hidden md:block text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Pricing
+              </Link>
+
               <Link
                 href="/auth/login"
                 className="text-sm text-muted-foreground hover:text-foreground transition-colors"
