@@ -70,7 +70,7 @@ export const styleCategories: StyleCategory[] = [
         id: 'hawker',
         name: 'Hawker Centre',
         description: 'Singapore/SEA hawker stall vibes',
-        thumbnail: 'https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1722995690313-9ef561d30143?w=100&h=100&fit=crop',
         keywords: ['singapore', 'malaysia', 'local', 'kopitiam']
       },
       {
