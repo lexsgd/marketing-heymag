@@ -523,7 +523,7 @@ function SocialPageContent() {
     <div className="min-h-screen bg-background">
       <MainNavAuth />
 
-      <div className="container max-w-4xl py-8 px-4 space-y-8">
+      <div className="container max-w-4xl pt-4 pb-8 px-4 space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
