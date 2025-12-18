@@ -10,9 +10,10 @@ interface CheckoutButtonProps {
   planName: string
   isCurrentPlan: boolean
   isPopular?: boolean
+  isAnnual?: boolean
 }
 
-export function CheckoutButton({ planId, planName, isCurrentPlan, isPopular }: CheckoutButtonProps) {
+export function CheckoutButton({ planId, planName, isCurrentPlan, isPopular, isAnnual = false }: CheckoutButtonProps) {
   const [loading, setLoading] = useState(false)
 
   const handleCheckout = async () => {
@@ -23,7 +24,7 @@ export function CheckoutButton({ planId, planName, isCurrentPlan, isPopular }: C
       const response = await fetch('/api/stripe/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId }),
+        body: JSON.stringify({ planId, isAnnual }),
       })
 
       const data = await response.json()

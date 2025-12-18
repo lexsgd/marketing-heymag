@@ -146,7 +146,8 @@ async function handleSubscriptionUpdate(
 
   // Get plan ID from price
   const priceId = subscription.items.data[0]?.price?.id
-  const planId = priceId ? getPlanByPriceId(priceId) : null
+  const planResult = priceId ? getPlanByPriceId(priceId) : null
+  const planId = planResult?.planId || null
 
   // Map Stripe status to our status
   let subscriptionStatus: string

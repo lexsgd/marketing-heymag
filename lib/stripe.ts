@@ -11,26 +11,26 @@ export const STRIPE_PLANS = {
   lite: {
     name: 'Lite',
     priceId: process.env.STRIPE_LITE_PRICE_ID || '',
+    annualPriceId: process.env.STRIPE_LITE_ANNUAL_PRICE_ID || '',
     price: 15,
+    annualPrice: 150,
     credits: 15,
   },
   starter: {
     name: 'Starter',
     priceId: process.env.STRIPE_STARTER_PRICE_ID || '',
+    annualPriceId: process.env.STRIPE_STARTER_ANNUAL_PRICE_ID || '',
     price: 25,
+    annualPrice: 250,
     credits: 30,
   },
   pro: {
     name: 'Pro',
     priceId: process.env.STRIPE_PRO_PRICE_ID || '',
+    annualPriceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID || '',
     price: 80,
+    annualPrice: 800,
     credits: 100,
-  },
-  business: {
-    name: 'Business',
-    priceId: process.env.STRIPE_BUSINESS_PRICE_ID || '',
-    price: 180,
-    credits: 300,
   },
 } as const
 
@@ -71,11 +71,14 @@ export function getPlanCredits(planId: string): number {
   return plan?.credits || 0
 }
 
-// Map price ID to plan ID
-export function getPlanByPriceId(priceId: string): PlanId | null {
+// Map price ID to plan ID (checks both monthly and annual price IDs)
+export function getPlanByPriceId(priceId: string): { planId: PlanId; isAnnual: boolean } | null {
   for (const [key, plan] of Object.entries(STRIPE_PLANS)) {
     if (plan.priceId === priceId) {
-      return key as PlanId
+      return { planId: key as PlanId, isAnnual: false }
+    }
+    if (plan.annualPriceId === priceId) {
+      return { planId: key as PlanId, isAnnual: true }
     }
   }
   return null

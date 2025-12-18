@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Parse request body
-    const { planId } = await request.json()
+    const { planId, isAnnual = false } = await request.json()
 
     if (!planId || !STRIPE_PLANS[planId as PlanId]) {
       return NextResponse.json(
@@ -26,10 +26,11 @@ export async function POST(request: NextRequest) {
     }
 
     const plan = STRIPE_PLANS[planId as PlanId]
+    const priceId = isAnnual ? plan.annualPriceId : plan.priceId
 
-    if (!plan.priceId) {
+    if (!priceId) {
       return NextResponse.json(
-        { error: 'Stripe price ID not configured for this plan' },
+        { error: `Stripe ${isAnnual ? 'annual' : 'monthly'} price ID not configured for this plan` },
         { status: 500 }
       )
     }
@@ -80,7 +81,7 @@ export async function POST(request: NextRequest) {
       payment_method_types: ['card'],
       line_items: [
         {
-          price: plan.priceId,
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -89,11 +90,13 @@ export async function POST(request: NextRequest) {
       metadata: {
         business_id: business.id,
         plan_id: planId,
+        is_annual: isAnnual ? 'true' : 'false',
       },
       subscription_data: {
         metadata: {
           business_id: business.id,
           plan_id: planId,
+          is_annual: isAnnual ? 'true' : 'false',
         },
       },
       // Allow promotion codes

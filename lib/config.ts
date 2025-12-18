@@ -1,7 +1,7 @@
 export const config = {
   // Version tracking
-  version: '0.15.0',
-  internalBuild: '1.46',
+  version: '0.16.0',
+  internalBuild: '1.47',
 
   // App info
   appName: 'Zazzles',
@@ -13,61 +13,56 @@ export const config = {
     lite: {
       name: 'Lite',
       price: 15,
+      annualPrice: 150,
       credits: 15,
       stripePriceId: process.env.STRIPE_LITE_PRICE_ID,
+      stripeAnnualPriceId: process.env.STRIPE_LITE_ANNUAL_PRICE_ID,
       features: [
         'AI Photo Enhancement',
-        '10 Style Presets',
-        'Basic Export Formats',
-        'Watermarked Output',
+        'AI Caption Generator',
+        '30+ Style Presets',
+        'Batch Processing',
+        'Social Media Integration',
+        'AI Support',
       ],
     },
     starter: {
       name: 'Starter',
       price: 25,
+      annualPrice: 250,
       credits: 30,
       stripePriceId: process.env.STRIPE_STARTER_PRICE_ID,
+      stripeAnnualPriceId: process.env.STRIPE_STARTER_ANNUAL_PRICE_ID,
       features: [
-        'Everything in Lite',
+        'AI Photo Enhancement',
         'AI Caption Generator',
-        'No Watermark',
-        'Commercial License',
         '30+ Style Presets',
+        'Batch Processing',
+        'Social Media Integration',
+        'AI Support',
       ],
     },
     pro: {
       name: 'Pro',
       price: 80,
+      annualPrice: 800,
       credits: 100,
       stripePriceId: process.env.STRIPE_PRO_PRICE_ID,
+      stripeAnnualPriceId: process.env.STRIPE_PRO_ANNUAL_PRICE_ID,
       popular: true,
       features: [
-        'Everything in Starter',
-        'Template Library (50+)',
+        'AI Photo Enhancement',
+        'AI Caption Generator',
+        '30+ Style Presets',
         'Batch Processing',
-        'Direct Social Posting',
-        'Xiaohongshu & WeChat',
-        'Instagram Style Transfer',
-      ],
-    },
-    business: {
-      name: 'Business',
-      price: 180,
-      credits: 300,
-      stripePriceId: process.env.STRIPE_BUSINESS_PRICE_ID,
-      features: [
-        'Everything in Pro',
-        'API Access',
-        'Team Seats (5)',
-        'White-label Export',
+        'Social Media Integration',
         'Priority Support',
-        'Custom Style Training',
       ],
     },
   },
 
-  // Annual discount
-  annualDiscount: 0.40, // 40% off for annual billing
+  // Annual savings (2 months free)
+  annualSavings: '2 months free',
 
   // Credit pricing
   creditPrice: 0.50, // Per additional credit

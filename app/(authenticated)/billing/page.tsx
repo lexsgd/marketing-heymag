@@ -4,10 +4,7 @@ import { Suspense } from 'react'
 import {
   CreditCard,
   Sparkles,
-  Check,
   Crown,
-  Zap,
-  Building2,
   Receipt,
   Plus,
   AlertCircle
@@ -18,81 +15,11 @@ import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { MainNav } from '@/components/main-nav'
-import { CheckoutButton } from '@/components/billing/checkout-button'
 import { CreditsButton } from '@/components/billing/credits-button'
 import { PortalButton } from '@/components/billing/portal-button'
 import { SuccessToast } from '@/components/billing/success-toast'
 import { AutoTopUpSettings } from '@/components/billing/auto-topup-settings'
-
-const plans = [
-  {
-    id: 'lite',
-    name: 'Lite',
-    price: 15,
-    credits: 15,
-    description: 'Try the basics',
-    icon: Sparkles,
-    features: [
-      'AI Photo Enhancement',
-      '10 Style Presets',
-      'Basic Export Formats',
-      'Watermarked Output',
-    ],
-    popular: false,
-  },
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 25,
-    credits: 30,
-    description: 'Perfect for small restaurants',
-    icon: Zap,
-    features: [
-      'Everything in Lite',
-      'AI Caption Generator',
-      'No Watermarks',
-      'Commercial License',
-      '30+ Style Presets',
-    ],
-    popular: false,
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 80,
-    credits: 100,
-    description: 'For growing businesses',
-    icon: Crown,
-    features: [
-      'Everything in Starter',
-      '20+ Style Presets',
-      'Thematic Templates',
-      'Batch Processing',
-      'Post Scheduling',
-      'Social Media Integration',
-      'Priority Support',
-    ],
-    popular: true,
-  },
-  {
-    id: 'business',
-    name: 'Business',
-    price: 180,
-    credits: 300,
-    description: 'For restaurant chains',
-    icon: Building2,
-    features: [
-      'Everything in Pro',
-      'API Access',
-      'Team Seats (5 users)',
-      'White-label Exports',
-      'Custom Branding',
-      'Dedicated Account Manager',
-      'Priority Processing',
-    ],
-    popular: false,
-  },
-]
+import { PricingPlans } from '@/components/billing/pricing-plans'
 
 const creditPacks = [
   { id: 'pack_4', credits: 4, price: 5, pricePerCredit: 1.25 },
@@ -231,81 +158,9 @@ export default async function BillingPage() {
               </Card>
             )}
 
-            {/* Plan Cards */}
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              {plans.map((plan) => (
-                <Card
-                  key={plan.id}
-                  className={`relative ${
-                    plan.popular ? 'border-orange-500 shadow-lg' : ''
-                  }`}
-                >
-                  {plan.popular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-orange-500">
-                      Most Popular
-                    </Badge>
-                  )}
-                  <CardHeader className="text-center pb-4">
-                    <div className={`h-12 w-12 rounded-full mx-auto flex items-center justify-center mb-3 ${
-                      plan.popular
-                        ? 'bg-orange-100 dark:bg-orange-900/30'
-                        : 'bg-muted'
-                    }`}>
-                      <plan.icon className={`h-6 w-6 ${
-                        plan.popular ? 'text-orange-500' : 'text-muted-foreground'
-                      }`} />
-                    </div>
-                    <CardTitle>{plan.name}</CardTitle>
-                    <CardDescription>{plan.description}</CardDescription>
-                    <div className="pt-2">
-                      <span className="text-4xl font-bold">${plan.price}</span>
-                      <span className="text-muted-foreground">/mo</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      {plan.credits} credits/month
-                    </p>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <ul className="space-y-2">
-                      {plan.features.map((feature) => (
-                        <li key={feature} className="flex items-start gap-2 text-sm">
-                          <Check className="h-4 w-4 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <CheckoutButton
-                      planId={plan.id}
-                      planName={plan.name}
-                      isCurrentPlan={currentPlan === plan.id}
-                      isPopular={plan.popular}
-                    />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {/* Plan Cards with Monthly/Annual Toggle */}
+            <PricingPlans currentPlan={currentPlan} />
 
-            {/* Enterprise */}
-            <Card className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/20 dark:to-blue-950/20 border-purple-200 dark:border-purple-900/50">
-              <CardContent className="flex items-center justify-between p-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                    <Building2 className="h-6 w-6 text-purple-500" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">Enterprise</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Custom solutions for large organizations with multiple locations
-                    </p>
-                  </div>
-                </div>
-                <Button variant="outline" asChild>
-                  <a href="mailto:support@heymag.app?subject=Enterprise%20Inquiry">
-                    Contact Sales
-                  </a>
-                </Button>
-              </CardContent>
-            </Card>
           </TabsContent>
 
           {/* Credits Tab */}
