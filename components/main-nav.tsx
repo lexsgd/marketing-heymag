@@ -18,7 +18,6 @@ interface MainNavProps {
 const navTabs = [
   { name: 'Explore', href: '/explore', badge: null },
   { name: 'Photography', href: '/editor', badge: null },
-  { name: 'Creative', href: '/templates', badge: 'NEW' },
 ]
 
 export function MainNav({ user, credits }: MainNavProps) {
@@ -35,8 +34,7 @@ export function MainNav({ user, credits }: MainNavProps) {
           <div className="flex items-center bg-muted/50 rounded-full p-1">
             {navTabs.map((tab) => {
               const isActive = pathname === tab.href ||
-                (tab.href === '/editor' && pathname.startsWith('/editor')) ||
-                (tab.href === '/templates' && pathname.startsWith('/templates'))
+                (tab.href === '/editor' && pathname.startsWith('/editor'))
 
               return (
                 <Link
