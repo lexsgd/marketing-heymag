@@ -17,11 +17,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Crown,
-  Square,
-  Grid3X3,
   ArrowRight,
   Palette,
-  RefreshCw,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -30,6 +27,8 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { MainNav } from '@/components/main-nav'
 import { getTemplateById, type TemplateImage } from '@/lib/template-images'
+import { AspectRatioPicker } from '@/components/editor/aspect-ratio-picker'
+import { VariationsPicker } from '@/components/editor/variations-picker'
 
 // Style categories with scrollable tabs
 const styleCategories = [
@@ -639,18 +638,18 @@ function EditorContent() {
                 )}
               </div>
 
-              <div className="flex items-center gap-6">
-                {/* Aspect Ratio */}
-                <div className="flex items-center gap-2">
-                  <Square className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{aspectRatio}</span>
-                </div>
+              <div className="flex items-center gap-4">
+                {/* Aspect Ratio Picker */}
+                <AspectRatioPicker
+                  value={aspectRatio}
+                  onChange={setAspectRatio}
+                />
 
-                {/* Variations */}
-                <div className="flex items-center gap-2">
-                  <Grid3X3 className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm">{variations} variation</span>
-                </div>
+                {/* Variations Picker */}
+                <VariationsPicker
+                  value={variations}
+                  onChange={setVariations}
+                />
 
                 {/* Ultra-Realistic Toggle */}
                 <div className="flex items-center gap-2">
