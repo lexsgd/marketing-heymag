@@ -370,7 +370,7 @@ export const styleCategories: StyleCategory[] = [
         id: 'macro',
         name: 'Macro Close-up',
         description: 'Extreme close-up detail shots',
-        thumbnail: 'https://images.unsplash.com/photo-1531279390331-0db31e853a49?w=100&h=100&fit=crop',
+        thumbnail: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=100&h=100&fit=crop',
         keywords: ['macro', 'closeup', 'detail', 'texture']
       },
     ]
