@@ -164,12 +164,30 @@ export default async function TemplatesPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/auth/login')
 
+  // Get business
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('id, subscription_status')
+    .eq('auth_user_id', user.id)
+    .single()
+
+  // Get credits
+  let creditsRemaining = 0
+  if (business?.id) {
+    const { data: creditsData } = await supabase
+      .from('credits')
+      .select('credits_remaining')
+      .eq('business_id', business.id)
+      .single()
+    creditsRemaining = creditsData?.credits_remaining || 0
+  }
+
   // Get all templates combined for "All" tab
   const allTemplatesList = Object.values(allTemplates).flat()
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNav />
+      <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
       <div className="pt-16 p-6 space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

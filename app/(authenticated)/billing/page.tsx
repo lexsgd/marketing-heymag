@@ -140,7 +140,7 @@ export default async function BillingPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNav />
+      <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
       <div className="pt-16 p-6 space-y-6">
       {/* Header */}
       <div>

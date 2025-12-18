@@ -17,7 +17,7 @@ import {
   Loader2,
   Check
 } from 'lucide-react'
-import { MainNav } from '@/components/main-nav'
+import { MainNavAuth } from '@/components/main-nav-auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -157,7 +157,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNav />
+        <MainNavAuth />
         <div className="pt-16 flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
         </div>
@@ -167,7 +167,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNav />
+      <MainNavAuth />
       <div className="pt-16 p-6 space-y-6">
       {/* Header */}
       <div>

@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { MainNav } from '@/components/main-nav'
+import { MainNavAuth } from '@/components/main-nav-auth'
 import { getTemplateById, type TemplateImage } from '@/lib/template-images'
 import { AspectRatioPicker } from '@/components/editor/aspect-ratio-picker'
 import { VariationsPicker } from '@/components/editor/variations-picker'
@@ -255,7 +255,7 @@ function EditorContent() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Top Navigation */}
-      <MainNav />
+      <MainNavAuth />
 
       <div className="flex-1 flex pt-16">
         {/* Left Sidebar - Style Picker */}
@@ -602,7 +602,7 @@ function EditorContent() {
 function EditorSkeleton() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <MainNav />
+      <MainNavAuth />
       <div className="flex-1 flex pt-16">
         <aside className="w-80 border-r border-border bg-card animate-pulse" />
         <main className="flex-1 flex items-center justify-center">

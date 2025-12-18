@@ -79,7 +79,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNav />
+      <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
       <div className="pt-16 p-6 space-y-6">
       {/* Welcome Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

@@ -12,9 +12,20 @@ export default async function GalleryPage() {
   // Get business
   const { data: business } = await supabase
     .from('businesses')
-    .select('id')
+    .select('id, subscription_status')
     .eq('auth_user_id', user.id)
     .single()
+
+  // Get credits
+  let creditsRemaining = 0
+  if (business?.id) {
+    const { data: creditsData } = await supabase
+      .from('credits')
+      .select('credits_remaining')
+      .eq('business_id', business.id)
+      .single()
+    creditsRemaining = creditsData?.credits_remaining || 0
+  }
 
   // Get all images
   const { data: images } = await supabase
@@ -25,7 +36,7 @@ export default async function GalleryPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNav />
+      <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
       <div className="pt-16">
         <GalleryClient initialImages={images || []} />
       </div>

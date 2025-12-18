@@ -13,6 +13,7 @@ interface MainNavProps {
     email?: string
   } | null
   credits?: number
+  subscriptionStatus?: string | null
 }
 
 const navTabs = [
@@ -21,7 +22,7 @@ const navTabs = [
   { name: 'Social', href: '/social', badge: null },
 ]
 
-export function MainNav({ user, credits }: MainNavProps) {
+export function MainNav({ user, credits, subscriptionStatus }: MainNavProps) {
   const pathname = usePathname()
 
   return (
@@ -83,15 +84,31 @@ export function MainNav({ user, credits }: MainNavProps) {
 
           {user ? (
             <>
+              {/* Plan Badge */}
+              {subscriptionStatus && (
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    "hidden sm:flex text-xs",
+                    subscriptionStatus === 'trial'
+                      ? "border-orange-500/50 text-orange-500 bg-orange-500/10"
+                      : "border-green-500/50 text-green-500 bg-green-500/10"
+                  )}
+                >
+                  {subscriptionStatus === 'trial' ? 'Free Trial' : subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1)}
+                </Badge>
+              )}
+
               {/* Credits Display */}
-              <div className="hidden sm:flex items-center gap-1.5 text-sm">
-                <span className="text-muted-foreground">Credits:</span>
+              <div className="hidden sm:flex items-center gap-1.5 text-sm bg-muted/50 px-3 py-1.5 rounded-full">
+                <Sparkles className="h-3.5 w-3.5 text-orange-500" />
                 <span className="font-semibold">{credits || 0}</span>
+                <span className="text-muted-foreground text-xs">credits</span>
               </div>
 
               {/* User Avatar */}
               <Link href="/settings">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium text-sm">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium text-sm hover:opacity-90 transition-opacity">
                   {user.email?.charAt(0).toUpperCase() || 'U'}
                 </div>
               </Link>
