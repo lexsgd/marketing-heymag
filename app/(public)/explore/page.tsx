@@ -228,16 +228,6 @@ export default function ExplorePage() {
             </nav>
           </div>
 
-          {/* AI Generated Badge */}
-          <div className="mt-8 p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
-            <div className="flex items-center gap-2 text-orange-500 font-medium text-sm mb-1">
-              <span>✨</span>
-              <span>AI Generated</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              All {templateImages.length} templates created with Gemini 3 Pro + Real-ESRGAN at 2048x2048 resolution.
-            </p>
-          </div>
         </aside>
 
         {/* Main Content */}
