@@ -270,7 +270,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
     <TooltipProvider>
     <div className="min-h-[calc(100vh-64px)] flex">
       {/* Left Sidebar - Matching Explore pattern */}
-      <aside className="hidden lg:block w-64 border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto p-6">
+      <aside className="hidden lg:block w-64 shrink-0 border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto p-6">
         {/* Library Section */}
         <div className="mb-8">
           <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
