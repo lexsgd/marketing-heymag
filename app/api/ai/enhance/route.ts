@@ -4,8 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 import { getMultiStylePrompt, parseStyleIds } from '@/lib/multi-style-prompt-builder'
 import { checkAndExecuteAutoTopUp } from '@/lib/auto-topup'
-import { detectCameraAngle, getAngleDescription, getAngleConstraints, type CameraAngle } from '@/lib/ai/angle-detector'
-import { getAngleAwareVenuePrompt, hasAngleAwareStyling, getPhysicsConstraints } from '@/lib/ai/angle-aware-styles'
+import { getAngleAwareVenuePrompt, hasAngleAwareStyling, getAllAnglePrompts } from '@/lib/ai/angle-aware-styles'
 import {
   checkRateLimit,
   rateLimitedResponse,
@@ -439,39 +438,15 @@ export async function POST(request: NextRequest) {
       const mimeType = image.mime_type || 'image/jpeg'
       logger.debug('Image prepared for AI', { mimeType })
 
-      // ═══════════════════════════════════════════════════════════════════════════
-      // STEP 0: Detect Camera Angle (for physically realistic enhancements)
-      // ═══════════════════════════════════════════════════════════════════════════
-      currentStep = 'detecting camera angle'
-      logger.info('STEP 0: Detecting camera angle for physics-aware enhancement')
-
-      let detectedAngle: CameraAngle = 'hero' // Default fallback
-      let angleConfidence = 0.5
-
-      try {
-        const angleAnalysis = await detectCameraAngle(base64Image, mimeType)
-        detectedAngle = angleAnalysis.detectedAngle
-        angleConfidence = angleAnalysis.confidence
-        logger.info('Camera angle detected', {
-          angle: detectedAngle,
-          confidence: angleConfidence.toFixed(2),
-          reasoning: angleAnalysis.reasoning
-        })
-      } catch (angleError) {
-        logger.warn('Angle detection failed, using default hero angle', angleError as Error)
-        detectedAngle = 'hero'
-        angleConfidence = 0.3
-      }
-
-      // HYBRID ENHANCEMENT PIPELINE
-      // Step 0: Detect camera angle (for physics-aware prompts)
-      // Step 1: Sharp base enhancement (100% content preservation guaranteed)
-      // Step 2: Gemini 3 Pro Image AI polish (professional style enhancement)
+      // SINGLE-CALL ENHANCEMENT PIPELINE
+      // Gemini 3 Pro Image handles BOTH angle detection AND enhancement in one call
+      // This reduces latency and cost (was: Flash + Pro, now: Pro only)
 
       let enhancedUrl: string | null = null
       let processingSkipped = false
       let aiSuggestions: string[] = []
       let enhancementMethod = 'unknown'
+      let detectedAngle = 'hero' // Default, will be overwritten by AI self-detection
       const defaultEnhancements = getDefaultEnhancements(stylePreset || 'delivery')
 
       // ═══════════════════════════════════════════════════════════════════════════
@@ -529,48 +504,73 @@ export async function POST(request: NextRequest) {
           } as unknown as import('@google/generative-ai').GenerationConfig
         })
 
-        currentStep = 'calling Gemini API with angle-aware enhancement prompt'
-        logger.debug('Calling Gemini with angle-aware enhancement prompt', {
+        currentStep = 'calling Gemini API with self-detecting angle-aware prompt'
+        logger.debug('Calling Gemini with self-detecting angle-aware prompt', {
           style: stylePreset,
-          detectedAngle,
-          angleConfidence: angleConfidence.toFixed(2),
           aspectRatio: platformConfig.aspectRatio,
           platform: primaryStyleForConfig
         })
 
-        // Get angle-specific constraints
-        const angleConstraints = getAngleConstraints(detectedAngle)
-
-        // Build angle-aware venue styling section
+        // Build angle-aware venue styling section (all angles provided for self-selection)
         let venueStyleSection = ''
         if (stylePreset && hasAngleAwareStyling(stylePreset)) {
-          venueStyleSection = getAngleAwareVenuePrompt(stylePreset, detectedAngle)
-          logger.debug('Using angle-aware venue prompt', { venue: stylePreset, angle: detectedAngle })
+          venueStyleSection = getAllAnglePrompts(stylePreset)
+          logger.debug('Using angle-aware venue prompts (all angles)', { venue: stylePreset })
         } else {
-          // Fallback to standard style prompt with physics constraints
+          // Fallback to standard style prompt
           venueStyleSection = `
-${getPhysicsConstraints(detectedAngle)}
-
 STYLE ENHANCEMENT: ${stylePreset?.toUpperCase() || 'PROFESSIONAL'}
 ${stylePrompt}
 `
         }
 
-        // AI IMAGE ENHANCEMENT PROMPT - ANGLE AWARE
-        // Enhances the EXISTING photograph while respecting physical camera angle constraints
-        // Reference: https://ai.google.dev/gemini-api/docs/gemini-3
+        // AI IMAGE ENHANCEMENT PROMPT - SELF-DETECTING ANGLE
+        // Model analyzes the camera angle AND applies appropriate enhancements in ONE call
+        // This eliminates the separate Flash API call, reducing latency and cost
         const generationPrompt = `You are a world-class professional food photography retoucher. Your task is to ENHANCE this existing food photograph while respecting PHYSICAL REALITY.
 
 ═══════════════════════════════════════════════════════════════════════════════
-DETECTED CAMERA ANGLE: ${detectedAngle.toUpperCase()} (${(angleConfidence * 100).toFixed(0)}% confidence)
+STEP 1: ANALYZE CAMERA ANGLE (Do this first!)
 ═══════════════════════════════════════════════════════════════════════════════
-${getAngleDescription(detectedAngle)}
 
-PHYSICALLY POSSIBLE at this angle (CAN enhance/add):
-${angleConstraints.canShow.map(item => `✓ ${item}`).join('\n')}
+Look at the photograph and determine the camera angle:
 
-PHYSICALLY IMPOSSIBLE at this angle (DO NOT add):
-${angleConstraints.cannotShow.map(item => `✗ ${item}`).join('\n')}
+OVERHEAD (90°) - Looking straight down:
+- Camera directly above, pointing down at food
+- Only TABLE SURFACE visible - no vertical backgrounds
+- Plates appear as CIRCLES (not ellipses)
+- NO walls, stalls, shelves, or standing elements visible
+- Common for: flat lays, pizzas, spreads, bowls from above
+
+HERO ANGLE (45°) - The classic food photography angle:
+- Camera at roughly 45 degrees
+- Shows food HEIGHT and DEPTH
+- Table surface visible + SOFT BLURRED background
+- Plates appear as ELLIPSES
+- Most common food photography angle
+
+EYE LEVEL (0°) - Camera at food level:
+- Camera pointing horizontally at food
+- FULL VERTICAL BACKGROUND visible
+- Shows the "face" of items (burgers, cakes, stacks)
+- Environment/venue details clearly visible
+- Table edge may not be visible
+
+═══════════════════════════════════════════════════════════════════════════════
+PHYSICS CONSTRAINTS BY ANGLE
+═══════════════════════════════════════════════════════════════════════════════
+
+▼ IF YOU DETECT OVERHEAD:
+  ✓ CAN add/enhance: Table texture, props on surface, garnishes, sauces, napkins
+  ✗ CANNOT add: Vertical backgrounds, walls, stalls, standing elements, people
+
+▼ IF YOU DETECT HERO ANGLE:
+  ✓ CAN add/enhance: Table surface, soft bokeh background, food depth, gentle shadows
+  ✗ CANNOT add: Sharp detailed backgrounds, readable signage, clear environment
+
+▼ IF YOU DETECT EYE LEVEL:
+  ✓ CAN add/enhance: Full background environment, venue atmosphere, vertical elements
+  ✗ CANNOT add: Elements that contradict existing background
 
 ═══════════════════════════════════════════════════════════════════════════════
 CRITICAL: PRESERVE THE ORIGINAL COMPOSITION
@@ -580,18 +580,18 @@ You MUST keep these elements EXACTLY as they are:
 ✗ DO NOT change the camera angle or perspective
 ✗ DO NOT change the plating arrangement
 ✗ DO NOT reposition any elements
-✗ DO NOT add elements that violate the physics of a ${detectedAngle} shot
+✗ DO NOT add elements that violate the physics of the detected angle
 
 This is a PHOTO ENHANCEMENT task, NOT a scene generation task.
 The output must be clearly recognizable as the SAME photograph, just enhanced.
 
 ═══════════════════════════════════════════════════════════════════════════════
-VENUE STYLE & ANGLE-APPROPRIATE ENHANCEMENTS
+STEP 2: APPLY ANGLE-APPROPRIATE VENUE STYLING
 ═══════════════════════════════════════════════════════════════════════════════
 ${venueStyleSection}
 
 ═══════════════════════════════════════════════════════════════════════════════
-UNIVERSAL ENHANCEMENTS (Apply to all angles)
+STEP 3: UNIVERSAL ENHANCEMENTS (Apply to all angles)
 ═══════════════════════════════════════════════════════════════════════════════
 ✓ LIGHTING - Improve quality while keeping direction natural
 ✓ COLOR GRADING - Apply style-appropriate color palette
@@ -600,7 +600,7 @@ UNIVERSAL ENHANCEMENTS (Apply to all angles)
 ✓ CONTRAST - Optimize dynamic range for visual impact
 ✓ FOOD APPEAL - Make food look fresher, more vibrant
 
-SUBTLE ADDITIONS (if appropriate):
+SUBTLE ADDITIONS (if appropriate for the angle):
 - Light steam for hot food
 - Enhanced texture definition
 - Gentle shadows for dimension
@@ -616,7 +616,7 @@ OUTPUT SPECIFICATIONS
 ═══════════════════════════════════════════════════════════════════════════════
 QUALITY STANDARDS
 ═══════════════════════════════════════════════════════════════════════════════
-1. PHYSICALLY REALISTIC - Enhancements must make spatial sense for a ${detectedAngle} shot
+1. PHYSICALLY REALISTIC - Enhancements must make spatial sense for the DETECTED angle
 2. APPETIZING - Food must look irresistibly delicious
 3. AUTHENTIC - Must be clearly the SAME photo, enhanced
 4. NATURAL - No obvious AI artifacts or physics-breaking elements
@@ -625,14 +625,16 @@ QUALITY STANDARDS
 ═══════════════════════════════════════════════════════════════════════════════
 ENHANCE THE IMAGE NOW
 ═══════════════════════════════════════════════════════════════════════════════
-Enhance this ${detectedAngle} photograph to professional quality.
-
-Remember: At ${detectedAngle} angle, ${detectedAngle === 'overhead' ? 'ONLY the table surface is visible - do NOT add vertical backgrounds' : detectedAngle === 'hero' ? 'keep backgrounds SOFT and BLURRED - no detailed scenes' : 'the full environment can be visible'}.
+1. First, analyze and identify the camera angle (overhead/hero/eye-level)
+2. Apply ONLY enhancements appropriate for that angle
+3. NEVER add vertical backgrounds to overhead shots
+4. NEVER add sharp detailed scenes to hero angle shots
+5. Enhance to professional quality while preserving authenticity
 
 The result should look like the original photo was professionally retouched, NOT like a completely different image or a physics-breaking composite.
 
-After enhancing, provide 3 improvement tips in format:
-SUGGESTIONS: [tip1] | [tip2] | [tip3]`
+After enhancing, respond with:
+ANGLE: [detected angle] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
         // Wrap Gemini API call with retry logic AND per-request timeout
         // - Timeout: 18s per attempt (prevents hanging on overloaded model)
@@ -662,13 +664,19 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         currentStep = 'processing Gemini response'
         const response = await result.response
 
-        // Extract enhanced image and suggestions
+        // Extract enhanced image, detected angle, and suggestions
         let aiEnhancedBuffer: Buffer | null = null
 
         for (const candidate of response.candidates || []) {
           for (const part of candidate.content?.parts || []) {
             if (part.text) {
               logger.debug('AI text response received')
+              // Parse format: ANGLE: [angle] | SUGGESTIONS: [tip1] | [tip2] | [tip3]
+              const angleMatch = part.text.match(/ANGLE:\s*(\w+[-\w]*)/i)
+              if (angleMatch) {
+                detectedAngle = angleMatch[1].toLowerCase()
+                logger.info('AI self-detected camera angle', { angle: detectedAngle })
+              }
               const suggestionsMatch = part.text.match(/SUGGESTIONS:\s*(.+)/i)
               if (suggestionsMatch) {
                 aiSuggestions = suggestionsMatch[1].split('|').map((s: string) => s.trim()).filter((s: string) => s)
@@ -750,7 +758,8 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           ...defaultEnhancements.enhancements,
           method: enhancementMethod,
           stylePreset: stylePreset,
-          pipeline: 'hybrid-v1' // Track pipeline version
+          detectedAngle: detectedAngle, // AI self-detected camera angle
+          pipeline: 'single-call-v1' // Single Gemini call (angle detection + enhancement)
         },
         suggestions: aiSuggestions.length > 0 ? aiSuggestions : defaultEnhancements.suggestions
       }

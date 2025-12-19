@@ -720,3 +720,33 @@ export function hasAngleAwareStyling(venueId: string): boolean {
 export function getAngleAwareVenueIds(): string[] {
   return Object.keys(angleAwareVenueStyles)
 }
+
+/**
+ * Get all angle prompts for a venue (for AI self-selection)
+ * Returns prompts for all 3 angles so AI can choose based on detected angle
+ */
+export function getAllAnglePrompts(venueId: string): string {
+  const venueStyle = angleAwareVenueStyles[venueId]
+
+  if (!venueStyle) {
+    return ''
+  }
+
+  return `
+═══════════════════════════════════════════════════════════════════════════════
+VENUE: ${venueStyle.name.toUpperCase()}
+${venueStyle.description}
+═══════════════════════════════════════════════════════════════════════════════
+
+ANGLE-SPECIFIC STYLING INSTRUCTIONS:
+
+▼ IF OVERHEAD (90°) - Camera directly above, only table surface visible:
+${venueStyle.prompts.overhead}
+
+▼ IF HERO ANGLE (45°) - The classic food photography angle:
+${venueStyle.prompts.hero}
+
+▼ IF EYE LEVEL (0°) - Camera at food level, full background visible:
+${venueStyle.prompts['eye-level']}
+`
+}
