@@ -57,7 +57,7 @@ export default function VerifyEmailPage() {
           <p className="text-sm text-muted-foreground">
             Need help?{' '}
             <a
-              href="mailto:support@marketing.heymag.app"
+              href="mailto:hello@zazzles.app"
               className="text-primary hover:underline"
             >
               Contact support

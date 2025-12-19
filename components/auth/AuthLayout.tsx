@@ -1,7 +1,7 @@
 "use client"
 
 import Link from 'next/link'
-import { ArrowLeft, Camera, Sparkles, Zap, Share2 } from 'lucide-react'
+import { ArrowLeft, Camera, Sparkles, Zap, Share2, Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 interface AuthLayoutProps {
@@ -13,30 +13,33 @@ export function AuthLayout({ children, showBackButton = true }: AuthLayoutProps)
   return (
     <div className="min-h-screen flex">
       {/* Left Panel - Branding & Benefits */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-orange-500 to-orange-600 p-12 text-white">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 p-12 text-white">
         <div className="w-full max-w-md mx-auto flex flex-col justify-between">
           <div>
             <Link href="/" className="inline-flex items-center gap-3 mb-12">
               <div className="w-10 h-10 rounded-lg bg-white/20 flex items-center justify-center">
-                <Camera className="h-6 w-6" />
+                <Wand2 className="h-6 w-6" />
               </div>
-              <span className="text-2xl font-bold">FoodSnap AI</span>
+              <span className="text-2xl font-bold">Zazzles</span>
             </Link>
 
             <h1 className="text-4xl font-bold leading-tight">
-              Transform Your Food Photos<br />
-              Into Marketing Magic
+              AI Food Photography<br />
+              Made Simple
             </h1>
+            <p className="text-white/90 mt-4 text-lg">
+              Transform phone photos into stunning marketing content for your F&B business
+            </p>
 
-            <div className="space-y-6 mt-8">
+            <div className="space-y-6 mt-10">
               <div className="flex gap-4">
                 <div className="flex-shrink-0 w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
                   <Sparkles className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">AI-Powered Enhancement</h3>
+                  <h3 className="font-semibold mb-1">AI Photo Enhancement</h3>
                   <p className="text-white/80 text-sm">
-                    Turn amateur photos into stunning, professional-quality images in seconds
+                    Pro-quality food photos in seconds with Google AI technology
                   </p>
                 </div>
               </div>
@@ -46,9 +49,9 @@ export function AuthLayout({ children, showBackButton = true }: AuthLayoutProps)
                   <Zap className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">10+ Style Presets</h3>
+                  <h3 className="font-semibold mb-1">30+ Style Presets</h3>
                   <p className="text-white/80 text-sm">
-                    Optimized for delivery apps, Instagram, menus, and Chinese platforms
+                    GrabFood, Foodpanda, Instagram, Xiaohongshu & more SEA platforms
                   </p>
                 </div>
               </div>
@@ -58,9 +61,9 @@ export function AuthLayout({ children, showBackButton = true }: AuthLayoutProps)
                   <Share2 className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-semibold mb-1">Post Everywhere</h3>
+                  <h3 className="font-semibold mb-1">AI Captions & Social Posting</h3>
                   <p className="text-white/80 text-sm">
-                    Facebook, Instagram, TikTok, Xiaohongshu, WeChat - all in one click
+                    Generate captions in EN/CN and post to all platforms in one click
                   </p>
                 </div>
               </div>
@@ -69,10 +72,10 @@ export function AuthLayout({ children, showBackButton = true }: AuthLayoutProps)
 
           <div className="pt-8 border-t border-white/20">
             <p className="text-sm font-medium">
-              Start Your Free Trial
+              Start Free Today
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-sm text-white/80">
-              <span>✓ 14-Day Free Trial</span>
+              <span>✓ 5 Free Credits</span>
               <span>✓ No Credit Card</span>
               <span>✓ Cancel Anytime</span>
             </div>
@@ -101,9 +104,9 @@ export function AuthLayout({ children, showBackButton = true }: AuthLayoutProps)
           <div className="lg:hidden mb-8 text-center">
             <Link href="/" className="inline-flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-orange-500 flex items-center justify-center">
-                <Camera className="h-6 w-6 text-white" />
+                <Wand2 className="h-6 w-6 text-white" />
               </div>
-              <span className="text-2xl font-bold">FoodSnap AI</span>
+              <span className="text-2xl font-bold">Zazzles</span>
             </Link>
           </div>
 
