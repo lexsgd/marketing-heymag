@@ -499,53 +499,73 @@ export async function POST(request: NextRequest) {
           } as unknown as import('@google/generative-ai').GenerationConfig
         })
 
-        currentStep = 'calling Gemini API with preservation prompt'
-        logger.debug('Calling Gemini with strict preservation prompt', { aspectRatio: platformConfig.aspectRatio })
+        currentStep = 'calling Gemini API with generation prompt'
+        logger.debug('Calling Gemini with style generation prompt', { style: stylePreset, aspectRatio: platformConfig.aspectRatio })
 
-        // CRITICAL: Research-backed prompt for maximum content preservation
-        // Based on Google's official documentation and best practices for Nano Banana Pro
+        // AI IMAGE GENERATION PROMPT
+        // Generates a NEW professional food photograph in the selected style
+        // while preserving the same food items from the reference image
         // Reference: https://ai.google.dev/gemini-api/docs/gemini-3
-        const preservationPrompt = `You are a professional food photo RETOUCHER. This image has already been color-corrected.
+        const generationPrompt = `You are a world-class professional food photographer and AI image generator. Your task is to create a STUNNING NEW food photograph based on the reference image provided.
 
-ABSOLUTE PRESERVATION RULES (VIOLATION = FAILURE):
-1. Keep the EXACT SAME food items visible in the image
-2. Keep the EXACT SAME plates, bowls, containers
-3. Keep the EXACT SAME composition and arrangement
-4. Keep the EXACT SAME camera angle and perspective
-5. Do NOT replace any food with different food
-6. Do NOT change what is being photographed
+═══════════════════════════════════════════════════════════════════════════════
+STEP 1: FOOD IDENTIFICATION (CRITICAL)
+═══════════════════════════════════════════════════════════════════════════════
+Carefully analyze the reference image and identify:
+- The specific food items/dishes shown
+- Type of cuisine (Asian, Western, Dessert, etc.)
+- Key ingredients visible
+- Portion size and presentation style
 
-OUTPUT SPECIFICATIONS:
+IMPORTANT: The SAME food items must appear in your generated image.
+Example: If the reference shows "char kway teow" - generate char kway teow, not a different noodle dish.
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 2: STYLE TRANSFORMATION - "${stylePreset?.toUpperCase() || 'PROFESSIONAL'}"
+═══════════════════════════════════════════════════════════════════════════════
+Generate a COMPLETELY NEW photograph of the identified food with this style:
+
+${stylePrompt}
+
+You MUST transform:
+✓ Background - Match the style's setting (dark studio, marble table, wooden surface, neon-lit street, etc.)
+✓ Lighting - Apply style-appropriate lighting (dramatic spotlight, soft window light, neon glow, etc.)
+✓ Plating/Presentation - Restyle the food presentation to match the aesthetic
+✓ Props & Styling - Add appropriate props (cutlery, napkins, drinks, garnishes)
+✓ Color Grading - Apply the style's signature color palette
+✓ Atmosphere - Create the mood described in the style (cozy, elegant, vibrant, moody, etc.)
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 3: OUTPUT SPECIFICATIONS
+═══════════════════════════════════════════════════════════════════════════════
 - Aspect Ratio: ${platformConfig.aspectRatio} (${platformConfig.description})
-- Resolution: ${platformConfig.imageSize} quality
-- Platform: ${platformConfig.platformRequirements || 'General food photography'}
+- Resolution: ${platformConfig.imageSize} quality - ultra high detail
+- Platform: ${platformConfig.platformRequirements || 'Professional food photography'}
 
-YOUR TASK - Apply ONLY these professional adjustments:
-- Professional ${stylePreset} style lighting simulation
-- Enhance food texture micro-details (steam, glossiness, crispy elements)
-- Apply ${stylePreset}-specific color grading while preserving natural food colors
-- Sharpen texture details for appetizing appearance
-- Improve overall professional quality suitable for ${platformConfig.description}
+═══════════════════════════════════════════════════════════════════════════════
+QUALITY REQUIREMENTS
+═══════════════════════════════════════════════════════════════════════════════
+1. PROFESSIONAL QUALITY - Magazine/commercial grade photography
+2. APPETIZING - Food must look irresistibly delicious
+3. STYLE-ACCURATE - Must clearly reflect "${stylePreset}" aesthetic
+4. FOOD AUTHENTIC - Same dishes as reference but can be restyled/replated
+5. PHOTOREALISTIC - Must look like a real photograph, not AI-generated
 
-STYLE REFERENCE: ${stylePrompt}
+FOOD STYLING ENHANCEMENTS ALLOWED:
+- Steam rising from hot dishes
+- Cheese pulls and sauce drips for indulgent foods
+- Condensation on cold drinks
+- Garnishes appropriate to the cuisine
+- Better plating arrangement
+- Fresh-looking presentation
 
-PHOTOGRAPHY TECHNIQUE:
-- Use soft diffused lighting for appetizing highlights
-- Enhance natural food colors without oversaturation
-- Add subtle depth through shadow/highlight balance
-- Maintain authentic, real appearance (not artificial)
+═══════════════════════════════════════════════════════════════════════════════
+GENERATE THE IMAGE NOW
+═══════════════════════════════════════════════════════════════════════════════
+Create a stunning ${stylePreset} style food photograph featuring the SAME food items from the reference.
+The result should look like it was shot by a professional food photographer in a ${platformConfig.description} setting.
 
-VERIFICATION CHECKLIST (satisfy ALL before outputting):
-✓ Same food items as input
-✓ Same dishes/plates as input
-✓ Same arrangement as input
-✓ Same camera angle as input
-✓ Only lighting/color/texture enhanced
-✓ Output matches ${platformConfig.aspectRatio} aspect ratio
-
-OUTPUT: Return the enhanced version of THIS EXACT photo. Preserve subject fidelity.
-
-After enhancement, provide 3 tips in format:
+After generating, provide 3 styling tips in format:
 SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
         // Wrap Gemini API call with retry logic AND per-request timeout
@@ -563,7 +583,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
                     data: sharpEnhancedBase64 // Use Sharp-enhanced image as input
                   }
                 },
-                { text: preservationPrompt }
+                { text: generationPrompt }
               ]),
               GEMINI_REQUEST_TIMEOUT_MS,
               `Gemini 3 Pro Image request exceeded ${GEMINI_REQUEST_TIMEOUT_MS / 1000}s`
@@ -614,7 +634,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
             const urlData = serviceSupabase.storage.from('images').getPublicUrl(enhancedFileName)
             enhancedUrl = urlData.data.publicUrl
             enhancementMethod = 'hybrid-sharp-gemini'
-            logger.info('Hybrid enhancement successful')
+            logger.info('AI image generation successful', { style: stylePreset })
           } else {
             logger.error('Upload error', uploadError)
           }
@@ -679,7 +699,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           enhanced_url: enhancedUrl,
           enhancement_settings: enhancementData.enhancements,
           processed_at: new Date().toISOString(),
-          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'hybrid-sharp+gemini-3-pro-image' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
+          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'gemini-3-pro-image-generation' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
           ai_suggestions: enhancementData.suggestions,
           // Note: processing_skipped is returned in API response but not stored in DB
         })
