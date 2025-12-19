@@ -535,8 +535,8 @@ MOOD:
   // ═══════════════════════════════════════════════════════════════════════════════
   // CASUAL DINING
   // ═══════════════════════════════════════════════════════════════════════════════
-  'casual': {
-    id: 'casual',
+  'casual-dining': {
+    id: 'casual-dining',
     name: 'Casual Dining',
     description: 'Warm, inviting atmosphere',
     prompts: {
@@ -601,6 +601,82 @@ MOOD:
 - Warm, welcoming, relaxed
 - Family-friendly atmosphere
 - Value and satisfaction visible
+`
+    }
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════════
+  // DESSERT & SWEETS
+  // ═══════════════════════════════════════════════════════════════════════════════
+  'dessert': {
+    id: 'dessert',
+    name: 'Dessert & Sweets',
+    description: 'Sweet, colorful, Instagram-worthy treats',
+    prompts: {
+      overhead: `
+DESSERT & SWEETS - OVERHEAD FLAT LAY ENHANCEMENT
+Enhance this flat-lay dessert photo with Instagram-worthy styling.
+
+SURFACE STYLING:
+- Pretty pastel plates or vintage ceramics
+- Marble or light wood surface
+- Sprinkles, crumbs, sauce drizzles on surface
+- Pretty napkins, small flowers laid flat
+- Decorative props (macarons, berries) scattered
+
+COLOR:
+- Soft pastel palette (pink, mint, cream, lavender)
+- Bright, candy-like colors for vibrant desserts
+- Light, airy, dreamy color grading
+- Instagram-aesthetic warmth
+
+PRESENTATION:
+- Dessert as hero, beautifully styled
+- Texture detail enhanced (frosting swirls, chocolate drips)
+- Fresh, appetizing, irresistible look
+
+NO vertical backgrounds - dessert flat-lay is about SURFACE BEAUTY.
+`,
+      hero: `
+DESSERT & SWEETS - HERO ANGLE ENHANCEMENT
+Enhance with dreamy, sweet aesthetic.
+
+SURFACE:
+- Pretty plate or cake stand
+- Elegant surface styling
+- Sauce drips, toppings visible
+
+BACKGROUND:
+- Soft, dreamy pastel blur
+- Bokeh light hints
+- Romantic, sweet atmosphere
+
+COLOR:
+- Pastel and candy colors
+- Soft, feminine aesthetic
+- Instagram-worthy polish
+- Bright, appetizing tones
+`,
+      'eye-level': `
+DESSERT & SWEETS - EYE LEVEL ENHANCEMENT
+Enhance with patisserie/bakery atmosphere.
+
+BACKGROUND:
+- Soft bakery/patisserie setting
+- Display case hints (soft blur)
+- Warm, inviting pastry shop feel
+- Pretty lighting fixtures
+
+FOOD:
+- Height and layers showcased
+- Chocolate drips, cream swirls detailed
+- Fresh toppings enhanced
+- Irresistible sweetness
+
+MOOD:
+- Sweet, indulgent, treat-yourself
+- Instagram-worthy prettiness
+- Bright, cheerful, appetizing
 `
     }
   },
