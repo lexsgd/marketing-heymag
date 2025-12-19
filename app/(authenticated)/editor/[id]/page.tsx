@@ -308,8 +308,15 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       setPostError('Please enhance the image first before posting to social media.')
       return
     }
-    // Pre-fill with generated caption if available
-    setSocialPostCaption(caption || '')
+    // Pre-fill with generated caption AND hashtags if available
+    if (caption) {
+      const fullCaption = hashtags.length > 0
+        ? caption + '\n\n' + hashtags.map(h => `#${h}`).join(' ')
+        : caption
+      setSocialPostCaption(fullCaption)
+    } else {
+      setSocialPostCaption('')
+    }
     setSelectedSocialPlatforms([])
     setPostError(null)
     setPostSuccess(null)
