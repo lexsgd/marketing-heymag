@@ -122,15 +122,16 @@ export function BeforeAfterSlider({
       <div className="absolute inset-0 bg-muted/30" />
 
       {/* BEFORE Image (Original) - Full background UNDERNEATH */}
+      {/* Using object-cover to ensure both images fill the container and align properly */}
       <img
         src={beforeUrl}
         alt={`${alt} - Original`}
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute inset-0 w-full h-full object-cover object-center"
         onLoad={() => setImagesLoaded(prev => ({ ...prev, before: true }))}
         draggable={false}
       />
 
-      {/* AFTER Image (Enhanced) - On TOP with clip-path */}
+      {/* AFTER Image (Enhanced/Generated) - On TOP with clip-path */}
       {/*
         Clip behavior:
         - sliderPosition = 0%: Enhanced completely clipped (hidden)
@@ -140,11 +141,14 @@ export function BeforeAfterSlider({
         User interaction:
         - Drag RIGHT → sliderPosition increases → More Enhanced visible
         - Drag LEFT → sliderPosition decreases → More Original visible
+
+        Note: object-cover ensures both images fill the container identically,
+        so the comparison works even with different aspect ratios.
       */}
       <img
         src={afterUrl}
         alt={`${alt} - Enhanced`}
-        className="absolute inset-0 w-full h-full object-contain"
+        className="absolute inset-0 w-full h-full object-cover object-center"
         style={{
           clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`
         }}

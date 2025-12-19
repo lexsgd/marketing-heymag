@@ -1,7 +1,7 @@
 export const config = {
   // Version tracking
-  version: '0.31.0',
-  internalBuild: '1.89',
+  version: '0.31.1',
+  internalBuild: '1.90',
 
   // App info
   appName: 'Zazzles',
@@ -68,8 +68,10 @@ export const config = {
   creditPrice: 0.50, // Per additional credit
 
   // AI costs (for internal tracking)
+  // Updated Dec 2025: Gemini 3 Pro Image generation pricing
   aiCosts: {
-    enhancement: 0.039, // Google Nano Banana Pro
+    generation2K: 0.134, // Gemini 3 Pro Image (2K resolution) - $120/1M tokens, 1120 tokens/image
+    generation4K: 0.24,  // Gemini 3 Pro Image (4K resolution) - 2000 tokens/image
     caption: 0.003, // Claude
     backgroundRemoval: 0.09, // Remove.bg
   },
