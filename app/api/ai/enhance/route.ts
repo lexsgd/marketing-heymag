@@ -509,70 +509,82 @@ export async function POST(request: NextRequest) {
           platform: primaryStyleForConfig
         })
 
-        // AI IMAGE GENERATION PROMPT
-        // Generates a NEW professional food photograph in the selected style
-        // while preserving the same food items from the reference image
+        // AI IMAGE ENHANCEMENT PROMPT
+        // Enhances the EXISTING photograph to professional quality
+        // while preserving the exact food, composition, angle, and props
         // Reference: https://ai.google.dev/gemini-api/docs/gemini-3
-        const generationPrompt = `You are a world-class professional food photographer and AI image generator. Your task is to create a STUNNING NEW food photograph based on the reference image provided.
+        const generationPrompt = `You are a world-class professional food photography retoucher and image enhancer. Your task is to ENHANCE this existing food photograph to professional, commercial-grade quality.
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 1: FOOD IDENTIFICATION (CRITICAL)
+CRITICAL: PRESERVE THE ORIGINAL IMAGE
 ═══════════════════════════════════════════════════════════════════════════════
-Carefully analyze the reference image and identify:
-- The specific food items/dishes shown
-- Type of cuisine (Asian, Western, Dessert, etc.)
-- Key ingredients visible
-- Portion size and presentation style
+You MUST keep these elements EXACTLY as they are in the original:
+✗ DO NOT change the food items - enhance what's there
+✗ DO NOT change the camera angle or composition
+✗ DO NOT change the plating arrangement
+✗ DO NOT add or remove props, dishes, or items
+✗ DO NOT replace the background with a completely different scene
+✗ DO NOT reposition any elements
 
-IMPORTANT: The SAME food items must appear in your generated image.
-Example: If the reference shows "char kway teow" - generate char kway teow, not a different noodle dish.
+This is a PHOTO ENHANCEMENT task, NOT a scene generation task.
+The output must be clearly recognizable as the SAME photograph, just enhanced.
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 2: STYLE TRANSFORMATION - "${stylePreset?.toUpperCase() || 'PROFESSIONAL'}"
+ENHANCEMENT STYLE: "${stylePreset?.toUpperCase() || 'PROFESSIONAL'}"
 ═══════════════════════════════════════════════════════════════════════════════
-Generate a COMPLETELY NEW photograph of the identified food with this style:
+Apply these professional enhancements inspired by ${stylePreset} style:
 
 ${stylePrompt}
 
-You MUST transform:
-✓ Background - Match the style's setting (dark studio, marble table, wooden surface, neon-lit street, etc.)
-✓ Lighting - Apply style-appropriate lighting (dramatic spotlight, soft window light, neon glow, etc.)
-✓ Plating/Presentation - Restyle the food presentation to match the aesthetic
-✓ Props & Styling - Add appropriate props (cutlery, napkins, drinks, garnishes)
-✓ Color Grading - Apply the style's signature color palette
-✓ Atmosphere - Create the mood described in the style (cozy, elegant, vibrant, moody, etc.)
+ENHANCEMENTS TO APPLY:
+✓ LIGHTING - Improve lighting quality to match ${stylePreset} aesthetic (brighter, more dramatic, softer, etc.)
+✓ COLOR GRADING - Apply ${stylePreset}-inspired color palette and mood
+✓ SHARPNESS - Enhance detail and clarity of the food
+✓ BACKGROUND - Clean up, blur slightly, or improve existing background (DO NOT replace it)
+✓ WHITE BALANCE - Correct color temperature to make food look appetizing
+✓ CONTRAST - Optimize dynamic range for visual impact
+✓ FOOD APPEAL - Make existing food look fresher, more vibrant, more appetizing
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 3: OUTPUT SPECIFICATIONS
+SUBTLE STYLING ENHANCEMENTS (OPTIONAL)
+═══════════════════════════════════════════════════════════════════════════════
+You MAY add these SUBTLE enhancements if they improve the image:
+- Light steam rising from hot food (if appropriate)
+- Subtle highlights on glossy surfaces
+- Enhanced texture definition
+- Slightly deeper shadows for dimension
+- Gentle color correction for food freshness
+
+You MUST NOT add:
+- New props, dishes, or cutlery
+- Different background environments
+- Additional food items
+- Text, logos, or overlays
+
+═══════════════════════════════════════════════════════════════════════════════
+OUTPUT SPECIFICATIONS
 ═══════════════════════════════════════════════════════════════════════════════
 - Aspect Ratio: ${platformConfig.aspectRatio} (${platformConfig.description})
 - Resolution: ${platformConfig.imageSize} quality - ultra high detail
-- Platform: ${platformConfig.platformRequirements || 'Professional food photography'}
+- Platform: Optimized for ${platformConfig.platformRequirements || 'professional food photography'}
 
 ═══════════════════════════════════════════════════════════════════════════════
-QUALITY REQUIREMENTS
+QUALITY STANDARDS
 ═══════════════════════════════════════════════════════════════════════════════
-1. PROFESSIONAL QUALITY - Magazine/commercial grade photography
+1. PROFESSIONAL FINISH - Magazine/commercial grade quality
 2. APPETIZING - Food must look irresistibly delicious
-3. STYLE-ACCURATE - Must clearly reflect "${stylePreset}" aesthetic
-4. FOOD AUTHENTIC - Same dishes as reference but can be restyled/replated
-5. PHOTOREALISTIC - Must look like a real photograph, not AI-generated
-
-FOOD STYLING ENHANCEMENTS ALLOWED:
-- Steam rising from hot dishes
-- Cheese pulls and sauce drips for indulgent foods
-- Condensation on cold drinks
-- Garnishes appropriate to the cuisine
-- Better plating arrangement
-- Fresh-looking presentation
+3. AUTHENTIC - Must be clearly the SAME photo, enhanced
+4. NATURAL - Enhancements should look real, not over-processed
+5. PLATFORM-READY - Suitable for ${platformConfig.description}
 
 ═══════════════════════════════════════════════════════════════════════════════
-GENERATE THE IMAGE NOW
+ENHANCE THE IMAGE NOW
 ═══════════════════════════════════════════════════════════════════════════════
-Create a stunning ${stylePreset} style food photograph featuring the SAME food items from the reference.
-The result should look like it was shot by a professional food photographer in a ${platformConfig.description} setting.
+Enhance this photograph to professional ${stylePreset} quality while keeping the exact same composition, angle, food items, and scene.
 
-After generating, provide 3 styling tips in format:
+The result should look like the original photo was professionally retouched by an expert food photographer, NOT like a completely different image.
+
+After enhancing, provide 3 improvement tips in format:
 SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
         // Wrap Gemini API call with retry logic AND per-request timeout
@@ -641,7 +653,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
             const urlData = serviceSupabase.storage.from('images').getPublicUrl(enhancedFileName)
             enhancedUrl = urlData.data.publicUrl
             enhancementMethod = 'hybrid-sharp-gemini'
-            logger.info('AI image generation successful', { style: stylePreset })
+            logger.info('AI image enhancement successful', { style: stylePreset })
           } else {
             logger.error('Upload error', uploadError)
           }
@@ -706,7 +718,7 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           enhanced_url: enhancedUrl,
           enhancement_settings: enhancementData.enhancements,
           processed_at: new Date().toISOString(),
-          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'gemini-3-pro-image-generation' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
+          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'gemini-3-pro-image-enhancement' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
           ai_suggestions: enhancementData.suggestions,
           // Note: processing_skipped is returned in API response but not stored in DB
         })
