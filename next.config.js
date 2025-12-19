@@ -6,8 +6,10 @@ const nextConfig = {
     // Disable ESLint during production builds (linting done separately)
     ignoreDuringBuilds: true,
   },
-  // Exclude Node.js-only packages from Edge runtime bundling
-  serverExternalPackages: ['stripe', 'sharp'],
+  // Exclude Node.js-only packages from server bundling
+  experimental: {
+    serverComponentsExternalPackages: ['stripe', 'sharp'],
+  },
 
   // Security headers
   async headers() {
