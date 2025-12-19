@@ -16,7 +16,10 @@ import {
   Save,
   Loader2,
   Check,
-  Settings
+  Settings,
+  Eye,
+  EyeOff,
+  Lock
 } from 'lucide-react'
 import { MainNavAuth } from '@/components/main-nav-auth'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -44,6 +47,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { cn } from '@/lib/utils'
 
 type SettingsTab = 'profile' | 'preferences' | 'notifications' | 'account'
@@ -80,6 +92,15 @@ export default function SettingsPage() {
     email_updates: true,
     marketing_emails: false,
   })
+  // Password change state
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPasswords, setShowPasswords] = useState(false)
+  const [passwordChanging, setPasswordChanging] = useState(false)
+  const [passwordError, setPasswordError] = useState<string | null>(null)
+  const [passwordSuccess, setPasswordSuccess] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
@@ -155,6 +176,63 @@ export default function SettingsPage() {
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push('/auth/login')
+  }
+
+  const handlePasswordChange = async () => {
+    setPasswordError(null)
+    setPasswordSuccess(false)
+
+    // Validate passwords
+    if (!newPassword || !confirmPassword) {
+      setPasswordError('Please fill in all password fields')
+      return
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError('New password must be at least 8 characters')
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError('New passwords do not match')
+      return
+    }
+
+    setPasswordChanging(true)
+
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword
+      })
+
+      if (error) throw error
+
+      setPasswordSuccess(true)
+      // Clear form
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+
+      // Close dialog after 2 seconds
+      setTimeout(() => {
+        setPasswordDialogOpen(false)
+        setPasswordSuccess(false)
+      }, 2000)
+    } catch (err) {
+      console.error('Password change error:', err)
+      setPasswordError((err as Error).message || 'Failed to change password')
+    } finally {
+      setPasswordChanging(false)
+    }
+  }
+
+  const resetPasswordDialog = () => {
+    setCurrentPassword('')
+    setNewPassword('')
+    setConfirmPassword('')
+    setPasswordError(null)
+    setPasswordSuccess(false)
+    setShowPasswords(false)
   }
 
   if (loading) {
@@ -635,29 +713,127 @@ export default function SettingsPage() {
                     <div>
                       <p className="font-medium">Password</p>
                       <p className="text-sm text-muted-foreground">
-                        Last changed: Never
+                        Update your account password
                       </p>
                     </div>
-                    <Button variant="outline">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        resetPasswordDialog()
+                        setPasswordDialogOpen(true)
+                      }}
+                    >
+                      <Lock className="mr-2 h-4 w-4" />
                       Change Password
-                    </Button>
-                  </div>
-
-                  <Separator />
-
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-medium">Two-Factor Authentication</p>
-                      <p className="text-sm text-muted-foreground">
-                        Add an extra layer of security
-                      </p>
-                    </div>
-                    <Button variant="outline">
-                      Enable 2FA
                     </Button>
                   </div>
                 </CardContent>
               </Card>
+
+              {/* Password Change Dialog */}
+              <Dialog
+                open={passwordDialogOpen}
+                onOpenChange={(open) => {
+                  setPasswordDialogOpen(open)
+                  if (!open) resetPasswordDialog()
+                }}
+              >
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <Lock className="h-5 w-5 text-orange-500" />
+                      Change Password
+                    </DialogTitle>
+                    <DialogDescription>
+                      Enter your new password below. Password must be at least 8 characters.
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="space-y-4 py-4">
+                    {/* New Password */}
+                    <div className="space-y-2">
+                      <Label htmlFor="new-password">New Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="new-password"
+                          type={showPasswords ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
+                          placeholder="Enter new password"
+                          className="pr-10"
+                          disabled={passwordChanging || passwordSuccess}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPasswords(!showPasswords)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          tabIndex={-1}
+                        >
+                          {showPasswords ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Confirm Password */}
+                    <div className="space-y-2">
+                      <Label htmlFor="confirm-password">Confirm New Password</Label>
+                      <Input
+                        id="confirm-password"
+                        type={showPasswords ? 'text' : 'password'}
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        placeholder="Confirm new password"
+                        disabled={passwordChanging || passwordSuccess}
+                      />
+                    </div>
+
+                    {/* Error message */}
+                    {passwordError && (
+                      <Alert variant="destructive">
+                        <AlertDescription>{passwordError}</AlertDescription>
+                      </Alert>
+                    )}
+
+                    {/* Success message */}
+                    {passwordSuccess && (
+                      <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
+                        <Check className="h-4 w-4 text-green-500" />
+                        <AlertDescription className="text-green-700 dark:text-green-300">
+                          Password changed successfully!
+                        </AlertDescription>
+                      </Alert>
+                    )}
+                  </div>
+
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setPasswordDialogOpen(false)}
+                      disabled={passwordChanging}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      className="bg-orange-500 hover:bg-orange-600"
+                      onClick={handlePasswordChange}
+                      disabled={passwordChanging || passwordSuccess || !newPassword || !confirmPassword}
+                    >
+                      {passwordChanging ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Changing...
+                        </>
+                      ) : (
+                        'Change Password'
+                      )}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
               <Card>
                 <CardHeader>
