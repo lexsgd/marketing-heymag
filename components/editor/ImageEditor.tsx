@@ -165,7 +165,7 @@ export function ImageEditor({
 
     const a = document.createElement('a')
     a.href = previewUrl
-    a.download = `foodsnap-enhanced-${Date.now()}.${extension}`
+    a.download = `zazzles-enhanced-${Date.now()}.${extension}`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
