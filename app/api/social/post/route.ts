@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { postToFacebook, postToInstagram, validateImageUrl } from '@/lib/social/meta'
 
+// Use Node.js runtime for consistency with other API routes
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 interface PostRequest {

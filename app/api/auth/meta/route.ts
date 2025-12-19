@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { getMetaAuthUrl } from '@/lib/social/meta'
 
+// Use Node.js runtime for consistency with other API routes
+export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID

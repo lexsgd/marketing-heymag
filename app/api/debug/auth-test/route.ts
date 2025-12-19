@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// Use Node.js runtime for consistency with other API routes
+export const runtime = 'nodejs'
+
 export async function GET() {
   // Disable debug endpoints in production
   if (process.env.NODE_ENV === 'production') {

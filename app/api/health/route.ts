@@ -2,6 +2,9 @@ import { NextResponse } from 'next/server'
 import { config } from '@/lib/config'
 import { createClient } from '@supabase/supabase-js'
 
+// Use Node.js runtime for consistency with other API routes
+export const runtime = 'nodejs'
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const debug = searchParams.get('debug') === 'true'
