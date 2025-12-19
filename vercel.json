@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "buildCommand": "npm run build",
-  "installCommand": "npm install --omit=optional"
+  "buildCommand": "NEXT_PRIVATE_STANDALONE=true npm run build",
+  "installCommand": "npm ci --omit=optional"
 }

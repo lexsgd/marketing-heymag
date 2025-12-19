@@ -24,31 +24,15 @@ export const runtime = 'nodejs'
 // Step 2: Gemini 3 Pro Image adds AI-powered professional polish (with strict preservation prompts)
 // This ensures original food content is ALWAYS preserved while adding professional quality
 
-// Lazy Sharp initialization to handle Vercel deployment issues
-// Sharp type - using dynamic import type
-type SharpModule = typeof import('sharp')
-let sharpInstance: SharpModule | null = null
-let sharpLoadError: Error | null = null
+// Sharp is disabled - not installed on Vercel
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type SharpModule = any
+const sharpInstance: SharpModule | null = null
 
+// Sharp is not available - always returns null
 async function getSharp(): Promise<SharpModule | null> {
-  if (sharpLoadError) {
-    logger.debug('Sharp previously failed to load', { error: sharpLoadError.message })
-    return null
-  }
-  if (sharpInstance) {
-    return sharpInstance
-  }
-  try {
-    // Use require with try-catch to avoid webpack resolution errors
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    sharpInstance = require('sharp') as SharpModule
-    logger.info('Sharp loaded successfully')
-    return sharpInstance
-  } catch (error) {
-    sharpLoadError = error as Error
-    logger.warn('Failed to load Sharp (platform binary issue)', { error: sharpLoadError.message })
-    return null
-  }
+  // Sharp is intentionally disabled - enhancement uses Gemini AI only
+  return null
 }
 
 // Extend timeout to 60 seconds (requires Vercel Pro, falls back to 10s on Hobby)
