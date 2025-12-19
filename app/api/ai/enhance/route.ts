@@ -490,21 +490,15 @@ export async function POST(request: NextRequest) {
         // Features: Superior quality, professional food photography enhancement
         // Note: Has 503 "model overloaded" issues, using retry logic with exponential backoff
         // Required config per docs: temperature=1.0, responseModalities=['Text', 'Image']
-        // Map imageSize to uppercase format required by Gemini API
-        const imageSizeMap: Record<string, string> = { '1K': '1K', '2K': '2K', '4K': '4K' }
-        const outputImageSize = imageSizeMap[platformConfig.imageSize] || '2K' // Default to 2K for higher quality
+        // Note: imageConfig for 2K/4K resolution not supported in getGenerativeModel pattern
+        // TODO: Upgrade to newer SDK pattern to enable 2K output
 
         const model = getGoogleAI().getGenerativeModel({
           model: 'gemini-3-pro-image-preview', // Nano Banana Pro - premium quality
-          // Gemini 3 Pro Image requires responseModalities and imageConfig for resolution control
-          // Must use uppercase K (e.g., "2K" not "2k") per Google docs
+          // Gemini 3 Pro Image requires responseModalities - cast to bypass SDK types
           generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE'], // Must be uppercase per docs
+            responseModalities: ['Text', 'Image'],
             temperature: 1.0, // Required for Gemini 3 Pro Image generation
-            imageConfig: {
-              aspectRatio: platformConfig.aspectRatio, // Use aspect ratio from platform config
-              imageSize: outputImageSize, // "1K"=1024, "2K"=2048, "4K"=4096
-            },
           } as unknown as import('@google/generative-ai').GenerationConfig
         })
 
@@ -512,7 +506,6 @@ export async function POST(request: NextRequest) {
         logger.debug('Calling Gemini with style generation prompt', {
           style: stylePreset,
           aspectRatio: platformConfig.aspectRatio,
-          imageSize: outputImageSize,
           platform: primaryStyleForConfig
         })
 
