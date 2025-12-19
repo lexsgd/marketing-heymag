@@ -25,11 +25,11 @@ export const runtime = 'nodejs'
 // This ensures original food content is ALWAYS preserved while adding professional quality
 
 // Sharp is disabled - not installed on Vercel
-type SharpModule = unknown
-const sharpInstance: SharpModule | null = null
+// Using 'any' because Sharp types aren't installed and this code path is never executed
+type SharpInstance = any
 
 // Sharp is not available - always returns null
-async function getSharp(): Promise<SharpModule | null> {
+async function getSharp(): Promise<SharpInstance | null> {
   // Sharp is intentionally disabled - enhancement uses Gemini AI only
   return null
 }
