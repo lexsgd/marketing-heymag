@@ -490,17 +490,31 @@ export async function POST(request: NextRequest) {
         // Features: Superior quality, professional food photography enhancement
         // Note: Has 503 "model overloaded" issues, using retry logic with exponential backoff
         // Required config per docs: temperature=1.0, responseModalities=['Text', 'Image']
+        // Map imageSize to uppercase format required by Gemini API
+        const imageSizeMap: Record<string, string> = { '1K': '1K', '2K': '2K', '4K': '4K' }
+        const outputImageSize = imageSizeMap[platformConfig.imageSize] || '2K' // Default to 2K for higher quality
+
         const model = getGoogleAI().getGenerativeModel({
           model: 'gemini-3-pro-image-preview', // Nano Banana Pro - premium quality
-          // Gemini 3 Pro Image requires responseModalities - cast to bypass SDK types
+          // Gemini 3 Pro Image requires responseModalities and imageConfig for resolution control
+          // Must use uppercase K (e.g., "2K" not "2k") per Google docs
           generationConfig: {
-            responseModalities: ['Text', 'Image'],
+            responseModalities: ['TEXT', 'IMAGE'], // Must be uppercase per docs
             temperature: 1.0, // Required for Gemini 3 Pro Image generation
+            imageConfig: {
+              aspectRatio: platformConfig.aspectRatio, // Use aspect ratio from platform config
+              imageSize: outputImageSize, // "1K"=1024, "2K"=2048, "4K"=4096
+            },
           } as unknown as import('@google/generative-ai').GenerationConfig
         })
 
         currentStep = 'calling Gemini API with generation prompt'
-        logger.debug('Calling Gemini with style generation prompt', { style: stylePreset, aspectRatio: platformConfig.aspectRatio })
+        logger.debug('Calling Gemini with style generation prompt', {
+          style: stylePreset,
+          aspectRatio: platformConfig.aspectRatio,
+          imageSize: outputImageSize,
+          platform: primaryStyleForConfig
+        })
 
         // AI IMAGE GENERATION PROMPT
         // Generates a NEW professional food photograph in the selected style
@@ -804,200 +818,28 @@ SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 }
 
 // Get style-appropriate default enhancements
+// NOTE: All adjustments disabled - AI generates the final image directly
+// User can manually adjust later if needed
 function getDefaultEnhancements(stylePreset: string) {
-  const defaults: Record<string, { enhancements: Record<string, number>, suggestions: string[], styleMatch: number, overallRating: number }> = {
-    // SEA Delivery Platforms
-    'grab': {
-      enhancements: { brightness: 18, contrast: 22, saturation: 40, warmth: 8, sharpness: 55, highlights: -5, shadows: 18 },
-      suggestions: ['Optimize for GrabFood green branding', 'Maximum appetizing appeal', 'Clean bright background'],
-      styleMatch: 88, overallRating: 8
-    },
-    'foodpanda': {
-      enhancements: { brightness: 20, contrast: 25, saturation: 45, warmth: 5, sharpness: 55, highlights: 0, shadows: 15 },
-      suggestions: ['High saturation for Foodpanda', 'Vibrant colors pop', 'Professional studio look'],
-      styleMatch: 88, overallRating: 8
-    },
-    'deliveroo': {
-      enhancements: { brightness: 15, contrast: 20, saturation: 35, warmth: -3, sharpness: 50, highlights: -5, shadows: 12 },
-      suggestions: ['Premium restaurant quality', 'Teal-friendly tones', 'Clean modern aesthetic'],
-      styleMatch: 88, overallRating: 8
-    },
-    'gojek': {
-      enhancements: { brightness: 18, contrast: 20, saturation: 38, warmth: 10, sharpness: 50, highlights: 0, shadows: 15 },
-      suggestions: ['GoFood Indonesia style', 'Warm approachable feel', 'Local cuisine appeal'],
-      styleMatch: 85, overallRating: 8
-    },
-    'shopee': {
-      enhancements: { brightness: 20, contrast: 25, saturation: 50, warmth: 12, sharpness: 55, highlights: 5, shadows: 18 },
-      suggestions: ['ShopeeFood orange tones', 'High impact scroll-stopper', 'Marketplace optimized'],
-      styleMatch: 88, overallRating: 8
-    },
-    'delivery': {
-      enhancements: { brightness: 15, contrast: 20, saturation: 35, warmth: 8, sharpness: 50, highlights: -5, shadows: 15 },
-      suggestions: ['Universal delivery app style', 'Clean background', 'Maximum appetizing appeal'],
-      styleMatch: 85, overallRating: 8
-    },
-
-    // Social Media
-    'instagram': {
-      enhancements: { brightness: 10, contrast: 15, saturation: 40, warmth: 10, sharpness: 45, highlights: 0, shadows: 10 },
-      suggestions: ['Boost colors for feed visibility', 'Add warm tones', 'Enhance food texture'],
-      styleMatch: 85, overallRating: 8
-    },
-    'instagram-stories': {
-      enhancements: { brightness: 15, contrast: 18, saturation: 45, warmth: 8, sharpness: 50, highlights: 5, shadows: 12 },
-      suggestions: ['Vertical format optimized', 'Bold colors for stories', 'Eye-catching presentation'],
-      styleMatch: 85, overallRating: 8
-    },
-    'instagram-reels': {
-      enhancements: { brightness: 18, contrast: 22, saturation: 50, warmth: 5, sharpness: 55, highlights: 5, shadows: 15 },
-      suggestions: ['High energy for Reels', 'Scroll-stopping impact', 'Gen-Z aesthetic'],
-      styleMatch: 88, overallRating: 8
-    },
-    'tiktok': {
-      enhancements: { brightness: 20, contrast: 25, saturation: 55, warmth: 5, sharpness: 55, highlights: 8, shadows: 18 },
-      suggestions: ['Maximum scroll-stopping impact', 'TikTok trending style', 'Vibrant attention-grabbing'],
-      styleMatch: 90, overallRating: 8
-    },
-    'facebook': {
-      enhancements: { brightness: 12, contrast: 15, saturation: 30, warmth: 12, sharpness: 40, highlights: 0, shadows: 10 },
-      suggestions: ['Warm inviting tone', 'Shareable quality', 'Works in varied feeds'],
-      styleMatch: 85, overallRating: 8
-    },
-    'xiaohongshu': {
-      enhancements: { brightness: 15, contrast: 10, saturation: 30, warmth: 5, sharpness: 45, highlights: 5, shadows: 10 },
-      suggestions: ['Brighten for trendy look', 'Add subtle pastel tones', 'Enhance cute factor'],
-      styleMatch: 85, overallRating: 8
-    },
-    'wechat': {
-      enhancements: { brightness: 10, contrast: 15, saturation: 25, warmth: 5, sharpness: 40, highlights: 0, shadows: 8 },
-      suggestions: ['Keep clean and professional', 'Balanced enhancement', 'Shareable quality'],
-      styleMatch: 85, overallRating: 8
-    },
-
-    // Restaurant Styles
-    'fine-dining': {
-      enhancements: { brightness: -5, contrast: 25, saturation: 15, warmth: -5, sharpness: 40, highlights: -10, shadows: -5 },
-      suggestions: ['Darken background for drama', 'Enhance plate details', 'Add subtle contrast'],
-      styleMatch: 80, overallRating: 8
-    },
-    'casual': {
-      enhancements: { brightness: 12, contrast: 10, saturation: 25, warmth: 15, sharpness: 35, highlights: 0, shadows: 12 },
-      suggestions: ['Add warm, inviting tones', 'Soften overall look', 'Enhance comfort food appeal'],
-      styleMatch: 85, overallRating: 8
-    },
-    'fast-food': {
-      enhancements: { brightness: 18, contrast: 25, saturation: 50, warmth: 12, sharpness: 55, highlights: 5, shadows: 15 },
-      suggestions: ['Maximize color impact', 'Increase energy', 'Make food look indulgent'],
-      styleMatch: 85, overallRating: 8
-    },
-    'cafe': {
-      enhancements: { brightness: 8, contrast: 12, saturation: 20, warmth: 18, sharpness: 40, highlights: -5, shadows: 8 },
-      suggestions: ['Add rustic warmth', 'Enhance artisan feel', 'Soften highlights'],
-      styleMatch: 85, overallRating: 8
-    },
-    'street-food': {
-      enhancements: { brightness: 15, contrast: 20, saturation: 40, warmth: 15, sharpness: 45, highlights: 0, shadows: 15 },
-      suggestions: ['Authentic hawker vibes', 'Vibrant street atmosphere', 'Real-world feel'],
-      styleMatch: 85, overallRating: 8
-    },
-    'menu': {
-      enhancements: { brightness: 10, contrast: 18, saturation: 25, warmth: 5, sharpness: 50, highlights: -5, shadows: 8 },
-      suggestions: ['Clean professional look', 'Print-ready quality', 'Neutral background'],
-      styleMatch: 88, overallRating: 8
-    },
-    'kopitiam': {
-      enhancements: { brightness: 5, contrast: 15, saturation: 20, warmth: 20, sharpness: 35, highlights: -5, shadows: 5 },
-      suggestions: ['Nostalgic warmth', 'Heritage feel', 'Rustic comfort'],
-      styleMatch: 85, overallRating: 8
-    },
-    'hawker': {
-      enhancements: { brightness: 12, contrast: 18, saturation: 35, warmth: 15, sharpness: 45, highlights: 0, shadows: 12 },
-      suggestions: ['SEA street food culture', 'Authentic presentation', 'Casual but appetizing'],
-      styleMatch: 85, overallRating: 8
-    },
-
-    // Background Styles
-    'minimal': {
-      enhancements: { brightness: 20, contrast: 15, saturation: 30, warmth: 0, sharpness: 55, highlights: 10, shadows: 5 },
-      suggestions: ['Pure white background', 'Product focus', 'E-commerce ready'],
-      styleMatch: 90, overallRating: 8
-    },
-    'rustic': {
-      enhancements: { brightness: 8, contrast: 15, saturation: 25, warmth: 20, sharpness: 40, highlights: -5, shadows: 10 },
-      suggestions: ['Warm wood tones', 'Natural organic feel', 'Artisan aesthetic'],
-      styleMatch: 85, overallRating: 8
-    },
-    'marble': {
-      enhancements: { brightness: 12, contrast: 20, saturation: 20, warmth: -5, sharpness: 50, highlights: 0, shadows: 5 },
-      suggestions: ['Cool elegant tones', 'Luxury feel', 'Upscale presentation'],
-      styleMatch: 88, overallRating: 8
-    },
-    'dark-moody': {
-      enhancements: { brightness: -10, contrast: 30, saturation: 20, warmth: -5, sharpness: 45, highlights: -15, shadows: -10 },
-      suggestions: ['Dramatic shadows', 'Editorial magazine style', 'Artistic presentation'],
-      styleMatch: 85, overallRating: 8
-    },
-    'bright-airy': {
-      enhancements: { brightness: 18, contrast: 10, saturation: 25, warmth: 8, sharpness: 40, highlights: 10, shadows: 15 },
-      suggestions: ['Fresh light feel', 'Lifestyle magazine style', 'Healthy aesthetic'],
-      styleMatch: 88, overallRating: 8
-    },
-    'tropical': {
-      enhancements: { brightness: 15, contrast: 20, saturation: 50, warmth: 10, sharpness: 45, highlights: 5, shadows: 12 },
-      suggestions: ['Vibrant tropical colors', 'Exotic beach vibes', 'Bright and fresh'],
-      styleMatch: 85, overallRating: 8
-    },
-    'concrete': {
-      enhancements: { brightness: 5, contrast: 22, saturation: 15, warmth: -5, sharpness: 50, highlights: -5, shadows: 0 },
-      suggestions: ['Urban industrial feel', 'Modern edgy aesthetic', 'Trendy cafe style'],
-      styleMatch: 85, overallRating: 8
-    },
-    'botanical': {
-      enhancements: { brightness: 12, contrast: 15, saturation: 35, warmth: 5, sharpness: 45, highlights: 0, shadows: 10 },
-      suggestions: ['Fresh green accents', 'Organic healthy feel', 'Natural presentation'],
-      styleMatch: 85, overallRating: 8
-    },
-
-    // Photography Techniques
-    'overhead': {
-      enhancements: { brightness: 15, contrast: 18, saturation: 35, warmth: 8, sharpness: 50, highlights: 0, shadows: 12 },
-      suggestions: ['Perfect flat lay composition', 'Full dish visibility', 'Ideal for bowls'],
-      styleMatch: 88, overallRating: 8
-    },
-    'natural-light': {
-      enhancements: { brightness: 12, contrast: 10, saturation: 25, warmth: 10, sharpness: 35, highlights: 5, shadows: 15 },
-      suggestions: ['Soft diffused lighting', 'No harsh shadows', 'Gentle organic feel'],
-      styleMatch: 88, overallRating: 8
-    },
-    'neon': {
-      enhancements: { brightness: 5, contrast: 30, saturation: 60, warmth: -10, sharpness: 50, highlights: 10, shadows: 5 },
-      suggestions: ['Night market vibes', 'Vibrant artificial lighting', 'Urban nightlife'],
-      styleMatch: 85, overallRating: 8
-    },
-    'vintage': {
-      enhancements: { brightness: 5, contrast: 12, saturation: 15, warmth: 25, sharpness: 30, highlights: -5, shadows: 5 },
-      suggestions: ['Nostalgic sepia tones', 'Film grain effect', 'Retro heritage feel'],
-      styleMatch: 85, overallRating: 8
-    },
-    'hdr': {
-      enhancements: { brightness: 10, contrast: 35, saturation: 45, warmth: 5, sharpness: 60, highlights: -10, shadows: 20 },
-      suggestions: ['Maximum detail range', 'Punchy dramatic colors', 'High impact visual'],
-      styleMatch: 88, overallRating: 8
-    },
-    'bokeh': {
-      enhancements: { brightness: 8, contrast: 18, saturation: 30, warmth: 10, sharpness: 55, highlights: 5, shadows: 8 },
-      suggestions: ['Blurred background effect', 'Focus on food subject', 'Artistic restaurant feel'],
-      styleMatch: 85, overallRating: 8
-    },
-
-    // Legacy
-    'stories': {
-      enhancements: { brightness: 15, contrast: 18, saturation: 45, warmth: 8, sharpness: 50, highlights: 5, shadows: 12 },
-      suggestions: ['Vertical format optimized', 'Bold colors for stories', 'Eye-catching presentation'],
-      styleMatch: 85, overallRating: 8
-    },
+  // All enhancements set to 0 (neutral/no adjustment)
+  // The AI-generated image is used as-is without additional processing
+  const neutralEnhancements = {
+    brightness: 0,
+    contrast: 0,
+    saturation: 0,
+    warmth: 0,
+    sharpness: 0,
+    highlights: 0,
+    shadows: 0
   }
 
-  return defaults[stylePreset] || defaults['delivery']
+  // Default suggestions for all styles
+  const defaultSuggestions = ['AI-generated image ready', 'Adjust manually if needed', 'Professional quality output']
+
+  return {
+    enhancements: neutralEnhancements,
+    suggestions: defaultSuggestions,
+    styleMatch: 90,
+    overallRating: 8
+  }
 }
