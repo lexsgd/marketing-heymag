@@ -47,7 +47,8 @@ export async function middleware(request: NextRequest) {
   const protectedPaths = ['/dashboard', '/editor', '/gallery', '/settings', '/billing', '/social']
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
-  // Auth routes
+  // Auth routes (redirect to dashboard if already logged in)
+  // Note: /auth/reset-password is NOT included - users need a valid session to reset password
   const authPaths = ['/auth/login', '/auth/signup', '/auth/forgot-password']
   const isAuthPath = authPaths.some(path => request.nextUrl.pathname.startsWith(path))
 
