@@ -6,11 +6,6 @@ const nextConfig = {
     // Disable ESLint during production builds (linting done separately)
     ignoreDuringBuilds: true,
   },
-  typescript: {
-    // Temporarily restore to fix edge_invalid_api deployment failure
-    // v0.22.1 had this and worked, v0.23.0 removed it and broke
-    ignoreBuildErrors: true,
-  },
 
   // Security headers
   async headers() {
