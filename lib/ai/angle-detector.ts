@@ -61,9 +61,10 @@ export async function detectCameraAngle(
   mimeType: string = 'image/jpeg'
 ): Promise<AngleAnalysis> {
   try {
-    // Use Gemini 2.0 Flash for fast, cheap vision analysis
+    // Use Gemini 2.0 Flash (stable GA) for fast, cheap vision analysis
+    // Note: Changed from 'gemini-2.0-flash-exp' (experimental) to stable version
     const model = getGoogleAI().getGenerativeModel({
-      model: 'gemini-2.0-flash-exp',
+      model: 'gemini-2.0-flash',
       generationConfig: {
         temperature: 0.1, // Low temperature for consistent analysis
         maxOutputTokens: 256,
