@@ -1,14 +1,11 @@
 /**
  * Rate Limiting Utility
  *
- * Uses Upstash Redis for serverless-compatible rate limiting.
- * Falls back to in-memory limiting if Upstash is not configured.
+ * Uses in-memory rate limiting for simplicity.
+ * Can be upgraded to Redis-based rate limiting later.
  */
 
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
-
-// In-memory fallback for development or when Redis is not configured
+// In-memory store for rate limiting
 const inMemoryStore = new Map<string, { count: number; resetAt: number }>()
 
 // Rate limit configurations for different endpoints
@@ -33,49 +30,15 @@ export const RATE_LIMITS = {
 
 export type RateLimitKey = keyof typeof RATE_LIMITS
 
-// Initialize Redis client if configured
-let redis: Redis | null = null
-let rateLimiters: Map<RateLimitKey, Ratelimit> = new Map()
-
-function initializeRedis() {
-  if (redis) return redis
-
-  const url = process.env.UPSTASH_REDIS_URL
-  const token = process.env.UPSTASH_REDIS_TOKEN
-
-  if (url && token) {
-    try {
-      redis = new Redis({ url, token })
-
-      // Initialize rate limiters for each endpoint type
-      for (const [key, config] of Object.entries(RATE_LIMITS)) {
-        rateLimiters.set(key as RateLimitKey, new Ratelimit({
-          redis,
-          limiter: Ratelimit.slidingWindow(config.requests, config.window),
-          analytics: true,
-          prefix: `ratelimit:${key}`,
-        }))
-      }
-
-      console.log('[RateLimit] Upstash Redis initialized')
-    } catch (error) {
-      console.warn('[RateLimit] Failed to initialize Upstash Redis, using in-memory fallback')
-      redis = null
-    }
-  }
-
-  return redis
-}
-
 /**
- * In-memory rate limit fallback
+ * In-memory rate limit implementation
  */
 function inMemoryRateLimit(
   identifier: string,
   limitKey: RateLimitKey
 ): { success: boolean; remaining: number; reset: number } {
   const config = RATE_LIMITS[limitKey]
-  const windowMs = config.window === '1 m' ? 60000 : 60000 // Default to 1 minute
+  const windowMs = 60000 // 1 minute
 
   const now = Date.now()
   const key = `${limitKey}:${identifier}`
@@ -109,28 +72,9 @@ export async function checkRateLimit(
   remaining: number
   reset: number
 }> {
-  initializeRedis()
-
   const config = RATE_LIMITS[limitKey]
-
-  // Try Redis rate limiter first
-  const limiter = rateLimiters.get(limitKey)
-  if (limiter) {
-    try {
-      const result = await limiter.limit(identifier)
-      return {
-        success: result.success,
-        limit: config.requests,
-        remaining: result.remaining,
-        reset: result.reset,
-      }
-    } catch (error) {
-      console.warn('[RateLimit] Redis error, falling back to in-memory:', error)
-    }
-  }
-
-  // Fallback to in-memory
   const result = inMemoryRateLimit(identifier, limitKey)
+
   return {
     success: result.success,
     limit: config.requests,
