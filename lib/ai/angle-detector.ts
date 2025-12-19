@@ -14,6 +14,19 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 
 export type CameraAngle = 'overhead' | 'hero' | 'eye-level' | 'unknown'
 
+// Fast timeout for angle detection (6 seconds max)
+// This ensures the main enhancement flow isn't blocked
+const ANGLE_DETECTION_TIMEOUT_MS = 6000
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`TIMEOUT: ${errorMessage}`)), timeoutMs)
+    )
+  ])
+}
+
 export interface AngleAnalysis {
   detectedAngle: CameraAngle
   confidence: number // 0-1
@@ -91,15 +104,20 @@ EYE-LEVEL (0-30 degrees - straight on):
 
 Analyze the geometry (plate shape, visible surfaces, background presence) and respond with JSON only.`
 
-    const result = await model.generateContent([
-      {
-        inlineData: {
-          mimeType,
-          data: imageBase64
-        }
-      },
-      { text: analysisPrompt }
-    ])
+    // Wrap API call with fast timeout to prevent blocking main enhancement
+    const result = await withTimeout(
+      model.generateContent([
+        {
+          inlineData: {
+            mimeType,
+            data: imageBase64
+          }
+        },
+        { text: analysisPrompt }
+      ]),
+      ANGLE_DETECTION_TIMEOUT_MS,
+      `Angle detection exceeded ${ANGLE_DETECTION_TIMEOUT_MS / 1000}s limit`
+    )
 
     const response = await result.response
     const text = response.text()
