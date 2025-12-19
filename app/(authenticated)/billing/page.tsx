@@ -75,10 +75,7 @@ function BillingPageContent() {
   const supabase = createClient()
 
   useEffect(() => {
-    loadData()
-  }, [])
-
-  const loadData = async () => {
+    const loadData = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
@@ -136,7 +133,9 @@ function BillingPageContent() {
     } finally {
       setLoading(false)
     }
-  }
+    }
+    loadData()
+  }, [router, supabase])
 
   const creditsRemaining = creditsData?.credits_remaining || 0
   const creditsUsed = creditsData?.credits_used || 0

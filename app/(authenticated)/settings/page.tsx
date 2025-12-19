@@ -85,44 +85,43 @@ export default function SettingsPage() {
   const supabase = createClient()
 
   useEffect(() => {
-    loadBusiness()
-  }, [])
+    const loadBusiness = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.push('/auth/login')
+          return
+        }
 
-  const loadBusiness = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.push('/auth/login')
-        return
+        const { data: businessData } = await supabase
+          .from('businesses')
+          .select('*')
+          .eq('auth_user_id', user.id)
+          .single()
+
+        if (businessData) {
+          setBusiness(businessData)
+          setFormData({
+            business_name: businessData.business_name || '',
+            email: businessData.email || user.email || '',
+            phone: businessData.phone || '',
+            website: businessData.website || '',
+            description: businessData.description || '',
+            default_language: businessData.default_language || 'en',
+          })
+          setNotifications(businessData.notification_preferences || {
+            email_updates: true,
+            marketing_emails: false,
+          })
+        }
+      } catch (err) {
+        console.error('Error loading business:', err)
+      } finally {
+        setLoading(false)
       }
-
-      const { data: businessData } = await supabase
-        .from('businesses')
-        .select('*')
-        .eq('auth_user_id', user.id)
-        .single()
-
-      if (businessData) {
-        setBusiness(businessData)
-        setFormData({
-          business_name: businessData.business_name || '',
-          email: businessData.email || user.email || '',
-          phone: businessData.phone || '',
-          website: businessData.website || '',
-          description: businessData.description || '',
-          default_language: businessData.default_language || 'en',
-        })
-        setNotifications(businessData.notification_preferences || {
-          email_updates: true,
-          marketing_emails: false,
-        })
-      }
-    } catch (err) {
-      console.error('Error loading business:', err)
-    } finally {
-      setLoading(false)
     }
-  }
+    loadBusiness()
+  }, [router, supabase])
 
   const handleSave = async () => {
     if (!business) return

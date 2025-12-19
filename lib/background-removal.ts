@@ -60,11 +60,11 @@ async function loadModuleFromCDN(url: string): Promise<unknown> {
 
     const handler = () => {
       const windowAny = window as unknown as Record<string, unknown>
-      const module = windowAny[callbackName]
+      const loadedModule = windowAny[callbackName]
       delete windowAny[callbackName]
       window.removeEventListener(callbackName, handler)
       document.head.removeChild(script)
-      resolve(module)
+      resolve(loadedModule)
     }
 
     window.addEventListener(callbackName, handler)

@@ -25,8 +25,7 @@ export const runtime = 'nodejs'
 // This ensures original food content is ALWAYS preserved while adding professional quality
 
 // Sharp is disabled - not installed on Vercel
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type SharpModule = any
+type SharpModule = unknown
 const sharpInstance: SharpModule | null = null
 
 // Sharp is not available - always returns null

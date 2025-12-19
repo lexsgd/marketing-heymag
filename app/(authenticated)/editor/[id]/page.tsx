@@ -76,11 +76,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const router = useRouter()
   const supabase = createClient()
 
-  useEffect(() => {
-    loadImage()
-  }, [params.id])
-
-  const loadImage = async () => {
+  const loadImage = useCallback(async () => {
     setLoading(true)
     try {
       const { data: { user } } = await supabase.auth.getUser()
@@ -125,7 +121,11 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     } finally {
       setLoading(false)
     }
-  }
+  }, [params.id, router, supabase])
+
+  useEffect(() => {
+    loadImage()
+  }, [loadImage])
 
   // Trigger AI enhancement for pending/failed images
   const handleEnhanceWithAI = async () => {
@@ -210,7 +210,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       console.error('Error saving enhanced image:', err)
       throw err
     }
-  }, [image, businessId, supabase])
+  }, [image, businessId, supabase, loadImage])
 
   const handleGenerateCaption = async () => {
     if (!image) return
