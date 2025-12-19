@@ -4,6 +4,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 import { getMultiStylePrompt, parseStyleIds } from '@/lib/multi-style-prompt-builder'
 import { checkAndExecuteAutoTopUp } from '@/lib/auto-topup'
+import { detectCameraAngle, getAngleDescription, getAngleConstraints, type CameraAngle } from '@/lib/ai/angle-detector'
+import { getAngleAwareVenuePrompt, hasAngleAwareStyling, getPhysicsConstraints } from '@/lib/ai/angle-aware-styles'
 import {
   checkRateLimit,
   rateLimitedResponse,
@@ -437,7 +439,32 @@ export async function POST(request: NextRequest) {
       const mimeType = image.mime_type || 'image/jpeg'
       logger.debug('Image prepared for AI', { mimeType })
 
+      // ═══════════════════════════════════════════════════════════════════════════
+      // STEP 0: Detect Camera Angle (for physically realistic enhancements)
+      // ═══════════════════════════════════════════════════════════════════════════
+      currentStep = 'detecting camera angle'
+      logger.info('STEP 0: Detecting camera angle for physics-aware enhancement')
+
+      let detectedAngle: CameraAngle = 'hero' // Default fallback
+      let angleConfidence = 0.5
+
+      try {
+        const angleAnalysis = await detectCameraAngle(base64Image, mimeType)
+        detectedAngle = angleAnalysis.detectedAngle
+        angleConfidence = angleAnalysis.confidence
+        logger.info('Camera angle detected', {
+          angle: detectedAngle,
+          confidence: angleConfidence.toFixed(2),
+          reasoning: angleAnalysis.reasoning
+        })
+      } catch (angleError) {
+        logger.warn('Angle detection failed, using default hero angle', angleError as Error)
+        detectedAngle = 'hero'
+        angleConfidence = 0.3
+      }
+
       // HYBRID ENHANCEMENT PIPELINE
+      // Step 0: Detect camera angle (for physics-aware prompts)
       // Step 1: Sharp base enhancement (100% content preservation guaranteed)
       // Step 2: Gemini 3 Pro Image AI polish (professional style enhancement)
 
@@ -502,87 +529,107 @@ export async function POST(request: NextRequest) {
           } as unknown as import('@google/generative-ai').GenerationConfig
         })
 
-        currentStep = 'calling Gemini API with generation prompt'
-        logger.debug('Calling Gemini with style generation prompt', {
+        currentStep = 'calling Gemini API with angle-aware enhancement prompt'
+        logger.debug('Calling Gemini with angle-aware enhancement prompt', {
           style: stylePreset,
+          detectedAngle,
+          angleConfidence: angleConfidence.toFixed(2),
           aspectRatio: platformConfig.aspectRatio,
           platform: primaryStyleForConfig
         })
 
-        // AI IMAGE ENHANCEMENT PROMPT
-        // Enhances the EXISTING photograph to professional quality
-        // while preserving the exact food, composition, angle, and props
+        // Get angle-specific constraints
+        const angleConstraints = getAngleConstraints(detectedAngle)
+
+        // Build angle-aware venue styling section
+        let venueStyleSection = ''
+        if (stylePreset && hasAngleAwareStyling(stylePreset)) {
+          venueStyleSection = getAngleAwareVenuePrompt(stylePreset, detectedAngle)
+          logger.debug('Using angle-aware venue prompt', { venue: stylePreset, angle: detectedAngle })
+        } else {
+          // Fallback to standard style prompt with physics constraints
+          venueStyleSection = `
+${getPhysicsConstraints(detectedAngle)}
+
+STYLE ENHANCEMENT: ${stylePreset?.toUpperCase() || 'PROFESSIONAL'}
+${stylePrompt}
+`
+        }
+
+        // AI IMAGE ENHANCEMENT PROMPT - ANGLE AWARE
+        // Enhances the EXISTING photograph while respecting physical camera angle constraints
         // Reference: https://ai.google.dev/gemini-api/docs/gemini-3
-        const generationPrompt = `You are a world-class professional food photography retoucher and image enhancer. Your task is to ENHANCE this existing food photograph to professional, commercial-grade quality.
+        const generationPrompt = `You are a world-class professional food photography retoucher. Your task is to ENHANCE this existing food photograph while respecting PHYSICAL REALITY.
 
 ═══════════════════════════════════════════════════════════════════════════════
-CRITICAL: PRESERVE THE ORIGINAL IMAGE
+DETECTED CAMERA ANGLE: ${detectedAngle.toUpperCase()} (${(angleConfidence * 100).toFixed(0)}% confidence)
 ═══════════════════════════════════════════════════════════════════════════════
-You MUST keep these elements EXACTLY as they are in the original:
+${getAngleDescription(detectedAngle)}
+
+PHYSICALLY POSSIBLE at this angle (CAN enhance/add):
+${angleConstraints.canShow.map(item => `✓ ${item}`).join('\n')}
+
+PHYSICALLY IMPOSSIBLE at this angle (DO NOT add):
+${angleConstraints.cannotShow.map(item => `✗ ${item}`).join('\n')}
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL: PRESERVE THE ORIGINAL COMPOSITION
+═══════════════════════════════════════════════════════════════════════════════
+You MUST keep these elements EXACTLY as they are:
 ✗ DO NOT change the food items - enhance what's there
-✗ DO NOT change the camera angle or composition
+✗ DO NOT change the camera angle or perspective
 ✗ DO NOT change the plating arrangement
-✗ DO NOT add or remove props, dishes, or items
-✗ DO NOT replace the background with a completely different scene
 ✗ DO NOT reposition any elements
+✗ DO NOT add elements that violate the physics of a ${detectedAngle} shot
 
 This is a PHOTO ENHANCEMENT task, NOT a scene generation task.
 The output must be clearly recognizable as the SAME photograph, just enhanced.
 
 ═══════════════════════════════════════════════════════════════════════════════
-ENHANCEMENT STYLE: "${stylePreset?.toUpperCase() || 'PROFESSIONAL'}"
+VENUE STYLE & ANGLE-APPROPRIATE ENHANCEMENTS
 ═══════════════════════════════════════════════════════════════════════════════
-Apply these professional enhancements inspired by ${stylePreset} style:
+${venueStyleSection}
 
-${stylePrompt}
-
-ENHANCEMENTS TO APPLY:
-✓ LIGHTING - Improve lighting quality to match ${stylePreset} aesthetic (brighter, more dramatic, softer, etc.)
-✓ COLOR GRADING - Apply ${stylePreset}-inspired color palette and mood
-✓ SHARPNESS - Enhance detail and clarity of the food
-✓ BACKGROUND - Clean up, blur slightly, or improve existing background (DO NOT replace it)
-✓ WHITE BALANCE - Correct color temperature to make food look appetizing
+═══════════════════════════════════════════════════════════════════════════════
+UNIVERSAL ENHANCEMENTS (Apply to all angles)
+═══════════════════════════════════════════════════════════════════════════════
+✓ LIGHTING - Improve quality while keeping direction natural
+✓ COLOR GRADING - Apply style-appropriate color palette
+✓ SHARPNESS - Enhance food detail and texture clarity
+✓ WHITE BALANCE - Correct for appetizing color temperature
 ✓ CONTRAST - Optimize dynamic range for visual impact
-✓ FOOD APPEAL - Make existing food look fresher, more vibrant, more appetizing
+✓ FOOD APPEAL - Make food look fresher, more vibrant
 
-═══════════════════════════════════════════════════════════════════════════════
-SUBTLE STYLING ENHANCEMENTS (OPTIONAL)
-═══════════════════════════════════════════════════════════════════════════════
-You MAY add these SUBTLE enhancements if they improve the image:
-- Light steam rising from hot food (if appropriate)
-- Subtle highlights on glossy surfaces
+SUBTLE ADDITIONS (if appropriate):
+- Light steam for hot food
 - Enhanced texture definition
-- Slightly deeper shadows for dimension
-- Gentle color correction for food freshness
-
-You MUST NOT add:
-- New props, dishes, or cutlery
-- Different background environments
-- Additional food items
-- Text, logos, or overlays
+- Gentle shadows for dimension
+- Surface reflections and highlights
 
 ═══════════════════════════════════════════════════════════════════════════════
 OUTPUT SPECIFICATIONS
 ═══════════════════════════════════════════════════════════════════════════════
 - Aspect Ratio: ${platformConfig.aspectRatio} (${platformConfig.description})
 - Resolution: ${platformConfig.imageSize} quality - ultra high detail
-- Platform: Optimized for ${platformConfig.platformRequirements || 'professional food photography'}
+- Platform: ${platformConfig.platformRequirements || 'Professional food photography'}
 
 ═══════════════════════════════════════════════════════════════════════════════
 QUALITY STANDARDS
 ═══════════════════════════════════════════════════════════════════════════════
-1. PROFESSIONAL FINISH - Magazine/commercial grade quality
+1. PHYSICALLY REALISTIC - Enhancements must make spatial sense for a ${detectedAngle} shot
 2. APPETIZING - Food must look irresistibly delicious
 3. AUTHENTIC - Must be clearly the SAME photo, enhanced
-4. NATURAL - Enhancements should look real, not over-processed
+4. NATURAL - No obvious AI artifacts or physics-breaking elements
 5. PLATFORM-READY - Suitable for ${platformConfig.description}
 
 ═══════════════════════════════════════════════════════════════════════════════
 ENHANCE THE IMAGE NOW
 ═══════════════════════════════════════════════════════════════════════════════
-Enhance this photograph to professional ${stylePreset} quality while keeping the exact same composition, angle, food items, and scene.
+Enhance this ${detectedAngle} photograph to professional quality.
 
-The result should look like the original photo was professionally retouched by an expert food photographer, NOT like a completely different image.
+Remember: At ${detectedAngle} angle, ${detectedAngle === 'overhead' ? 'ONLY the table surface is visible - do NOT add vertical backgrounds' : detectedAngle === 'hero' ? 'keep backgrounds SOFT and BLURRED - no detailed scenes' : 'the full environment can be visible'}.
+
+The result should look like the original photo was professionally retouched, NOT like a completely different image or a physics-breaking composite.
 
 After enhancing, provide 3 improvement tips in format:
 SUGGESTIONS: [tip1] | [tip2] | [tip3]`
