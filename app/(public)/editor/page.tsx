@@ -50,6 +50,8 @@ function EditorContent() {
   const [error, setError] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('1:1')
   const [variations, setVariations] = useState(1)
+  // Guard to prevent multiple file dialogs from opening
+  const [isFileDialogOpen, setIsFileDialogOpen] = useState(false)
 
   const router = useRouter()
 
@@ -107,7 +109,25 @@ function EditorContent() {
     if (files && files[0]) {
       handleFile(files[0])
     }
+    // Reset the input value so selecting the same file triggers onChange again
+    e.target.value = ''
+    // Reset the dialog guard
+    setIsFileDialogOpen(false)
   }
+
+  // Safe function to trigger file input - prevents multiple dialogs
+  const triggerFileInput = useCallback((inputId: string) => {
+    if (isFileDialogOpen) return
+    setIsFileDialogOpen(true)
+    const input = document.getElementById(inputId) as HTMLInputElement
+    if (input) {
+      input.click()
+      // Reset guard after a delay in case user cancels the dialog
+      setTimeout(() => setIsFileDialogOpen(false), 1000)
+    } else {
+      setIsFileDialogOpen(false)
+    }
+  }, [isFileDialogOpen])
 
   const handleUploadAndEnhance = async () => {
     if (!selectedFile) return
@@ -367,7 +387,7 @@ function EditorContent() {
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
-                    onClick={() => !previewUrl && document.getElementById('file-input')?.click()}
+                    onClick={() => !previewUrl && triggerFileInput('file-input')}
                   >
                     <input
                       id="file-input"
@@ -419,7 +439,13 @@ function EditorContent() {
                         <p className="text-sm text-muted-foreground text-center max-w-xs mb-4">
                           Drop your image here or click to browse
                         </p>
-                        <Button className="bg-foreground text-background hover:bg-foreground/90">
+                        <Button
+                          className="bg-foreground text-background hover:bg-foreground/90"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            triggerFileInput('file-input')
+                          }}
+                        >
                           Select Image
                         </Button>
                       </>
@@ -447,7 +473,7 @@ function EditorContent() {
                     onDragLeave={handleDrag}
                     onDragOver={handleDrag}
                     onDrop={handleDrop}
-                    onClick={() => document.getElementById('file-input-single')?.click()}
+                    onClick={() => triggerFileInput('file-input-single')}
                   >
                     <input
                       id="file-input-single"
@@ -463,7 +489,13 @@ function EditorContent() {
                     <p className="text-sm text-muted-foreground text-center max-w-xs mb-4">
                       Transform your food photos with AI-powered styling
                     </p>
-                    <Button className="bg-foreground text-background hover:bg-foreground/90">
+                    <Button
+                      className="bg-foreground text-background hover:bg-foreground/90"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        triggerFileInput('file-input-single')
+                      }}
+                    >
                       Upload Image
                     </Button>
 
@@ -520,7 +552,7 @@ function EditorContent() {
                   variant="ghost"
                   size="icon"
                   className="h-12 w-12 border border-border"
-                  onClick={() => document.getElementById(template ? 'file-input' : 'file-input-single')?.click()}
+                  onClick={() => triggerFileInput(template ? 'file-input' : 'file-input-single')}
                 >
                   <Plus className="h-5 w-5" />
                 </Button>
