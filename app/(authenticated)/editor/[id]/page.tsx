@@ -17,12 +17,24 @@ import {
   Sparkles,
   Image as ImageIcon,
   Type,
-  Sliders
+  Sliders,
+  AlertCircle,
+  ExternalLink
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
@@ -72,6 +84,13 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
   const [captionError, setCaptionError] = useState<string | null>(null)
   const [captionsRemaining, setCaptionsRemaining] = useState<number | null>(null)
+  // Social posting state
+  const [socialDialogOpen, setSocialDialogOpen] = useState(false)
+  const [selectedSocialPlatforms, setSelectedSocialPlatforms] = useState<('facebook' | 'instagram')[]>([])
+  const [socialPostCaption, setSocialPostCaption] = useState('')
+  const [posting, setPosting] = useState(false)
+  const [postError, setPostError] = useState<string | null>(null)
+  const [postSuccess, setPostSuccess] = useState<{ platform: string; success: boolean }[] | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -283,6 +302,89 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     URL.revokeObjectURL(blobUrl)
   }
 
+  // Open social posting dialog
+  const handleOpenSocialDialog = () => {
+    if (!image?.enhanced_url) {
+      setPostError('Please enhance the image first before posting to social media.')
+      return
+    }
+    // Pre-fill with generated caption if available
+    setSocialPostCaption(caption || '')
+    setSelectedSocialPlatforms([])
+    setPostError(null)
+    setPostSuccess(null)
+    setSocialDialogOpen(true)
+  }
+
+  // Toggle platform selection
+  const handleTogglePlatform = (platform: 'facebook' | 'instagram') => {
+    setSelectedSocialPlatforms((prev) =>
+      prev.includes(platform)
+        ? prev.filter((p) => p !== platform)
+        : [...prev, platform]
+    )
+  }
+
+  // Post to social media
+  const handlePostToSocial = async () => {
+    if (!image?.enhanced_url) {
+      setPostError('Image must be enhanced before posting.')
+      return
+    }
+
+    if (selectedSocialPlatforms.length === 0) {
+      setPostError('Please select at least one platform.')
+      return
+    }
+
+    if (!socialPostCaption.trim()) {
+      setPostError('Please enter a caption for your post.')
+      return
+    }
+
+    setPosting(true)
+    setPostError(null)
+    setPostSuccess(null)
+
+    try {
+      const response = await fetch('/api/social/post', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          caption: socialPostCaption,
+          imageUrl: image.enhanced_url,
+          platforms: selectedSocialPlatforms,
+          imageId: image.id,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to post to social media')
+      }
+
+      // Show results
+      const results = Object.entries(data.results || {}).map(([platform, result]) => ({
+        platform,
+        success: (result as { success: boolean }).success,
+      }))
+      setPostSuccess(results)
+
+      // Close dialog after 2 seconds if all successful
+      if (data.status === 'posted') {
+        setTimeout(() => {
+          setSocialDialogOpen(false)
+        }, 2000)
+      }
+    } catch (err) {
+      console.error('Social posting error:', err)
+      setPostError((err as Error).message || 'Failed to post. Please try again.')
+    } finally {
+      setPosting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -376,7 +478,11 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             <Download className="mr-2 h-4 w-4" />
             Download
           </Button>
-          <Button className="bg-orange-500 hover:bg-orange-600">
+          <Button
+            className="bg-orange-500 hover:bg-orange-600"
+            onClick={handleOpenSocialDialog}
+            disabled={!image?.enhanced_url}
+          >
             <Share2 className="mr-2 h-4 w-4" />
             Post to Social
           </Button>
@@ -620,6 +726,159 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Social Posting Dialog */}
+      <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="h-5 w-5 text-orange-500" />
+              Post to Social Media
+            </DialogTitle>
+            <DialogDescription>
+              Share your enhanced food photo to your connected social accounts.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {/* Image Preview */}
+            {image?.enhanced_url && (
+              <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted">
+                <img
+                  src={image.enhanced_url}
+                  alt="Preview"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            )}
+
+            {/* Platform Selection */}
+            <div className="space-y-3">
+              <Label>Select Platforms</Label>
+              <div className="flex flex-col gap-3">
+                <div
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                    selectedSocialPlatforms.includes('instagram')
+                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                      : 'border-border hover:border-muted-foreground/50'
+                  )}
+                  onClick={() => handleTogglePlatform('instagram')}
+                >
+                  <Checkbox
+                    checked={selectedSocialPlatforms.includes('instagram')}
+                    onCheckedChange={() => handleTogglePlatform('instagram')}
+                  />
+                  <Instagram className="h-5 w-5 text-pink-500" />
+                  <span className="font-medium">Instagram</span>
+                </div>
+                <div
+                  className={cn(
+                    'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
+                    selectedSocialPlatforms.includes('facebook')
+                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
+                      : 'border-border hover:border-muted-foreground/50'
+                  )}
+                  onClick={() => handleTogglePlatform('facebook')}
+                >
+                  <Checkbox
+                    checked={selectedSocialPlatforms.includes('facebook')}
+                    onCheckedChange={() => handleTogglePlatform('facebook')}
+                  />
+                  <Facebook className="h-5 w-5 text-blue-600" />
+                  <span className="font-medium">Facebook</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Caption */}
+            <div className="space-y-2">
+              <Label>Caption</Label>
+              <Textarea
+                value={socialPostCaption}
+                onChange={(e) => setSocialPostCaption(e.target.value)}
+                placeholder="Write a caption for your post..."
+                rows={4}
+                className="resize-none"
+              />
+              {caption && !socialPostCaption && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSocialPostCaption(caption + '\n\n' + hashtags.map(h => `#${h}`).join(' '))}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Use Generated Caption
+                </Button>
+              )}
+            </div>
+
+            {/* Error */}
+            {postError && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{postError}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Success */}
+            {postSuccess && (
+              <Alert className="border-green-500 bg-green-50 dark:bg-green-950/20">
+                <Check className="h-4 w-4 text-green-500" />
+                <AlertDescription>
+                  <div className="space-y-1">
+                    {postSuccess.map((result) => (
+                      <div key={result.platform} className="flex items-center gap-2">
+                        {result.success ? (
+                          <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertCircle className="h-4 w-4 text-red-500" />
+                        )}
+                        <span className="capitalize">{result.platform}</span>
+                        <span className="text-muted-foreground">
+                          {result.success ? '- Posted successfully!' : '- Failed to post'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+
+            {/* Connect accounts hint */}
+            <p className="text-xs text-muted-foreground">
+              Need to connect your accounts?{' '}
+              <Link href="/social" className="text-orange-500 hover:underline inline-flex items-center gap-1">
+                Manage connected accounts
+                <ExternalLink className="h-3 w-3" />
+              </Link>
+            </p>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSocialDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600"
+              onClick={handlePostToSocial}
+              disabled={posting || selectedSocialPlatforms.length === 0 || !socialPostCaption.trim()}
+            >
+              {posting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Posting...
+                </>
+              ) : (
+                <>
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Post Now
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
