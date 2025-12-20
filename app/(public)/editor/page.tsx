@@ -10,9 +10,6 @@ import {
   X,
   Sparkles,
   ImageIcon,
-  ZoomIn,
-  ZoomOut,
-  Maximize2,
   Plus,
   ArrowRight,
   Palette,
@@ -270,19 +267,6 @@ function EditorContent() {
         <main className="flex-1 flex flex-col overflow-auto">
           {/* Canvas */}
           <div className="flex-1 flex items-center justify-center p-8 relative">
-            {/* Zoom Controls */}
-            <div className="absolute right-4 top-4 flex flex-col gap-2">
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-card border border-border">
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-card border border-border">
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-8 w-8 bg-card border border-border">
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-
             {/* Two-Panel Layout when template is selected */}
             {template ? (
               <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-stretch">
