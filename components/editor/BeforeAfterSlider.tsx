@@ -118,8 +118,8 @@ export function BeforeAfterSlider({
       onTouchMove={handleTouchMove}
       onTouchEnd={() => setIsDragging(false)}
     >
-      {/* Background for letterboxing */}
-      <div className="absolute inset-0 bg-black/80" />
+      {/* Background for letterboxing - gradient for polish */}
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black" />
 
       {/* BEFORE Image (Original) - Full background UNDERNEATH */}
       {/* Using object-contain to show the full image without cropping */}

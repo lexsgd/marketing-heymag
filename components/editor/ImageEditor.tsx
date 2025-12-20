@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +15,7 @@ import {
   ChevronDown,
   ImageIcon,
   Sparkles,
+  Check,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BeforeAfterSlider } from './BeforeAfterSlider'
@@ -248,186 +248,213 @@ export function ImageEditor({
   const hasEnhanced = !!enhancedUrl
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Image Preview */}
-      <Card>
-        <CardContent className="p-4 pt-2">
-          {/* Image Display */}
-          {hasEnhanced ? (
-            <>
-              {/* Before/After Comparison Mode */}
-              <div
-                className="relative overflow-hidden rounded-lg"
-                style={{
-                  height: 'calc(100vh - 280px)',
-                  minHeight: '400px'
-                }}
-              >
-                <BeforeAfterSlider
-                  beforeUrl={originalUrl}
-                  afterUrl={enhancedUrl}
-                  alt="Original vs AI Enhanced comparison"
-                  className="w-full h-full"
-                />
-              </div>
-
-              {/* Side-by-Side Comparison */}
-              <div className="grid grid-cols-2 gap-4 mt-4">
-                {/* Original */}
-                <div>
-                  <p className="text-sm font-medium mb-2">Original</p>
-                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                    <img
-                      src={originalUrl}
-                      alt="Original"
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                </div>
-                {/* AI Enhanced */}
-                <div>
-                  <p className="text-sm font-medium mb-2 text-green-600">AI Enhanced</p>
-                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted flex items-center justify-center">
-                    <img
-                      src={enhancedUrl}
-                      alt="AI Enhanced"
-                      className="max-w-full max-h-full object-contain"
-                    />
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            /* Single View Mode - no enhanced yet */
+    <div className="flex flex-col gap-6">
+      {/* Main Comparison Area */}
+      {hasEnhanced ? (
+        <>
+          {/* Before/After Comparison Slider */}
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black">
             <div
-              className="relative overflow-hidden rounded-lg bg-muted flex items-center justify-center"
+              className="relative"
               style={{
-                height: 'calc(100vh - 280px)',
+                height: 'calc(100vh - 320px)',
                 minHeight: '400px'
               }}
             >
-              <img
-                src={displayUrl}
-                alt="Preview"
-                className="max-w-full max-h-full object-contain"
+              <BeforeAfterSlider
+                beforeUrl={originalUrl}
+                afterUrl={enhancedUrl}
+                alt="Original vs AI Enhanced comparison"
+                className="w-full h-full"
               />
             </div>
-          )}
-
-          {/* Error message */}
-          {error && (
-            <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
-              {error}
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-3 mt-4">
-            {/* Download Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  className="flex-1 bg-orange-500 hover:bg-orange-600"
-                  disabled={!enhancedUrl || isDownloading}
-                >
-                  {isDownloading ? (
-                    <div className="flex items-center w-full">
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin flex-shrink-0" />
-                      <span className="flex-1 text-left">
-                        {downloadingOption === '4K' ? 'Generating 4K...' :
-                         downloadingOption === 'PNG' ? `Removing Background${bgRemovalProgress > 0 ? ` (${bgRemovalProgress}%)` : '...'}` :
-                         'Downloading...'}
-                      </span>
-                    </div>
-                  ) : (
-                    <>
-                      <Download className="mr-2 h-4 w-4" />
-                      Download
-                      <ChevronDown className="ml-2 h-4 w-4" />
-                    </>
-                  )}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
-                {/* 2K Option */}
-                <DropdownMenuItem
-                  onClick={handleDownload2K}
-                  disabled={isDownloading}
-                  className="flex items-start gap-3 p-3 cursor-pointer"
-                >
-                  <ImageIcon className="h-5 w-5 mt-0.5 text-muted-foreground" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Download 2K</span>
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        Recommended
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      2048 × 2048 px • High quality
-                    </p>
-                  </div>
-                </DropdownMenuItem>
-
-                {/* 4K Option */}
-                <DropdownMenuItem
-                  onClick={handleDownload4K}
-                  disabled={isDownloading || creditsRemaining < 1}
-                  className="flex items-start gap-3 p-3 cursor-pointer"
-                >
-                  <Sparkles className="h-5 w-5 mt-0.5 text-orange-500" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Download 4K</span>
-                      <Badge
-                        variant={creditsRemaining >= 1 ? "outline" : "destructive"}
-                        className="text-[10px] px-1.5 py-0"
-                      >
-                        +1 credit
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      4096 × 4096 px • Ultra high quality for print
-                    </p>
-                    {creditsRemaining < 1 && (
-                      <p className="text-xs text-destructive mt-1">
-                        Insufficient credits
-                      </p>
-                    )}
-                  </div>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator />
-
-                {/* PNG with Background Removal */}
-                <DropdownMenuItem
-                  onClick={handleDownloadPNG}
-                  disabled={isDownloading}
-                  className="flex items-start gap-3 p-3 cursor-pointer"
-                >
-                  <div className="h-5 w-5 mt-0.5 bg-[url('/checkerboard.svg')] bg-repeat rounded border border-border" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">Download PNG</span>
-                      <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                        No Background
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Transparent PNG • Perfect for overlays
-                    </p>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
-        </CardContent>
-      </Card>
 
-      {/* Credits indicator */}
-      <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-        <span>Credits remaining:</span>
-        <Badge variant="secondary">{creditsRemaining}</Badge>
+          {/* Side-by-Side Comparison */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Original */}
+            <div className="group relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
+              <div className="aspect-[4/3] relative flex items-center justify-center p-4">
+                <img
+                  src={originalUrl}
+                  alt="Original"
+                  className="max-w-full max-h-full object-contain rounded-lg transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+              </div>
+              {/* Gradient overlay at bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+              {/* Label */}
+              <div className="absolute bottom-3 left-3 z-10">
+                <Badge variant="secondary" className="bg-gray-800/90 text-gray-300 border-0">
+                  Original
+                </Badge>
+              </div>
+            </div>
+
+            {/* AI Enhanced */}
+            <div className="group relative rounded-2xl overflow-hidden bg-gradient-to-br from-orange-950/30 to-gray-900">
+              <div className="aspect-[4/3] relative flex items-center justify-center p-4">
+                <img
+                  src={enhancedUrl}
+                  alt="AI Enhanced"
+                  className="max-w-full max-h-full object-contain rounded-lg transition-transform duration-500 group-hover:scale-[1.02]"
+                />
+              </div>
+              {/* Gradient overlay at bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
+              {/* Label */}
+              <div className="absolute bottom-3 left-3 z-10">
+                <Badge className="bg-orange-500/90 text-white border-0">
+                  <Sparkles className="h-3 w-3 mr-1" />
+                  AI Enhanced
+                </Badge>
+              </div>
+              {/* Check mark */}
+              <div className="absolute top-3 right-3 z-10">
+                <div className="h-7 w-7 rounded-full bg-green-500 flex items-center justify-center shadow-lg">
+                  <Check className="h-4 w-4 text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </>
+      ) : (
+        /* Single View Mode - no enhanced yet */
+        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+          <div
+            className="relative flex items-center justify-center"
+            style={{
+              height: 'calc(100vh - 280px)',
+              minHeight: '400px'
+            }}
+          >
+            <img
+              src={displayUrl}
+              alt="Preview"
+              className="max-w-full max-h-full object-contain"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Error message */}
+      {error && (
+        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-sm text-destructive">
+          {error}
+        </div>
+      )}
+
+      {/* Action Bar */}
+      <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border">
+        {/* Credits indicator */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Sparkles className="h-4 w-4 text-orange-500" />
+            <span>Credits:</span>
+            <Badge variant="secondary" className="font-semibold">
+              {creditsRemaining}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Download Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              className="bg-orange-500 hover:bg-orange-600 px-6"
+              disabled={!enhancedUrl || isDownloading}
+              size="lg"
+            >
+              {isDownloading ? (
+                <div className="flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <span>
+                    {downloadingOption === '4K' ? 'Generating 4K...' :
+                     downloadingOption === 'PNG' ? `Removing BG${bgRemovalProgress > 0 ? ` ${bgRemovalProgress}%` : '...'}` :
+                     'Downloading...'}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download
+                  <ChevronDown className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-72">
+            {/* 2K Option */}
+            <DropdownMenuItem
+              onClick={handleDownload2K}
+              disabled={isDownloading}
+              className="flex items-start gap-3 p-3 cursor-pointer"
+            >
+              <ImageIcon className="h-5 w-5 mt-0.5 text-muted-foreground" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Download 2K</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-500/20 text-green-600">
+                    Free
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  2048 × 2048 px • High quality
+                </p>
+              </div>
+            </DropdownMenuItem>
+
+            {/* 4K Option */}
+            <DropdownMenuItem
+              onClick={handleDownload4K}
+              disabled={isDownloading || creditsRemaining < 1}
+              className="flex items-start gap-3 p-3 cursor-pointer"
+            >
+              <Sparkles className="h-5 w-5 mt-0.5 text-orange-500" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Download 4K</span>
+                  <Badge
+                    variant={creditsRemaining >= 1 ? "outline" : "destructive"}
+                    className="text-[10px] px-1.5 py-0"
+                  >
+                    1 credit
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  4096 × 4096 px • Print quality
+                </p>
+                {creditsRemaining < 1 && (
+                  <p className="text-xs text-destructive mt-1">
+                    Not enough credits
+                  </p>
+                )}
+              </div>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
+            {/* PNG with Background Removal */}
+            <DropdownMenuItem
+              onClick={handleDownloadPNG}
+              disabled={isDownloading}
+              className="flex items-start gap-3 p-3 cursor-pointer"
+            >
+              <div className="h-5 w-5 mt-0.5 bg-[url('/checkerboard.svg')] bg-repeat rounded border border-border" />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Download PNG</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-500/20 text-purple-600">
+                    No BG
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Transparent background • Perfect for overlays
+                </p>
+              </div>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   )
