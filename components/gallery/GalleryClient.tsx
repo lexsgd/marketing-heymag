@@ -553,46 +553,6 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
           </div>
         </div>
 
-        {/* Bulk Action Bar */}
-        {selectedIds.size > 0 && (
-          <div className="flex items-center gap-4 p-4 mb-6 bg-muted rounded-2xl">
-            <span className="text-sm font-medium">
-              {selectedIds.size} {selectedIds.size === 1 ? 'photo' : 'photos'} selected
-            </span>
-            <div className="flex-1" />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleBulkDownload}
-              disabled={isDownloading}
-            >
-              {isDownloading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Downloading...
-                </>
-              ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
-                </>
-              )}
-            </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setShowDeleteDialog(true)}
-              disabled={isDeleting}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={deselectAll}>
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
-
         {/* Gallery Content */}
         {filteredImages.length > 0 ? (
           viewMode === 'grid' ? (
@@ -799,6 +759,69 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
           </div>
         )}
       </main>
+
+      {/* Fixed Bottom Bulk Action Bar - Slides up when items selected */}
+      <div
+        className={cn(
+          "fixed bottom-0 left-0 right-0 z-50 transition-transform duration-300 ease-out",
+          selectedIds.size > 0 ? "translate-y-0" : "translate-y-full"
+        )}
+      >
+        <div className="bg-background/95 backdrop-blur-lg border-t border-border shadow-2xl">
+          <div className="max-w-7xl mx-auto px-6 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center">
+                  <span className="text-white text-sm font-semibold">{selectedIds.size}</span>
+                </div>
+                <span className="text-sm font-medium">
+                  {selectedIds.size === 1 ? 'photo' : 'photos'} selected
+                </span>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleBulkDownload}
+                  disabled={isDownloading}
+                  className="h-9"
+                >
+                  {isDownloading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Downloading...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => setShowDeleteDialog(true)}
+                  disabled={isDeleting}
+                  className="h-9"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 ml-2"
+                  onClick={deselectAll}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Bulk Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
