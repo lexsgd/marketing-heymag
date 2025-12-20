@@ -12,6 +12,11 @@ import {
   TooltipProvider,
 } from '@/components/ui/tooltip'
 import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from '@/components/ui/hover-card'
+import {
   simpleCategories,
   businessTypes,
   formats,
@@ -95,7 +100,7 @@ export function SimplifiedStylePicker({
     onSelectionChange(newSelection)
   }
 
-  // Render a style item
+  // Render a style item with hover card
   const renderStyleItem = (
     categoryKey: keyof SimpleSelection,
     style: SimpleStyle | FormatStyle
@@ -105,62 +110,150 @@ export function SimplifiedStylePicker({
       categoryKey === 'mood' && suggestions.suggestedMood === style.id
     const isFormatRecommended =
       categoryKey === 'format' && suggestions.suggestedFormat === style.id
+    const isFormat = 'aspectRatio' in style
 
     return (
-      <button
-        key={style.id}
-        onClick={() => handleStyleSelect(categoryKey, style.id)}
-        disabled={disabled}
-        className={cn(
-          'w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left group',
-          isSelected
-            ? 'border-orange-500 bg-orange-500/10'
-            : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50',
-          disabled && 'opacity-50 cursor-not-allowed'
-        )}
-      >
-        {/* Emoji */}
-        <span className="text-xl flex-shrink-0">{style.emoji}</span>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-medium text-sm">{style.name}</span>
-            {(isRecommended || isFormatRecommended) && (
-              <Badge
-                variant="secondary"
-                className="text-[10px] px-1.5 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
-              >
-                <Sparkles className="h-2.5 w-2.5 mr-0.5" />
-                Suggested
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-            {style.description}
-          </p>
-          {/* Show platform examples for formats */}
-          {'examples' in style && style.examples && style.examples.length > 0 && (
-            <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">
-              {style.examples.join(' • ')}
-            </p>
-          )}
-        </div>
-
-        {/* Selection indicator (radio style) */}
-        <div className="flex-shrink-0">
-          <div
+      <HoverCard key={style.id} openDelay={300} closeDelay={100}>
+        <HoverCardTrigger asChild>
+          <button
+            onClick={() => handleStyleSelect(categoryKey, style.id)}
+            disabled={disabled}
             className={cn(
-              'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+              'w-full flex items-center gap-3 p-3 rounded-lg border transition-all text-left group',
               isSelected
-                ? 'border-orange-500 bg-orange-500'
-                : 'border-muted-foreground/40'
+                ? 'border-orange-500 bg-orange-500/10'
+                : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50',
+              disabled && 'opacity-50 cursor-not-allowed'
             )}
           >
-            {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+            {/* Emoji */}
+            <span className="text-xl flex-shrink-0">{style.emoji}</span>
+
+            {/* Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-sm">{style.name}</span>
+                {(isRecommended || isFormatRecommended) && (
+                  <Badge
+                    variant="secondary"
+                    className="text-[10px] px-1.5 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400"
+                  >
+                    <Sparkles className="h-2.5 w-2.5 mr-0.5" />
+                    Suggested
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                {style.description}
+              </p>
+              {/* Show platform examples for formats */}
+              {'examples' in style && style.examples && style.examples.length > 0 && (
+                <p className="text-[10px] text-muted-foreground/70 mt-0.5 truncate">
+                  {style.examples.join(' • ')}
+                </p>
+              )}
+            </div>
+
+            {/* Selection indicator (radio style) */}
+            <div className="flex-shrink-0">
+              <div
+                className={cn(
+                  'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                  isSelected
+                    ? 'border-orange-500 bg-orange-500'
+                    : 'border-muted-foreground/40'
+                )}
+              >
+                {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+              </div>
+            </div>
+          </button>
+        </HoverCardTrigger>
+        <HoverCardContent
+          side="right"
+          align="start"
+          className="w-72 p-0"
+          sideOffset={8}
+        >
+          <div className="p-4 space-y-3">
+            {/* Header with emoji and name */}
+            <div className="flex items-center gap-3">
+              <span className="text-3xl">{style.emoji}</span>
+              <div>
+                <h4 className="font-semibold">{style.name}</h4>
+                {isFormat && (
+                  <Badge variant="outline" className="text-[10px] mt-1">
+                    {(style as FormatStyle).aspectRatio}
+                  </Badge>
+                )}
+              </div>
+            </div>
+
+            {/* Full description */}
+            <p className="text-sm text-muted-foreground">
+              {style.description}
+            </p>
+
+            {/* Format-specific details */}
+            {isFormat && (
+              <div className="space-y-2 pt-2 border-t border-border">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground">Resolution</span>
+                  <span className="font-mono">
+                    {(style as FormatStyle).width} × {(style as FormatStyle).height}
+                  </span>
+                </div>
+                {'examples' in style && style.examples && style.examples.length > 0 && (
+                  <div className="space-y-1">
+                    <span className="text-xs text-muted-foreground">Best for:</span>
+                    <div className="flex flex-wrap gap-1">
+                      {style.examples.map((example, idx) => (
+                        <Badge
+                          key={idx}
+                          variant="secondary"
+                          className="text-[10px] px-1.5 py-0.5"
+                        >
+                          {example}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AI info for moods */}
+            {categoryKey === 'mood' && style.id !== 'auto' && (
+              <div className="pt-2 border-t border-border">
+                <p className="text-[10px] text-muted-foreground">
+                  <Sparkles className="h-3 w-3 inline mr-1 text-orange-500" />
+                  AI will apply matching lighting, color grading, and atmosphere
+                </p>
+              </div>
+            )}
+
+            {/* Business type AI info */}
+            {categoryKey === 'businessType' && (
+              <div className="pt-2 border-t border-border">
+                <p className="text-[10px] text-muted-foreground">
+                  <Sparkles className="h-3 w-3 inline mr-1 text-orange-500" />
+                  AI will optimize styling for this food category
+                </p>
+              </div>
+            )}
+
+            {/* Seasonal theme info */}
+            {categoryKey === 'seasonal' && style.id !== 'none' && (
+              <div className="pt-2 border-t border-border">
+                <p className="text-[10px] text-muted-foreground">
+                  <Sparkles className="h-3 w-3 inline mr-1 text-orange-500" />
+                  Adds festive props and themed styling
+                </p>
+              </div>
+            )}
           </div>
-        </div>
-      </button>
+        </HoverCardContent>
+      </HoverCard>
     )
   }
 
