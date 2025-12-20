@@ -255,73 +255,75 @@ export function ImageEditor({
         <CardContent className="p-4 pt-2">
           {/* Image Display */}
           {hasEnhanced ? (
-            /* Before/After Comparison Mode */
-            <div
-              className="relative overflow-hidden rounded-lg"
-              style={{
-                height: 'calc(100vh - 280px)',
-                minHeight: '400px'
-              }}
-            >
-              <BeforeAfterSlider
-                beforeUrl={originalUrl}
-                afterUrl={enhancedUrl}
-                alt="Original vs AI Enhanced comparison"
-                className="w-full h-full"
-                onPositionChange={setComparisonSliderPosition}
-              />
-              {/* Labels with smooth fade animation */}
+            <>
+              {/* Before/After Comparison Mode */}
               <div
-                className={cn(
-                  'absolute bottom-4 left-4 z-20',
-                  'px-3 py-1.5 rounded-md text-sm font-medium',
-                  'bg-green-600 text-white',
-                  'shadow-lg pointer-events-none',
-                  'transition-opacity duration-200'
-                )}
-                style={{ opacity: Math.min(1, comparisonSliderPosition / 25) }}
+                className="relative overflow-hidden rounded-lg"
+                style={{
+                  height: 'calc(100vh - 280px)',
+                  minHeight: '400px'
+                }}
               >
-                AI Enhanced
+                <BeforeAfterSlider
+                  beforeUrl={originalUrl}
+                  afterUrl={enhancedUrl}
+                  alt="Original vs AI Enhanced comparison"
+                  className="w-full h-full"
+                  onPositionChange={setComparisonSliderPosition}
+                />
+                {/* Labels with smooth fade animation */}
+                <div
+                  className={cn(
+                    'absolute bottom-4 left-4 z-20',
+                    'px-3 py-1.5 rounded-md text-sm font-medium',
+                    'bg-green-600 text-white',
+                    'shadow-lg pointer-events-none',
+                    'transition-opacity duration-200'
+                  )}
+                  style={{ opacity: Math.min(1, comparisonSliderPosition / 25) }}
+                >
+                  AI Enhanced
+                </div>
+                <div
+                  className={cn(
+                    'absolute bottom-4 right-4 z-20',
+                    'px-3 py-1.5 rounded-md text-sm font-medium',
+                    'bg-gray-800 text-white',
+                    'shadow-lg pointer-events-none',
+                    'transition-opacity duration-200'
+                  )}
+                  style={{ opacity: Math.min(1, (100 - comparisonSliderPosition) / 25) }}
+                >
+                  Original
+                </div>
               </div>
-              <div
-                className={cn(
-                  'absolute bottom-4 right-4 z-20',
-                  'px-3 py-1.5 rounded-md text-sm font-medium',
-                  'bg-gray-800 text-white',
-                  'shadow-lg pointer-events-none',
-                  'transition-opacity duration-200'
-                )}
-                style={{ opacity: Math.min(1, (100 - comparisonSliderPosition) / 25) }}
-              >
-                Original
-              </div>
-            </div>
 
-            {/* Side-by-Side Comparison */}
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              {/* Original */}
-              <div>
-                <p className="text-sm font-medium mb-2">Original</p>
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={originalUrl}
-                    alt="Original"
-                    className="w-full h-full object-cover"
-                  />
+              {/* Side-by-Side Comparison */}
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                {/* Original */}
+                <div>
+                  <p className="text-sm font-medium mb-2">Original</p>
+                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                    <img
+                      src={originalUrl}
+                      alt="Original"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
+                </div>
+                {/* AI Enhanced */}
+                <div>
+                  <p className="text-sm font-medium mb-2 text-green-600">AI Enhanced</p>
+                  <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                    <img
+                      src={enhancedUrl}
+                      alt="AI Enhanced"
+                      className="max-w-full max-h-full object-contain"
+                    />
+                  </div>
                 </div>
               </div>
-              {/* AI Enhanced */}
-              <div>
-                <p className="text-sm font-medium mb-2 text-green-600">AI Enhanced</p>
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={enhancedUrl}
-                    alt="AI Enhanced"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-            </div>
+            </>
           ) : (
             /* Single View Mode - no enhanced yet */
             <div

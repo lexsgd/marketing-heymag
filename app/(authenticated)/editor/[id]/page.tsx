@@ -7,23 +7,18 @@ import Link from 'next/link'
 import {
   ArrowLeft,
   Share2,
-  Copy,
   Check,
   Loader2,
   Instagram,
   Facebook,
-  MessageCircle,
   Sparkles,
   Image as ImageIcon,
-  Type,
-  Sliders,
   AlertCircle,
   ExternalLink
 } from 'lucide-react'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   Dialog,
   DialogContent,
@@ -36,13 +31,6 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { cn } from '@/lib/utils'
 import { config } from '@/lib/config'
 import { ImageEditor } from '@/components/editor'
@@ -61,26 +49,12 @@ interface ImageData {
   caption_count: number | null
 }
 
-const MAX_CAPTIONS_PER_IMAGE = 10
-
 export default function ImageEditorPage({ params }: { params: { id: string } }) {
   const [image, setImage] = useState<ImageData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [generating, setGenerating] = useState(false)
-  const [caption, setCaption] = useState('')
-  const [hashtags, setHashtags] = useState<string[]>([])
-  const [alternates, setAlternates] = useState<string[]>([])
-  const [copied, setCopied] = useState(false)
-  const [selectedPlatform, setSelectedPlatform] = useState('instagram')
-  const [selectedLanguage, setSelectedLanguage] = useState('en')
-  const [selectedTone, setSelectedTone] = useState('engaging')
-  const [selectedStyle, setSelectedStyle] = useState<string>('')
-  const [activeMainTab, setActiveMainTab] = useState<'edit' | 'caption'>('edit')
   const [businessId, setBusinessId] = useState<string | null>(null)
   const [enhancing, setEnhancing] = useState(false)
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
-  const [captionError, setCaptionError] = useState<string | null>(null)
-  const [captionsRemaining, setCaptionsRemaining] = useState<number | null>(null)
   // Credits balance for download options
   const [creditsBalance, setCreditsBalance] = useState<number>(0)
   // Social posting state
@@ -140,10 +114,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       }
 
       setImage(imageData)
-      setSelectedStyle(imageData.style_preset || 'delivery')
-      // Initialize caption remaining count
-      const currentCount = imageData.caption_count || 0
-      setCaptionsRemaining(MAX_CAPTIONS_PER_IMAGE - currentCount)
     } catch (err) {
       console.error('Error loading image:', err)
       router.push('/gallery')
@@ -198,60 +168,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     }
   }
 
-  const handleGenerateCaption = async () => {
-    if (!image) return
-
-    setGenerating(true)
-    setCaptionError(null)
-    try {
-      const response = await fetch('/api/ai/caption', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageId: image.id,
-          platform: selectedPlatform,
-          language: selectedLanguage,
-          tone: selectedTone,
-        }),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        // Handle specific error codes
-        if (response.status === 402) {
-          setCaptionError('Please enhance this image first to unlock caption generation.')
-        } else if (response.status === 429) {
-          setCaptionError(`Caption limit reached. You've used all ${MAX_CAPTIONS_PER_IMAGE} captions for this image.`)
-          setCaptionsRemaining(0)
-        } else {
-          setCaptionError(data.error || 'Caption generation failed')
-        }
-        return
-      }
-
-      setCaption(data.caption || '')
-      setHashtags(data.hashtags || [])
-      setAlternates(data.alternateVersions || [])
-      // Update remaining captions from API response
-      if (data.captionsRemaining !== undefined) {
-        setCaptionsRemaining(data.captionsRemaining)
-      }
-    } catch (err) {
-      console.error('Error generating caption:', err)
-      setCaptionError('Failed to generate caption. Please try again.')
-    } finally {
-      setGenerating(false)
-    }
-  }
-
-  const handleCopyCaption = () => {
-    const fullCaption = caption + '\n\n' + hashtags.map(h => `#${h}`).join(' ')
-    navigator.clipboard.writeText(fullCaption)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
   // Refresh credits after download (called by ImageEditor)
   const handleCreditsRefresh = useCallback(async () => {
     if (!businessId) return
@@ -271,15 +187,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       setPostError('Please enhance the image first before posting to social media.')
       return
     }
-    // Pre-fill with generated caption AND hashtags if available
-    if (caption) {
-      const fullCaption = hashtags.length > 0
-        ? caption + '\n\n' + hashtags.map(h => `#${h}`).join(' ')
-        : caption
-      setSocialPostCaption(fullCaption)
-    } else {
-      setSocialPostCaption('')
-    }
+    setSocialPostCaption('')
     setSelectedSocialPlatforms([])
     setPostError(null)
     setPostSuccess(null)
@@ -455,244 +363,15 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-      {/* Main Tabs: Edit vs Caption */}
-      <Tabs value={activeMainTab} onValueChange={(v) => setActiveMainTab(v as typeof activeMainTab)} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 max-w-md">
-          <TabsTrigger value="edit">
-            <Sliders className="mr-2 h-4 w-4" />
-            Edit Image
-          </TabsTrigger>
-          <TabsTrigger value="caption">
-            <Type className="mr-2 h-4 w-4" />
-            Caption
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Edit Image Tab - Real-time Image Editor */}
-        <TabsContent value="edit" className="mt-6">
-          <ImageEditor
-            imageId={image.id}
-            originalUrl={image.original_url}
-            enhancedUrl={image.enhanced_url || undefined}
-            originalFilename={image.original_filename}
-            creditsRemaining={creditsBalance}
-            onDownloadComplete={handleCreditsRefresh}
-          />
-        </TabsContent>
-
-        {/* Caption Tab */}
-        <TabsContent value="caption" className="mt-6">
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* Image Preview */}
-            <Card>
-              <CardContent className="p-4">
-                <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
-                  <img
-                    src={image.enhanced_url || image.original_url}
-                    alt={image.original_filename || 'Food photo'}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Caption Generator Panel */}
-            <div className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <CardTitle className="text-lg">AI Caption Generator</CardTitle>
-                      <CardDescription>
-                        Generate engaging captions for your food photo
-                      </CardDescription>
-                    </div>
-                    {/* Caption remaining badge */}
-                    {image.enhanced_url && captionsRemaining !== null && (
-                      <Badge
-                        variant={captionsRemaining > 3 ? "secondary" : captionsRemaining > 0 ? "outline" : "destructive"}
-                        className="text-xs"
-                      >
-                        {captionsRemaining}/{MAX_CAPTIONS_PER_IMAGE} remaining
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* Platform Selection */}
-                  <div className="space-y-2">
-                    <Label>Platform</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {[
-                        { id: 'instagram', icon: Instagram, label: 'Instagram' },
-                        { id: 'facebook', icon: Facebook, label: 'Facebook' },
-                        { id: 'tiktok', icon: MessageCircle, label: 'TikTok' },
-                        { id: 'xiaohongshu', icon: Sparkles, label: 'Xiaohongshu' },
-                      ].map((platform) => (
-                        <button
-                          key={platform.id}
-                          onClick={() => setSelectedPlatform(platform.id)}
-                          className={cn(
-                            'flex items-center gap-2 px-3 py-2 rounded-lg border text-sm transition-all',
-                            selectedPlatform === platform.id
-                              ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                              : 'border-border hover:border-muted-foreground/50'
-                          )}
-                        >
-                          <platform.icon className="h-4 w-4" />
-                          {platform.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Language Selection */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Language</Label>
-                      <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="en">English</SelectItem>
-                          <SelectItem value="zh">简体中文</SelectItem>
-                          <SelectItem value="zh-tw">繁體中文</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>Tone</Label>
-                      <Select value={selectedTone} onValueChange={setSelectedTone}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="engaging">Engaging</SelectItem>
-                          <SelectItem value="professional">Professional</SelectItem>
-                          <SelectItem value="casual">Casual</SelectItem>
-                          <SelectItem value="playful">Playful</SelectItem>
-                          <SelectItem value="informative">Informative</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-
-                  {/* Error message */}
-                  {captionError && (
-                    <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg text-sm text-destructive">
-                      {captionError}
-                    </div>
-                  )}
-
-                  {/* Generate button */}
-                  <Button
-                    onClick={handleGenerateCaption}
-                    disabled={generating || captionsRemaining === 0 || !image.enhanced_url}
-                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:opacity-50"
-                  >
-                    {generating ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : captionsRemaining === 0 ? (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Limit Reached
-                      </>
-                    ) : !image.enhanced_url ? (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Enhance Image First
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="mr-2 h-4 w-4" />
-                        Generate Caption
-                      </>
-                    )}
-                  </Button>
-
-                  {/* Info text for non-enhanced images */}
-                  {!image.enhanced_url && (
-                    <p className="text-xs text-muted-foreground text-center">
-                      Enhance your image first to unlock {MAX_CAPTIONS_PER_IMAGE} free caption generations.
-                    </p>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Generated Caption */}
-              {caption && (
-                <Card>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">Generated Caption</CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleCopyCaption}
-                      >
-                        {copied ? (
-                          <>
-                            <Check className="mr-2 h-4 w-4" />
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="mr-2 h-4 w-4" />
-                            Copy
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <Textarea
-                      value={caption}
-                      onChange={(e) => setCaption(e.target.value)}
-                      rows={4}
-                      className="resize-none"
-                    />
-
-                    {hashtags.length > 0 && (
-                      <div>
-                        <Label className="text-sm">Hashtags</Label>
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {hashtags.map((tag, index) => (
-                            <Badge key={index} variant="secondary">
-                              #{tag}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {alternates.length > 0 && (
-                      <div>
-                        <Label className="text-sm">Alternative Versions</Label>
-                        <div className="space-y-2 mt-2">
-                          {alternates.map((alt, index) => (
-                            <button
-                              key={index}
-                              onClick={() => setCaption(alt)}
-                              className="w-full p-3 text-left text-sm border rounded-lg hover:bg-muted transition-colors"
-                            >
-                              {alt}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
+      {/* Image Editor */}
+      <ImageEditor
+        imageId={image.id}
+        originalUrl={image.original_url}
+        enhancedUrl={image.enhanced_url || undefined}
+        originalFilename={image.original_filename}
+        creditsRemaining={creditsBalance}
+        onDownloadComplete={handleCreditsRefresh}
+      />
 
       {/* Social Posting Dialog */}
       <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
@@ -768,16 +447,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                 rows={4}
                 className="resize-none"
               />
-              {caption && !socialPostCaption && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSocialPostCaption(caption + '\n\n' + hashtags.map(h => `#${h}`).join(' '))}
-                >
-                  <Sparkles className="mr-2 h-4 w-4" />
-                  Use Generated Caption
-                </Button>
-              )}
             </div>
 
             {/* Error */}
