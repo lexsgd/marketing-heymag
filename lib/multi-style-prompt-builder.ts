@@ -4,22 +4,28 @@
  * Intelligently combines multiple style selections into a cohesive AI prompt.
  * Uses research-backed defaults for missing categories to ensure great results.
  *
- * Architecture:
+ * Architecture v2 (Simplified System):
+ * - 3 Simple Categories: Business Type, Format, Mood
+ * - 1 Optional: Seasonal Theme
+ * - 8 Professional Photography Elements: Lens, Aperture, Angle, Lighting, Color, Style, Realism, Format
+ * - Smart Defaults: Professional settings auto-applied based on selection
+ *
+ * Legacy Architecture (Backward Compatible):
  * - Base Layer: Venue Type (defines overall aesthetic)
  * - Platform Layer: Delivery/Social optimization
  * - Modifier Layers: Seasonal, Background, Technique
  *
- * Priority order (most to least important):
- * 1. Venue Type - Sets the foundational style
- * 2. Delivery Platform - Platform-specific requirements
- * 3. Social Platform - Format and aesthetic requirements
- * 4. Seasonal Theme - Overlay of festive elements
- * 5. Background Style - Surface and backdrop preferences
- * 6. Photography Technique - Technical approach
+ * Reference: /docs/FOOD_PHOTOGRAPHY_IMPLEMENTATION.md
  */
 
 import { stylePrompts, defaultPrompt, getPlatformConfig } from './style-prompts'
 import { styleCategories, type SelectedStyles } from './styles-data'
+
+// New simplified system imports
+import type { SimpleSelection } from './simplified-styles'
+import { getFormatConfig, isSelectionValid } from './simplified-styles'
+import { buildSmartPrompt } from './smart-defaults'
+import { validateSelection, getSelectionStatus } from './conflict-rules'
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // INTELLIGENT DEFAULTS
@@ -504,4 +510,212 @@ export function getMultiStylePrompt(
   }
 
   return defaultPrompt
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEW SIMPLIFIED SYSTEM - v2
+// 3 simple categories + smart defaults for professional results
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export interface SimplifiedPromptResult {
+  prompt: string
+  isValid: boolean
+  warnings: string[]
+  formatConfig: {
+    aspectRatio: string
+    width: number
+    height: number
+  }
+  debug: {
+    selection: SimpleSelection
+    hasWarnings: boolean
+    selectionCount: number
+  }
+}
+
+/**
+ * Build prompt using the new simplified 3-category system
+ * This is the RECOMMENDED entry point for new code
+ *
+ * @param selection - SimpleSelection object with businessType, format, mood, seasonal
+ * @param customInstructions - Optional custom instructions to append
+ * @returns SimplifiedPromptResult with prompt and metadata
+ */
+export function buildSimplifiedPrompt(
+  selection: SimpleSelection,
+  customInstructions?: string
+): SimplifiedPromptResult {
+  // Validate selection
+  const status = getSelectionStatus(selection)
+  const warnings = validateSelection(selection)
+  const warningMessages = warnings.map((w) => w.message)
+
+  // Get format configuration
+  const formatConfig = getFormatConfig(selection.format)
+
+  // Build the smart prompt using professional photography elements
+  let prompt = buildSmartPrompt(selection)
+
+  // Add custom instructions if provided
+  if (customInstructions) {
+    prompt += `
+
+───────────────────────────────────────────────────────────────────────────────
+CUSTOM INSTRUCTIONS
+───────────────────────────────────────────────────────────────────────────────
+${customInstructions}
+`
+  }
+
+  // Add format-specific instructions
+  prompt += `
+
+───────────────────────────────────────────────────────────────────────────────
+OUTPUT FORMAT
+───────────────────────────────────────────────────────────────────────────────
+Aspect Ratio: ${formatConfig.aspectRatio}
+Resolution: ${formatConfig.width}x${formatConfig.height}px
+Optimize composition for this format while maintaining food as the hero.
+`
+
+  // Add verification checklist
+  prompt += `
+
+═══════════════════════════════════════════════════════════════════════════════
+VERIFICATION CHECKLIST
+═══════════════════════════════════════════════════════════════════════════════
+Before outputting, verify:
+✓ Same food items as input image
+✓ Same plates/dishes as input image
+✓ Same arrangement as input image
+✓ Enhanced lighting and colors
+✓ Professional, appetizing appearance
+✓ No artificial or fake-looking elements
+✓ Applied all 8 professional photography elements
+
+After enhancement, provide 3 tips in format:
+SUGGESTIONS: [tip1] | [tip2] | [tip3]
+`
+
+  // Count non-null selections
+  let selectionCount = 0
+  if (selection.businessType) selectionCount++
+  if (selection.format) selectionCount++
+  if (selection.mood && selection.mood !== 'auto') selectionCount++
+  if (selection.seasonal && selection.seasonal !== 'none') selectionCount++
+
+  return {
+    prompt,
+    isValid: status.isValid,
+    warnings: warningMessages,
+    formatConfig: {
+      aspectRatio: formatConfig.aspectRatio,
+      width: formatConfig.width,
+      height: formatConfig.height,
+    },
+    debug: {
+      selection,
+      hasWarnings: status.hasWarnings,
+      selectionCount,
+    },
+  }
+}
+
+/**
+ * Simple API for enhance route using new system
+ * Accepts SimpleSelection directly
+ */
+export function getSimplifiedPrompt(selection: SimpleSelection): string {
+  const result = buildSimplifiedPrompt(selection)
+  console.log('[Simplified] Built prompt for selection:', JSON.stringify(result.debug))
+  if (result.warnings.length > 0) {
+    console.log('[Simplified] Warnings:', result.warnings)
+  }
+  return result.prompt
+}
+
+/**
+ * Convert legacy SelectedStyles to new SimpleSelection
+ * For backward compatibility during migration
+ */
+export function convertToSimpleSelection(legacy: SelectedStyles): SimpleSelection {
+  // Map old venue IDs to new business types
+  const venueToBusinessType: Record<string, string> = {
+    'fine-dining': 'restaurant',
+    'casual-dining': 'restaurant',
+    'cafe': 'cafe',
+    'fast-food': 'fastfood',
+    'street-food': 'hawker',
+    'hawker': 'hawker',
+    'kopitiam': 'hawker',
+    'dessert': 'dessert',
+  }
+
+  // Map old delivery/social IDs to format
+  const platformToFormat: Record<string, string> = {
+    // Delivery platforms
+    grab: 'square',
+    deliveroo: 'square',
+    gojek: 'square',
+    shopee: 'square',
+    foodpanda: 'foodpanda',
+    // Social platforms
+    instagram: 'portrait',
+    'instagram-stories': 'vertical',
+    tiktok: 'vertical',
+    facebook: 'landscape',
+    xiaohongshu: 'portrait',
+    wechat: 'square',
+    pinterest: 'portrait',
+  }
+
+  // Map old background IDs to mood
+  const backgroundToMood: Record<string, string> = {
+    'minimal-white': 'bright',
+    'bright-airy': 'bright',
+    'rustic-wood': 'warm',
+    'dark-moody': 'elegant',
+    marble: 'elegant',
+    tropical: 'bright',
+    concrete: 'natural',
+    botanical: 'natural',
+  }
+
+  return {
+    businessType: legacy.venue ? (venueToBusinessType[legacy.venue] || 'restaurant') : null,
+    format: legacy.delivery
+      ? (platformToFormat[legacy.delivery] || 'square')
+      : legacy.social?.[0]
+        ? (platformToFormat[legacy.social[0]] || 'square')
+        : null,
+    mood: legacy.background ? (backgroundToMood[legacy.background] || 'auto') : 'auto',
+    seasonal: legacy.seasonal || null,
+  }
+}
+
+/**
+ * Unified API that works with both old and new selection formats
+ * Detects format and routes to appropriate builder
+ */
+export function buildUnifiedPrompt(
+  selection: SelectedStyles | SimpleSelection,
+  options?: {
+    aspectRatio?: string
+    customInstructions?: string
+  }
+): string {
+  // Detect if this is a SimpleSelection (has businessType) or SelectedStyles (has venue)
+  if ('businessType' in selection) {
+    // New simplified system
+    const result = buildSimplifiedPrompt(selection as SimpleSelection, options?.customInstructions)
+    return result.prompt
+  } else {
+    // Legacy system
+    const result = buildMultiStylePrompt({
+      selection: selection as SelectedStyles,
+      aspectRatio: options?.aspectRatio,
+      customInstructions: options?.customInstructions,
+    })
+    return result.prompt
+  }
 }
