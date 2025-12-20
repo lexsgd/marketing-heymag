@@ -1,34 +1,71 @@
 'use client'
 
-import { ChevronDown, Grid2X2, Sparkles } from 'lucide-react'
+import { ChevronDown, Lock, Sparkles, Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn } from '@/lib/utils'
 
 // Variation options with visual grid representation
 const variationOptions = [
-  { count: 1, label: 'Single', credits: 1, description: 'One high-quality result' },
-  { count: 2, label: 'Pair', credits: 2, description: 'Compare two styles' },
-  { count: 3, label: 'Triple', credits: 3, description: 'More variety' },
-  { count: 4, label: 'Quad', credits: 4, description: 'Maximum choices', popular: true },
+  {
+    count: 1,
+    label: 'Single',
+    credits: 1,
+    description: 'Best for photo enhancement',
+    available: true,
+  },
+  {
+    count: 2,
+    label: 'Pair',
+    credits: 2,
+    description: 'Compare creative variations',
+    available: false,
+    comingSoon: true,
+  },
+  {
+    count: 3,
+    label: 'Triple',
+    credits: 3,
+    description: 'More creative options',
+    available: false,
+    comingSoon: true,
+  },
+  {
+    count: 4,
+    label: 'Quad',
+    credits: 4,
+    description: 'Maximum creative choices',
+    available: false,
+    comingSoon: true,
+    popular: true,
+  },
 ]
 
 interface VariationsPickerProps {
   value: number
   onChange: (value: number) => void
   className?: string
+  mode?: 'enhance' | 'creative'  // Future: unlock variations for creative mode
 }
 
 export function VariationsPicker({
   value,
   onChange,
-  className
+  className,
+  mode = 'enhance',  // Default to enhance mode (locked to 1)
 }: VariationsPickerProps) {
   const selectedOption = variationOptions.find(v => v.count === value) || variationOptions[0]
+  const isLocked = mode === 'enhance'
 
   // Visual grid preview component
   const GridPreview = ({ count, small = false }: { count: number; small?: boolean }) => {
@@ -64,6 +101,55 @@ export function VariationsPicker({
     )
   }
 
+  // If locked to enhance mode, show simplified locked state
+  if (isLocked) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+          <div
+            className={cn(
+              "h-auto px-3 py-2 gap-2 flex items-center rounded-md text-muted-foreground cursor-default",
+              className
+            )}
+          >
+            <div className="text-muted-foreground/50">
+              <GridPreview count={1} small />
+            </div>
+            <span className="text-sm font-medium text-muted-foreground">
+              1 image
+            </span>
+            <Lock className="h-3 w-3 text-muted-foreground/50" />
+          </div>
+        </TooltipTrigger>
+        <TooltipContent side="top" className="max-w-[280px] p-4">
+          <div className="space-y-3">
+            <div className="flex items-start gap-2">
+              <Sparkles className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-sm">Optimized for Enhancement</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Photo enhancement produces consistent results. Multiple images would look nearly identical.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 pt-2 border-t border-border">
+              <Wand2 className="h-4 w-4 text-purple-500 mt-0.5 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-sm">Creative Mode Coming Soon</p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Generate multiple unique variations for ads, posters, and artistic reimaginings.
+                </p>
+              </div>
+            </div>
+          </div>
+        </TooltipContent>
+      </Tooltip>
+      </TooltipProvider>
+    )
+  }
+
+  // Full picker for creative mode (future)
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -92,15 +178,20 @@ export function VariationsPicker({
           <div className="space-y-2">
             {variationOptions.map((option) => {
               const isSelected = option.count === value
+              const isDisabled = !option.available
+
               return (
                 <button
                   key={option.count}
-                  onClick={() => onChange(option.count)}
+                  onClick={() => option.available && onChange(option.count)}
+                  disabled={isDisabled}
                   className={cn(
                     "w-full flex items-center gap-3 p-3 rounded-lg border-2 transition-all text-left",
                     isSelected
                       ? "border-orange-500 bg-orange-500/10"
-                      : "border-border hover:border-muted-foreground/50 hover:bg-muted/50"
+                      : isDisabled
+                        ? "border-border bg-muted/30 opacity-60 cursor-not-allowed"
+                        : "border-border hover:border-muted-foreground/50 hover:bg-muted/50"
                   )}
                 >
                   {/* Grid preview */}
@@ -117,7 +208,12 @@ export function VariationsPicker({
                       <p className="text-sm font-medium">
                         {option.count} {option.count === 1 ? 'Image' : 'Images'}
                       </p>
-                      {option.popular && (
+                      {option.comingSoon && (
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-600 font-medium">
+                          Coming Soon
+                        </span>
+                      )}
+                      {option.popular && !option.comingSoon && (
                         <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-600 font-medium">
                           Popular
                         </span>
