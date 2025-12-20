@@ -255,7 +255,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
         )
       case 'processing':
         return (
-          <Badge className="bg-blue-500 text-white border-0">
+          <Badge className="bg-amber-500 text-white border-0">
             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
             Processing
           </Badge>
@@ -371,7 +371,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
               )}
             >
               <div className="flex items-center gap-2">
-                <Loader2 className="h-3.5 w-3.5 text-blue-500" />
+                <Loader2 className="h-3.5 w-3.5 text-amber-500" />
                 <span>Processing</span>
               </div>
               <Badge variant="secondary" className="text-xs">{statusCounts.processing}</Badge>

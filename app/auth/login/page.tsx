@@ -261,7 +261,7 @@ export default function LoginPage() {
           )}
 
           {showResendVerification && (
-            <Alert className="bg-blue-50 text-blue-900 border-blue-200 dark:bg-blue-950 dark:text-blue-100 dark:border-blue-900">
+            <Alert className="bg-green-50 text-green-900 border-green-200 dark:bg-green-950 dark:text-green-100 dark:border-green-900">
               <Info className="h-4 w-4" />
               <AlertDescription>
                 Verification email sent! Please check your inbox.

@@ -210,8 +210,8 @@ export default async function DashboardPage() {
         <Card className="hover:shadow-md transition-shadow cursor-pointer group">
           <Link href="/social">
             <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-2 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50 transition-colors">
-                <Share2 className="h-6 w-6 text-blue-500" />
+              <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2 group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition-colors">
+                <Share2 className="h-6 w-6 text-orange-500" />
               </div>
               <CardTitle className="text-lg">Connect Social</CardTitle>
               <CardDescription>
@@ -302,7 +302,7 @@ export default async function DashboardPage() {
                 { name: 'Delivery App', uses: 12, color: 'bg-green-500' },
                 { name: 'Instagram Feed', uses: 8, color: 'bg-pink-500' },
                 { name: 'Xiaohongshu', uses: 5, color: 'bg-red-500' },
-                { name: 'Menu Card', uses: 3, color: 'bg-blue-500' },
+                { name: 'Menu Card', uses: 3, color: 'bg-amber-500' },
               ].map((preset) => (
                 <div key={preset.name} className="flex items-center justify-between">
                   <div className="flex items-center gap-3">

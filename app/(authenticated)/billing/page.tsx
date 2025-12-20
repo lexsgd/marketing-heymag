@@ -406,9 +406,9 @@ function BillingPageContent() {
               <AutoTopUpSettings />
 
               {/* Info Box */}
-              <Card className="bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900">
+              <Card className="bg-orange-50 dark:bg-orange-950/20 border-orange-200 dark:border-orange-900">
                 <CardContent className="flex items-start gap-4 p-4">
-                  <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                  <AlertCircle className="h-5 w-5 text-orange-500 mt-0.5" />
                   <div>
                     <h4 className="font-medium">How Credits Work</h4>
                     <ul className="text-sm text-muted-foreground mt-2 space-y-1">
