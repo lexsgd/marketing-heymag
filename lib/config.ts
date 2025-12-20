@@ -1,6 +1,6 @@
 export const config = {
   // Version tracking
-  version: '0.38.2',
+  version: '0.38.3',
   internalBuild: '2.08',
 
   // App info

@@ -374,6 +374,7 @@ ABSOLUTE RULES:
 3. KEEP the same composition and arrangement
 4. ONLY enhance: lighting, colors, textures, background styling, and overall polish
 5. Make the food look MORE appetizing, not different
+6. NO HUMANS - Do NOT add any people, hands, arms, or body parts. Remove any visible humans from the background. The photo should show ONLY food, props, and surfaces.
 `)
 
   // Technical specifications
