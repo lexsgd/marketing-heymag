@@ -3,7 +3,6 @@
 import { useState, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   Camera,
   Plus,
@@ -16,11 +15,11 @@ import {
   Sparkles,
   Clock,
   AlertCircle,
-  CheckCircle2,
-  ImageIcon,
-  Filter,
+  LayoutGrid,
+  List,
+  MoreHorizontal,
+  ExternalLink,
 } from 'lucide-react'
-import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -41,9 +40,14 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from '@/components/ui/tooltip'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
-import { ImageActions } from './ImageActions'
 
 interface ImageData {
   id: string
@@ -62,6 +66,7 @@ interface GalleryClientProps {
 
 type StatusFilter = 'all' | 'completed' | 'processing' | 'pending' | 'failed'
 type DateFilter = 'all' | 'today' | 'week' | 'month'
+type ViewMode = 'grid' | 'list'
 
 export function GalleryClient({ initialImages }: GalleryClientProps) {
   const [images, setImages] = useState<ImageData[]>(initialImages)
@@ -72,6 +77,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
+  const [viewMode, setViewMode] = useState<ViewMode>('grid')
 
   const router = useRouter()
   const supabase = createClient()
@@ -205,71 +211,113 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
     }
   }
 
-  // Premium icon-only status indicator (Apple Photos style)
-  const StatusIndicator = ({ status, showTooltip = true }: { status: string; showTooltip?: boolean }) => {
-    const iconClass = "h-3.5 w-3.5"
+  // Single image download
+  const handleDownload = async (image: ImageData) => {
+    const url = image.enhanced_url || image.original_url
+    try {
+      const response = await fetch(url)
+      const blob = await response.blob()
+      const blobUrl = URL.createObjectURL(blob)
 
-    const getStatusConfig = () => {
-      switch (status) {
-        case 'completed':
-          return {
-            icon: <Sparkles className={cn(iconClass, "text-amber-300")} />,
-            bg: "bg-black/50 backdrop-blur-sm",
-            tooltip: "AI Enhanced"
-          }
-        case 'processing':
-          return {
-            icon: <Loader2 className={cn(iconClass, "text-white animate-spin")} />,
-            bg: "bg-black/50 backdrop-blur-sm",
-            tooltip: "Processing..."
-          }
-        case 'pending':
-          return {
-            icon: <Clock className={cn(iconClass, "text-white/70")} />,
-            bg: "bg-black/40 backdrop-blur-sm",
-            tooltip: "Pending"
-          }
-        case 'failed':
-          return {
-            icon: <AlertCircle className={cn(iconClass, "text-white")} />,
-            bg: "bg-red-500/80 backdrop-blur-sm",
-            tooltip: "Enhancement Failed"
-          }
-        default:
-          return null
-      }
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = image.original_filename || `foodsnap-${image.id}.jpg`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(blobUrl)
+    } catch (err) {
+      console.error('Download failed:', err)
     }
+  }
 
-    const config = getStatusConfig()
-    if (!config) return null
+  // Format date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: date.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined,
+    })
+  }
 
-    const indicator = (
-      <div className={cn(
-        "p-1.5 rounded-full shadow-lg transition-transform hover:scale-110",
-        config.bg
-      )}>
-        {config.icon}
-      </div>
-    )
+  // Status Badge Component
+  const StatusBadge = ({ status }: { status: string }) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <Badge className="bg-orange-500 text-white border-0">
+            <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
+            </svg>
+            AI Enhanced
+          </Badge>
+        )
+      case 'processing':
+        return (
+          <Badge className="bg-blue-500 text-white border-0">
+            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+            Processing
+          </Badge>
+        )
+      case 'pending':
+        return (
+          <Badge variant="secondary" className="text-muted-foreground">
+            <Clock className="h-3 w-3 mr-1" />
+            Pending
+          </Badge>
+        )
+      case 'failed':
+        return (
+          <Badge variant="destructive">
+            <AlertCircle className="h-3 w-3 mr-1" />
+            Failed
+          </Badge>
+        )
+      default:
+        return null
+    }
+  }
 
-    if (!showTooltip) return indicator
-
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          {indicator}
-        </TooltipTrigger>
-        <TooltipContent side="right" className="text-xs">
-          {config.tooltip}
-        </TooltipContent>
-      </Tooltip>
-    )
+  // Status icon for grid view overlay
+  const StatusIcon = ({ status }: { status: string }) => {
+    const iconClass = "h-3.5 w-3.5"
+    switch (status) {
+      case 'completed':
+        return (
+          <div className="p-1.5 rounded-full bg-orange-500/90 backdrop-blur-sm shadow-lg">
+            <svg className={cn(iconClass, "text-white")} viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
+            </svg>
+          </div>
+        )
+      case 'processing':
+        return (
+          <div className="p-1.5 rounded-full bg-black/50 backdrop-blur-sm shadow-lg">
+            <Loader2 className={cn(iconClass, "text-white animate-spin")} />
+          </div>
+        )
+      case 'pending':
+        return (
+          <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm shadow-lg">
+            <Clock className={cn(iconClass, "text-white/70")} />
+          </div>
+        )
+      case 'failed':
+        return (
+          <div className="p-1.5 rounded-full bg-red-500/80 backdrop-blur-sm shadow-lg">
+            <AlertCircle className={cn(iconClass, "text-white")} />
+          </div>
+        )
+      default:
+        return null
+    }
   }
 
   return (
     <TooltipProvider>
     <div className="min-h-[calc(100vh-64px)] flex">
-      {/* Left Sidebar - Matching Explore pattern */}
+      {/* Left Sidebar */}
       <aside className="hidden lg:block w-64 shrink-0 border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto p-6">
         {/* Library Section */}
         <div className="mb-8">
@@ -308,7 +356,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
               )}
             >
               <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                <Sparkles className="h-3.5 w-3.5 text-orange-500" />
                 <span>Enhanced</span>
               </div>
               <Badge variant="secondary" className="text-xs">{statusCounts.completed}</Badge>
@@ -450,7 +498,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
             </p>
           </div>
 
-          {/* Search & Select All */}
+          {/* Search, View Toggle & Select All */}
           <div className="flex items-center gap-3">
             {/* Search */}
             <div className="relative w-64">
@@ -461,6 +509,36 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+
+            {/* View Toggle */}
+            <div className="flex items-center border rounded-lg p-1 bg-muted/50">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'grid' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setViewMode('grid')}
+                  >
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Grid view</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={viewMode === 'list' ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={() => setViewMode('list')}
+                  >
+                    <List className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>List view</TooltipContent>
+              </Tooltip>
             </div>
 
             {filteredImages.length > 0 && (
@@ -477,7 +555,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
 
         {/* Bulk Action Bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-4 p-4 mb-6 bg-muted rounded-lg">
+          <div className="flex items-center gap-4 p-4 mb-6 bg-muted rounded-2xl">
             <span className="text-sm font-medium">
               {selectedIds.size} {selectedIds.size === 1 ? 'photo' : 'photos'} selected
             </span>
@@ -509,7 +587,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
               <Trash2 className="mr-2 h-4 w-4" />
               Delete
             </Button>
-            <Button variant="ghost" size="sm" onClick={deselectAll}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={deselectAll}>
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -517,90 +595,175 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
 
         {/* Gallery Content */}
         {filteredImages.length > 0 ? (
-          /* Masonry Grid - Matching Explore pattern */
-          <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
-            {filteredImages.map((image) => {
-              const isSelected = selectedIds.has(image.id)
-              return (
-                <div
-                  key={image.id}
-                  className="break-inside-avoid mb-4 group"
-                >
-                  <div className={cn(
-                    "relative overflow-hidden rounded-xl bg-muted transition-all duration-200",
-                    isSelected && "ring-2 ring-orange-500"
-                  )}>
-                    {/* Status Indicator */}
-                    <div className="absolute top-3 left-3 z-10">
-                      <StatusIndicator status={image.status} />
-                    </div>
+          viewMode === 'grid' ? (
+            /* Grid View - Masonry */
+            <div className="columns-2 md:columns-3 lg:columns-4 gap-4">
+              {filteredImages.map((image) => {
+                const isSelected = selectedIds.has(image.id)
+                return (
+                  <div
+                    key={image.id}
+                    className="break-inside-avoid mb-4 group"
+                  >
+                    <div className={cn(
+                      "relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 transition-all duration-200",
+                      isSelected && "ring-2 ring-orange-500 ring-offset-2 ring-offset-background"
+                    )}>
+                      {/* Status Indicator */}
+                      <div className="absolute top-3 left-3 z-10">
+                        <StatusIcon status={image.status} />
+                      </div>
 
-                    {/* Selection Checkbox */}
-                    <div
-                      className={cn(
-                        "absolute top-3 right-3 z-10 transition-all duration-200",
-                        isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                      )}
-                    >
+                      {/* Selection Checkbox */}
+                      <div
+                        className={cn(
+                          "absolute top-3 right-3 z-10 transition-all duration-200",
+                          isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                        )}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={() => toggleSelection(image.id)}
+                          className="h-5 w-5 bg-white/90 backdrop-blur-sm border-0 shadow-lg data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                        />
+                      </div>
+
+                      <Link href={`/editor/${image.id}`}>
+                        {/* Image - Natural aspect ratio */}
+                        <div className="relative">
+                          {image.thumbnail_url || image.enhanced_url || image.original_url ? (
+                            <img
+                              src={image.thumbnail_url || image.enhanced_url || image.original_url}
+                              alt={image.original_filename || 'Food photo'}
+                              className="w-full h-auto object-cover transition-transform duration-500 group-hover:scale-105"
+                            />
+                          ) : (
+                            <div className="aspect-square w-full flex items-center justify-center">
+                              <Camera className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+
+                          {/* Hover Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
+                              <h3 className="text-white font-medium text-sm mb-1 line-clamp-1">
+                                {image.original_filename || 'Untitled'}
+                              </h3>
+                              <p className="text-white/70 text-xs">
+                                {image.style_preset || 'No style applied'}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          ) : (
+            /* List View */
+            <div className="space-y-2">
+              {/* List Header */}
+              <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
+                <div className="col-span-1"></div>
+                <div className="col-span-4">Name</div>
+                <div className="col-span-2">Status</div>
+                <div className="col-span-2">Style</div>
+                <div className="col-span-2">Date</div>
+                <div className="col-span-1"></div>
+              </div>
+
+              {/* List Items */}
+              {filteredImages.map((image) => {
+                const isSelected = selectedIds.has(image.id)
+                return (
+                  <div
+                    key={image.id}
+                    className={cn(
+                      "grid grid-cols-12 gap-4 items-center p-4 rounded-2xl bg-card border border-border hover:bg-muted/50 transition-colors group",
+                      isSelected && "ring-2 ring-orange-500 bg-orange-500/5"
+                    )}
+                  >
+                    {/* Checkbox + Thumbnail */}
+                    <div className="col-span-1 flex items-center gap-3">
                       <Checkbox
                         checked={isSelected}
                         onCheckedChange={() => toggleSelection(image.id)}
-                        className="h-5 w-5 bg-white/90 backdrop-blur-sm border-0 shadow-sm data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                        className="data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
                       />
+                      <Link href={`/editor/${image.id}`} className="shrink-0">
+                        <div className="h-12 w-12 rounded-lg overflow-hidden bg-muted">
+                          {image.thumbnail_url || image.enhanced_url || image.original_url ? (
+                            <img
+                              src={image.thumbnail_url || image.enhanced_url || image.original_url}
+                              alt={image.original_filename || 'Food photo'}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center">
+                              <Camera className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      </Link>
                     </div>
 
-                    <Link href={`/editor/${image.id}`}>
-                      {/* Image */}
-                      <div className="aspect-square relative">
-                        {image.thumbnail_url || image.enhanced_url || image.original_url ? (
-                          <img
-                            src={image.thumbnail_url || image.enhanced_url || image.original_url}
-                            alt={image.original_filename || 'Food photo'}
-                            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center">
-                            <Camera className="h-8 w-8 text-muted-foreground" />
-                          </div>
-                        )}
+                    {/* Name */}
+                    <div className="col-span-4">
+                      <Link href={`/editor/${image.id}`} className="hover:underline">
+                        <p className="font-medium truncate">
+                          {image.original_filename || 'Untitled'}
+                        </p>
+                      </Link>
+                    </div>
 
-                        {/* Hover Overlay - Matching Explore pattern */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                          <div className="absolute bottom-0 left-0 right-0 p-4">
-                            <h3 className="text-white font-medium text-sm mb-1 line-clamp-1">
-                              {image.original_filename || 'Untitled'}
-                            </h3>
-                            <p className="text-white/70 text-xs">
-                              {image.style_preset || 'No style applied'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
+                    {/* Status */}
+                    <div className="col-span-2">
+                      <StatusBadge status={image.status} />
+                    </div>
 
-                    {/* Image Info - Always visible */}
-                    <div className="p-3 bg-card">
-                      <div className="flex items-center justify-between">
-                        <div className="truncate flex-1 mr-2">
-                          <p className="text-sm font-medium truncate">
-                            {image.original_filename || 'Untitled'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {image.style_preset || 'No style'}
-                          </p>
-                        </div>
-                        <ImageActions
-                          imageId={image.id}
-                          imageUrl={image.enhanced_url || image.original_url}
-                          filename={image.original_filename || `foodsnap-${image.id}.jpg`}
-                        />
-                      </div>
+                    {/* Style */}
+                    <div className="col-span-2">
+                      <span className="text-sm text-muted-foreground">
+                        {image.style_preset || '—'}
+                      </span>
+                    </div>
+
+                    {/* Date */}
+                    <div className="col-span-2">
+                      <span className="text-sm text-muted-foreground">
+                        {formatDate(image.created_at)}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-1 flex justify-end">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem asChild>
+                            <Link href={`/editor/${image.id}`} className="flex items-center">
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              Open
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleDownload(image)}>
+                            <Download className="h-4 w-4 mr-2" />
+                            Download
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          )
         ) : (
           /* Empty State */
           <div className="text-center py-20">
