@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import {
   ArrowLeft,
-  Download,
   Share2,
   Copy,
   Check,
@@ -47,8 +46,6 @@ import {
 import { cn } from '@/lib/utils'
 import { config } from '@/lib/config'
 import { ImageEditor } from '@/components/editor'
-import { DownloadDialog } from '@/components/editor/download-dialog'
-import type { EnhancementSettings } from '@/lib/image-processing'
 
 interface ImageData {
   id: string
@@ -58,7 +55,6 @@ interface ImageData {
   original_filename: string
   style_preset: string
   status: string
-  enhancement_settings: EnhancementSettings | null
   metadata: Record<string, unknown> | null
   created_at: string
   processed_at: string | null
@@ -85,8 +81,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
   const [captionError, setCaptionError] = useState<string | null>(null)
   const [captionsRemaining, setCaptionsRemaining] = useState<number | null>(null)
-  // Download dialog state
-  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  // Credits balance for download options
   const [creditsBalance, setCreditsBalance] = useState<number>(0)
   // Social posting state
   const [socialDialogOpen, setSocialDialogOpen] = useState(false)
@@ -203,49 +198,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     }
   }
 
-  // Save enhanced image to Supabase Storage
-  const handleSaveEnhancedImage = useCallback(async (imageBlob: Blob) => {
-    if (!image || !businessId) return
-
-    try {
-      // Create unique filename for enhanced image
-      const fileName = `${businessId}/enhanced/${image.id}-${Date.now()}.jpg`
-
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('images')
-        .upload(fileName, imageBlob, {
-          cacheControl: '3600',
-          upsert: true
-        })
-
-      if (uploadError) throw uploadError
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('images')
-        .getPublicUrl(fileName)
-
-      // Update image record with enhanced URL
-      const { error: updateError } = await supabase
-        .from('images')
-        .update({
-          enhanced_url: publicUrl,
-          status: 'completed',
-          processed_at: new Date().toISOString()
-        })
-        .eq('id', image.id)
-
-      if (updateError) throw updateError
-
-      // Reload image to get updated data
-      await loadImage()
-    } catch (err) {
-      console.error('Error saving enhanced image:', err)
-      throw err
-    }
-  }, [image, businessId, supabase, loadImage])
-
   const handleGenerateCaption = async () => {
     if (!image) return
 
@@ -300,32 +252,18 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  // Handle download from URL (used by DownloadDialog)
-  const handleDownloadFromUrl = async (url: string, filename: string) => {
-    const response = await fetch(url)
-    const blob = await response.blob()
-    const blobUrl = URL.createObjectURL(blob)
-
-    const a = document.createElement('a')
-    a.href = blobUrl
-    a.download = filename
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(blobUrl)
-  }
-
-  // Open download dialog
-  const handleDownload = () => {
-    if (!image?.enhanced_url) {
-      // For non-enhanced images, download original directly
-      if (image?.original_url) {
-        handleDownloadFromUrl(image.original_url, `zazzles-${image.original_filename || 'image.jpg'}`)
-      }
-      return
+  // Refresh credits after download (called by ImageEditor)
+  const handleCreditsRefresh = useCallback(async () => {
+    if (!businessId) return
+    const { data: credits } = await supabase
+      .from('credits')
+      .select('credits_remaining')
+      .eq('business_id', businessId)
+      .single()
+    if (credits) {
+      setCreditsBalance(credits.credits_remaining)
     }
-    setDownloadDialogOpen(true)
-  }
+  }, [businessId, supabase])
 
   // Open social posting dialog
   const handleOpenSocialDialog = () => {
@@ -506,10 +444,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={handleDownload}>
-            <Download className="mr-2 h-4 w-4" />
-            Download
-          </Button>
           <Button
             className="bg-orange-500 hover:bg-orange-600"
             onClick={handleOpenSocialDialog}
@@ -537,11 +471,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         {/* Edit Image Tab - Real-time Image Editor */}
         <TabsContent value="edit" className="mt-6">
           <ImageEditor
+            imageId={image.id}
             originalUrl={image.original_url}
             enhancedUrl={image.enhanced_url || undefined}
-            aiSettings={image.enhancement_settings || undefined}
-            stylePreset={image.style_preset}
-            onSave={handleSaveEnhancedImage}
+            originalFilename={image.original_filename}
+            creditsRemaining={creditsBalance}
+            onDownloadComplete={handleCreditsRefresh}
           />
         </TabsContent>
 
@@ -758,19 +693,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Download Dialog */}
-      {image && (
-        <DownloadDialog
-          open={downloadDialogOpen}
-          onOpenChange={setDownloadDialogOpen}
-          imageId={image.id}
-          enhancedUrl={image.enhanced_url}
-          originalFilename={image.original_filename}
-          creditsRemaining={creditsBalance}
-          onDownload={handleDownloadFromUrl}
-        />
-      )}
 
       {/* Social Posting Dialog */}
       <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
