@@ -119,14 +119,14 @@ export function BeforeAfterSlider({
       onTouchEnd={() => setIsDragging(false)}
     >
       {/* Background for letterboxing */}
-      <div className="absolute inset-0 bg-muted/30" />
+      <div className="absolute inset-0 bg-black/80" />
 
       {/* BEFORE Image (Original) - Full background UNDERNEATH */}
-      {/* Using object-cover to ensure both images fill the container and align properly */}
+      {/* Using object-contain to show the full image without cropping */}
       <img
         src={beforeUrl}
         alt={`${alt} - Original`}
-        className="absolute inset-0 w-full h-full object-cover object-center"
+        className="absolute inset-0 w-full h-full object-contain object-center"
         onLoad={() => setImagesLoaded(prev => ({ ...prev, before: true }))}
         draggable={false}
       />
@@ -142,13 +142,13 @@ export function BeforeAfterSlider({
         - Drag RIGHT → sliderPosition increases → More Enhanced visible
         - Drag LEFT → sliderPosition decreases → More Original visible
 
-        Note: object-cover ensures both images fill the container identically,
+        Note: object-contain ensures both images are positioned identically,
         so the comparison works even with different aspect ratios.
       */}
       <img
         src={afterUrl}
         alt={`${alt} - Enhanced`}
-        className="absolute inset-0 w-full h-full object-cover object-center"
+        className="absolute inset-0 w-full h-full object-contain object-center"
         style={{
           clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`
         }}
