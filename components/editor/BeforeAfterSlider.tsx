@@ -197,16 +197,28 @@ export function BeforeAfterSlider({
         </div>
       </div>
 
-      {/* Center indicator when at 50% */}
+      {/* Corner labels that fade based on slider position */}
+      {/* AI Enhanced label - bottom left (visible when slider reveals enhanced) */}
       <div
-        className={cn(
-          'absolute top-4 left-1/2 -translate-x-1/2',
-          'px-3 py-1 bg-black/50 text-white text-xs rounded-full',
-          'transition-opacity duration-200 pointer-events-none'
-        )}
-        style={{ opacity: Math.abs(sliderPosition - 50) < 5 ? 0.8 : 0 }}
+        className="absolute bottom-4 left-4 pointer-events-none transition-opacity duration-300"
+        style={{ opacity: Math.min(1, sliderPosition / 40) * 0.9 }}
       >
-        ← Original | Enhanced →
+        <div className="px-3 py-1.5 bg-orange-500/90 text-white text-xs font-medium rounded-full flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
+          <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
+          </svg>
+          AI Enhanced
+        </div>
+      </div>
+
+      {/* Original label - bottom right (visible when slider reveals original) */}
+      <div
+        className="absolute bottom-4 right-4 pointer-events-none transition-opacity duration-300"
+        style={{ opacity: Math.min(1, (100 - sliderPosition) / 40) * 0.9 }}
+      >
+        <div className="px-3 py-1.5 bg-gray-800/90 text-gray-300 text-xs font-medium rounded-full shadow-lg backdrop-blur-sm">
+          Original
+        </div>
       </div>
 
       {/* Loading overlay */}
