@@ -29,8 +29,6 @@ import { SimplifiedStylePicker } from '@/components/editor/simplified-style-pick
 import {
   type SimpleSelection,
   emptySimpleSelection,
-  countSelections,
-  getSelectionSummary,
   getFormatConfig,
 } from '@/lib/simplified-styles'
 
@@ -272,20 +270,6 @@ function EditorContent() {
 
         {/* Main Canvas Area */}
         <main className="flex-1 flex flex-col overflow-auto">
-          {/* Selected Styles Summary - shows above canvas when styles are selected and no template */}
-          {!template && hasStylesSelected && (
-            <div className="p-4 pb-0">
-              <div className="flex items-center gap-2 text-sm">
-                <Badge variant="secondary" className="bg-orange-500/20 text-orange-500">
-                  {countSelections(selectedStyles)} selected
-                </Badge>
-                <span className="text-muted-foreground">
-                  {getSelectionSummary(selectedStyles)}
-                </span>
-              </div>
-            </div>
-          )}
-
           {/* Canvas */}
           <div className="flex-1 flex items-center justify-center p-8 relative">
             {/* Zoom Controls */}

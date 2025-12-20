@@ -17,7 +17,6 @@ import {
   formats,
   moods,
   seasonalThemes,
-  getSelectionSummary,
   countSelections,
   type SimpleSelection,
   type SimpleStyle,
@@ -168,42 +167,31 @@ export function SimplifiedStylePicker({
   return (
     <TooltipProvider>
       <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="p-4 border-b border-border">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="font-semibold">Style Settings</h3>
-            {selectedCount > 0 && (
+        {/* Header - Compact Design */}
+        <div className="p-3 border-b border-border">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-sm">Style Settings</h3>
+            {/* Status indicator on the right */}
+            {status.message && status.isValid && !status.hasWarnings ? (
+              <div className="flex items-center gap-1.5 text-xs text-green-600">
+                <Check className="h-3 w-3" />
+                <span>Ready</span>
+              </div>
+            ) : selectedCount > 0 ? (
               <Badge
                 variant="secondary"
-                className="bg-orange-500/20 text-orange-500"
+                className="bg-orange-500/20 text-orange-500 text-xs"
               >
-                {selectedCount} selected
+                {selectedCount}
               </Badge>
-            )}
+            ) : null}
           </div>
 
-          {/* Selection summary */}
-          {selectedCount > 0 && (
-            <p className="text-sm text-muted-foreground">
-              {getSelectionSummary(selection)}
-            </p>
-          )}
-
-          {/* Status message */}
-          {status.message && (
-            <div
-              className={cn(
-                'flex items-center gap-2 mt-2 text-xs',
-                status.isValid && !status.hasWarnings && 'text-green-600',
-                status.hasWarnings && 'text-amber-600',
-                !status.isValid && 'text-red-600'
-              )}
-            >
-              {status.isValid && !status.hasWarnings && (
-                <Check className="h-3.5 w-3.5" />
-              )}
-              {status.hasWarnings && <AlertTriangle className="h-3.5 w-3.5" />}
-              {status.message}
+          {/* Warning status if any */}
+          {status.hasWarnings && status.message && (
+            <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600">
+              <AlertTriangle className="h-3 w-3" />
+              <span>{status.message}</span>
             </div>
           )}
         </div>
