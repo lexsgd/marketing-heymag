@@ -47,6 +47,7 @@ import {
 import { cn } from '@/lib/utils'
 import { config } from '@/lib/config'
 import { ImageEditor } from '@/components/editor'
+import { DownloadDialog } from '@/components/editor/download-dialog'
 import type { EnhancementSettings } from '@/lib/image-processing'
 
 interface ImageData {
@@ -84,6 +85,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [enhanceError, setEnhanceError] = useState<string | null>(null)
   const [captionError, setCaptionError] = useState<string | null>(null)
   const [captionsRemaining, setCaptionsRemaining] = useState<number | null>(null)
+  // Download dialog state
+  const [downloadDialogOpen, setDownloadDialogOpen] = useState(false)
+  const [creditsBalance, setCreditsBalance] = useState<number>(0)
   // Social posting state
   const [socialDialogOpen, setSocialDialogOpen] = useState(false)
   const [selectedSocialPlatforms, setSelectedSocialPlatforms] = useState<('facebook' | 'instagram')[]>([])
@@ -116,6 +120,17 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       }
 
       setBusinessId(business.id)
+
+      // Fetch credits balance
+      const { data: credits } = await supabase
+        .from('credits')
+        .select('credits_remaining')
+        .eq('business_id', business.id)
+        .single()
+
+      if (credits) {
+        setCreditsBalance(credits.credits_remaining)
+      }
 
       const { data: imageData, error } = await supabase
         .from('images')
@@ -285,21 +300,31 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleDownload = async () => {
-    if (!image) return
-
-    const url = image.enhanced_url || image.original_url
+  // Handle download from URL (used by DownloadDialog)
+  const handleDownloadFromUrl = async (url: string, filename: string) => {
     const response = await fetch(url)
     const blob = await response.blob()
     const blobUrl = URL.createObjectURL(blob)
 
     const a = document.createElement('a')
     a.href = blobUrl
-    a.download = `foodsnap-${image.original_filename || 'image.jpg'}`
+    a.download = filename
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(blobUrl)
+  }
+
+  // Open download dialog
+  const handleDownload = () => {
+    if (!image?.enhanced_url) {
+      // For non-enhanced images, download original directly
+      if (image?.original_url) {
+        handleDownloadFromUrl(image.original_url, `zazzles-${image.original_filename || 'image.jpg'}`)
+      }
+      return
+    }
+    setDownloadDialogOpen(true)
   }
 
   // Open social posting dialog
@@ -733,6 +758,19 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Download Dialog */}
+      {image && (
+        <DownloadDialog
+          open={downloadDialogOpen}
+          onOpenChange={setDownloadDialogOpen}
+          imageId={image.id}
+          enhancedUrl={image.enhanced_url}
+          originalFilename={image.original_filename}
+          creditsRemaining={creditsBalance}
+          onDownload={handleDownloadFromUrl}
+        />
+      )}
 
       {/* Social Posting Dialog */}
       <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
