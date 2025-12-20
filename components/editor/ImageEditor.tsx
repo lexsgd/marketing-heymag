@@ -296,6 +296,32 @@ export function ImageEditor({
                 Original
               </div>
             </div>
+
+            {/* Side-by-Side Comparison */}
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              {/* Original */}
+              <div>
+                <p className="text-sm font-medium mb-2">Original</p>
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={originalUrl}
+                    alt="Original"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+              {/* AI Enhanced */}
+              <div>
+                <p className="text-sm font-medium mb-2 text-green-600">AI Enhanced</p>
+                <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={enhancedUrl}
+                    alt="AI Enhanced"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+            </div>
           ) : (
             /* Single View Mode - no enhanced yet */
             <div
