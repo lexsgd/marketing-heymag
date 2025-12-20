@@ -301,7 +301,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             <h1 className="text-2xl font-bold">{image.original_filename || 'Untitled'}</h1>
             <div className="flex items-center gap-2 mt-1">
               {image.status === 'completed' && (
-                <Badge className="bg-green-500">Enhanced</Badge>
+                <Badge className="bg-orange-500 text-white">
+                  <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
+                  </svg>
+                  AI Enhanced
+                </Badge>
               )}
               {image.status === 'processing' && (
                 <Badge className="bg-orange-500">Processing</Badge>
