@@ -25,15 +25,14 @@ import { MainNavAuth } from '@/components/main-nav-auth'
 import { getTemplateById, type TemplateImage } from '@/lib/template-images'
 import { AspectRatioPicker } from '@/components/editor/aspect-ratio-picker'
 import { VariationsPicker } from '@/components/editor/variations-picker'
-import { StylePicker } from '@/components/editor/style-picker'
-import { SelectedStylesSummary } from '@/components/editor/selected-styles-summary'
+import { SimplifiedStylePicker } from '@/components/editor/simplified-style-picker'
 import {
-  type SelectedStyles,
-  emptySelection,
-  selectionToStyleIds,
-  getSelectedCount,
-  styleCategories,
-} from '@/lib/styles-data'
+  type SimpleSelection,
+  emptySimpleSelection,
+  countSelections,
+  getSelectionSummary,
+  getFormatConfig,
+} from '@/lib/simplified-styles'
 
 function EditorContent() {
   const searchParams = useSearchParams()
@@ -45,7 +44,7 @@ function EditorContent() {
   const [uploadProgress, setUploadProgress] = useState(0)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
-  const [selectedStyles, setSelectedStyles] = useState<SelectedStyles>(emptySelection)
+  const [selectedStyles, setSelectedStyles] = useState<SimpleSelection>(emptySimpleSelection)
   const [enhancing, setEnhancing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [aspectRatio, setAspectRatio] = useState('1:1')
@@ -132,9 +131,11 @@ function EditorContent() {
   const handleUploadAndEnhance = async () => {
     if (!selectedFile) return
     // When template is selected, use template-based style
-    // Otherwise use the selected styles from the picker
-    const styleIds = template ? [`template-${template.id}`] : selectionToStyleIds(selectedStyles)
-    if (styleIds.length === 0 && !template) return
+    // Otherwise use the simplified selection (businessType is required)
+    if (!template && !selectedStyles.businessType) return
+
+    // Get format config for the selected format
+    const formatConfig = getFormatConfig(selectedStyles.format)
 
     setUploading(true)
     setUploadProgress(0)
@@ -144,8 +145,10 @@ function EditorContent() {
 
       const formData = new FormData()
       formData.append('file', selectedFile)
-      formData.append('stylePreset', styleIds.join(','))
-      formData.append('styleIds', JSON.stringify(styleIds))
+      // Send simplified selection as JSON for the new system
+      formData.append('simpleSelection', JSON.stringify(selectedStyles))
+      formData.append('stylePreset', selectedStyles.businessType || 'restaurant')
+      formData.append('aspectRatio', formatConfig.aspectRatio)
       if (template) {
         formData.append('templateId', template.id)
         formData.append('templateUrl', template.webUrl)
@@ -190,8 +193,9 @@ function EditorContent() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageId: imageRecord.id,
-            stylePreset: styleIds.join(','),
-            styleIds: styleIds,
+            simpleSelection: selectedStyles,
+            stylePreset: selectedStyles.businessType || 'restaurant',
+            aspectRatio: formatConfig.aspectRatio,
             templateId: template?.id,
             templateUrl: template?.webUrl,
           }),
@@ -247,29 +251,9 @@ function EditorContent() {
     router.replace('/editor', { scroll: false })
   }
 
-  // Remove a selected style (used by SelectedStylesSummary)
-  const removeStyle = (categoryId: string, styleId: string) => {
-    const category = styleCategories.find(c => c.id === categoryId)
-    if (!category) return
-
-    const newSelection = { ...selectedStyles }
-
-    if (category.selectionType === 'single') {
-      const key = categoryId as keyof SelectedStyles
-      if (!category.required) {
-        (newSelection[key] as string | undefined) = undefined
-      }
-    } else {
-      const key = categoryId as 'social' | 'technique'
-      newSelection[key] = (newSelection[key] || []).filter(id => id !== styleId)
-    }
-
-    setSelectedStyles(newSelection)
-  }
-
   // Determine if the transform button should be enabled
-  // Need either a template OR at least one style selected (venue is required)
-  const hasStylesSelected = getSelectedCount(selectedStyles) > 0
+  // Need either a template OR businessType selected (required for new system)
+  const hasStylesSelected = selectedStyles.businessType !== null
   const canTransform = selectedFile && (template || hasStylesSelected)
 
   return (
@@ -278,9 +262,9 @@ function EditorContent() {
       <MainNavAuth />
 
       <div className="flex-1 flex pt-16">
-        {/* Left Sidebar - Style Picker */}
+        {/* Left Sidebar - Simplified Style Picker */}
         <aside className="w-80 border-r border-border flex flex-col bg-card">
-          <StylePicker
+          <SimplifiedStylePicker
             selection={selectedStyles}
             onSelectionChange={setSelectedStyles}
           />
@@ -291,10 +275,14 @@ function EditorContent() {
           {/* Selected Styles Summary - shows above canvas when styles are selected and no template */}
           {!template && hasStylesSelected && (
             <div className="p-4 pb-0">
-              <SelectedStylesSummary
-                selection={selectedStyles}
-                onRemoveStyle={removeStyle}
-              />
+              <div className="flex items-center gap-2 text-sm">
+                <Badge variant="secondary" className="bg-orange-500/20 text-orange-500">
+                  {countSelections(selectedStyles)} selected
+                </Badge>
+                <span className="text-muted-foreground">
+                  {getSelectionSummary(selectedStyles)}
+                </span>
+              </div>
             </div>
           )}
 

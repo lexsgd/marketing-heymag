@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
-import { getMultiStylePrompt, parseStyleIds } from '@/lib/multi-style-prompt-builder'
+import { getMultiStylePrompt, parseStyleIds, buildSimplifiedPrompt } from '@/lib/multi-style-prompt-builder'
+import type { SimpleSelection } from '@/lib/simplified-styles'
 import { checkAndExecuteAutoTopUp } from '@/lib/auto-topup'
 import { getAngleAwareVenuePrompt, hasAngleAwareStyling, getAllAnglePrompts } from '@/lib/ai/angle-aware-styles'
 import {
@@ -294,6 +295,10 @@ export async function POST(request: NextRequest) {
 
     const { imageId, stylePreset, styleIds, customPrompt } = validation.data!
 
+    // Extract simpleSelection from body (not in Zod schema for backward compatibility)
+    const simpleSelection = body.simpleSelection as SimpleSelection | undefined
+    const aspectRatio = body.aspectRatio as string | undefined
+
     // imageId is required by schema, but double-check for safety
     if (!imageId) {
       logger.warn('Missing imageId after validation')
@@ -301,12 +306,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Log style selection details
+    const hasSimpleSelection = simpleSelection && simpleSelection.businessType !== null
     const styleIdsArray = styleIds || (stylePreset ? stylePreset.split(',') : [])
     logger.info('Processing image', {
       imageId,
       stylePreset,
       styleCount: styleIdsArray.length,
-      hasCustomPrompt: !!customPrompt
+      hasCustomPrompt: !!customPrompt,
+      hasSimpleSelection,
+      simpleSelection: hasSimpleSelection ? JSON.stringify(simpleSelection) : undefined,
     })
 
     // Get authenticated user
@@ -399,10 +407,22 @@ export async function POST(request: NextRequest) {
       // Get the style prompt using multi-style builder (custom prompt takes priority if provided)
       currentStep = 'getting style prompt'
       let stylePrompt: string
+      let simplifiedResult: ReturnType<typeof buildSimplifiedPrompt> | null = null
+
       if (customPrompt) {
         // Custom prompt overrides everything
         stylePrompt = customPrompt
         logger.debug('Using custom prompt (user override)')
+      } else if (hasSimpleSelection && simpleSelection) {
+        // NEW: Use simplified prompt builder for new 3-category system
+        simplifiedResult = buildSimplifiedPrompt(simpleSelection, undefined)
+        stylePrompt = simplifiedResult.prompt
+        logger.info('Using simplified prompt builder', {
+          selection: JSON.stringify(simpleSelection),
+          isValid: simplifiedResult.isValid,
+          warnings: simplifiedResult.warnings.length,
+          format: simplifiedResult.formatConfig.aspectRatio,
+        })
       } else if (styleIds && Array.isArray(styleIds) && styleIds.length > 0) {
         // Use multi-style prompt builder for array of style IDs
         stylePrompt = getMultiStylePrompt(stylePreset || 'delivery', JSON.stringify(styleIds))
@@ -477,15 +497,44 @@ export async function POST(request: NextRequest) {
       logger.info('STEP 2: Applying Gemini 3 Pro Image AI polish')
 
       // Get platform-specific image configuration
-      // For multi-style, use delivery platform if set, otherwise first social platform, otherwise first style
-      let primaryStyleForConfig = stylePreset
-      if (styleIds && Array.isArray(styleIds) && styleIds.length > 0) {
-        // Parse to find delivery or social platform for config
-        const selection = parseStyleIds(styleIds.join(','))
-        primaryStyleForConfig = selection.delivery || selection.social?.[0] || styleIds[0]
+      let platformConfig: ReturnType<typeof getPlatformConfig>
+
+      if (simplifiedResult) {
+        // Use format config from simplified selection
+        // Map simplified aspect ratio to PlatformImageConfig format
+        const aspectRatioMap: Record<string, PlatformImageConfig['aspectRatio']> = {
+          '1:1': '1:1',
+          '4:5': '4:5',
+          '9:16': '9:16',
+          '16:9': '16:9',
+          '4:3': '4:3',
+          '3:4': '3:4',
+          '2:3': '2:3',
+          '3:2': '3:2',
+        }
+        const mappedRatio = aspectRatioMap[simplifiedResult.formatConfig.aspectRatio] || '1:1'
+
+        platformConfig = {
+          aspectRatio: mappedRatio,
+          imageSize: '2K', // Default to 2K for quality
+          description: `Simplified format: ${simpleSelection?.format || 'square'}`,
+          platformRequirements: 'Professional food photography',
+        }
+        logger.debug('Platform config from simplified selection', {
+          format: simpleSelection?.format,
+          aspectRatio: platformConfig.aspectRatio,
+        })
+      } else {
+        // For multi-style, use delivery platform if set, otherwise first social platform, otherwise first style
+        let primaryStyleForConfig = stylePreset
+        if (styleIds && Array.isArray(styleIds) && styleIds.length > 0) {
+          // Parse to find delivery or social platform for config
+          const selection = parseStyleIds(styleIds.join(','))
+          primaryStyleForConfig = selection.delivery || selection.social?.[0] || styleIds[0]
+        }
+        platformConfig = getPlatformConfig(primaryStyleForConfig || 'delivery')
+        logger.debug('Platform config from legacy selection', { from: primaryStyleForConfig, aspectRatio: platformConfig.aspectRatio })
       }
-      const platformConfig = getPlatformConfig(primaryStyleForConfig || 'delivery')
-      logger.debug('Platform config', { from: primaryStyleForConfig, aspectRatio: platformConfig.aspectRatio })
 
       try {
         // Use Gemini 3 Pro Image (Nano Banana Pro) - premium image generation
@@ -506,14 +555,21 @@ export async function POST(request: NextRequest) {
 
         currentStep = 'calling Gemini API with self-detecting angle-aware prompt'
         logger.debug('Calling Gemini with self-detecting angle-aware prompt', {
-          style: stylePreset,
+          style: hasSimpleSelection ? simpleSelection?.businessType : stylePreset,
           aspectRatio: platformConfig.aspectRatio,
-          platform: primaryStyleForConfig
+          useSimplified: hasSimpleSelection,
         })
 
         // Build angle-aware venue styling section (all angles provided for self-selection)
         let venueStyleSection = ''
-        if (stylePreset && hasAngleAwareStyling(stylePreset)) {
+        if (hasSimpleSelection) {
+          // Use simplified style prompt directly (already contains all professional elements)
+          venueStyleSection = `
+STYLE ENHANCEMENT (Simplified Professional System)
+${stylePrompt}
+`
+          logger.debug('Using simplified style prompt', { businessType: simpleSelection?.businessType })
+        } else if (stylePreset && hasAngleAwareStyling(stylePreset)) {
           venueStyleSection = getAllAnglePrompts(stylePreset)
           logger.debug('Using angle-aware venue prompts (all angles)', { venue: stylePreset })
         } else {
@@ -757,9 +813,19 @@ ANGLE: [detected angle] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         enhancements: {
           ...defaultEnhancements.enhancements,
           method: enhancementMethod,
-          stylePreset: stylePreset,
+          stylePreset: hasSimpleSelection ? simpleSelection?.businessType : stylePreset,
           detectedAngle: detectedAngle, // AI self-detected camera angle
-          pipeline: 'single-call-v1' // Single Gemini call (angle detection + enhancement)
+          pipeline: hasSimpleSelection ? 'simplified-v2' : 'single-call-v1',
+          // Include simplified selection data if used
+          ...(hasSimpleSelection && simpleSelection ? {
+            simplifiedSelection: {
+              businessType: simpleSelection.businessType,
+              format: simpleSelection.format,
+              mood: simpleSelection.mood,
+              seasonal: simpleSelection.seasonal,
+            },
+            formatConfig: simplifiedResult?.formatConfig,
+          } : {}),
         },
         suggestions: aiSuggestions.length > 0 ? aiSuggestions : defaultEnhancements.suggestions
       }
