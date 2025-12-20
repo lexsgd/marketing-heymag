@@ -51,7 +51,6 @@ export function ImageEditor({
   const [isDownloading, setIsDownloading] = useState(false)
   const [downloadingOption, setDownloadingOption] = useState<DownloadOption | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [comparisonSliderPosition, setComparisonSliderPosition] = useState(50)
   const [bgRemovalProgress, setBgRemovalProgress] = useState(0)
 
   // Ref for background removal module
@@ -269,33 +268,7 @@ export function ImageEditor({
                   afterUrl={enhancedUrl}
                   alt="Original vs AI Enhanced comparison"
                   className="w-full h-full"
-                  onPositionChange={setComparisonSliderPosition}
                 />
-                {/* Labels with smooth fade animation */}
-                <div
-                  className={cn(
-                    'absolute bottom-4 left-4 z-20',
-                    'px-3 py-1.5 rounded-md text-sm font-medium',
-                    'bg-green-600 text-white',
-                    'shadow-lg pointer-events-none',
-                    'transition-opacity duration-200'
-                  )}
-                  style={{ opacity: Math.min(1, comparisonSliderPosition / 25) }}
-                >
-                  AI Enhanced
-                </div>
-                <div
-                  className={cn(
-                    'absolute bottom-4 right-4 z-20',
-                    'px-3 py-1.5 rounded-md text-sm font-medium',
-                    'bg-gray-800 text-white',
-                    'shadow-lg pointer-events-none',
-                    'transition-opacity duration-200'
-                  )}
-                  style={{ opacity: Math.min(1, (100 - comparisonSliderPosition) / 25) }}
-                >
-                  Original
-                </div>
               </div>
 
               {/* Side-by-Side Comparison */}
