@@ -75,7 +75,7 @@ export function VariationsPicker({
             <GridPreview count={value} small />
           </div>
           <span className="text-sm font-medium">
-            {value} {value === 1 ? 'variation' : 'variations'}
+            {value} {value === 1 ? 'image' : 'images'}
           </span>
           <ChevronDown className="h-3 w-3 text-muted-foreground" />
         </Button>
@@ -83,7 +83,7 @@ export function VariationsPicker({
       <PopoverContent className="w-72 p-3" align="center" side="top">
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm">Variations</h4>
+            <h4 className="font-medium text-sm">Images to Generate</h4>
             <span className="text-xs text-muted-foreground">
               Credits per run
             </span>
@@ -145,7 +145,7 @@ export function VariationsPicker({
           <div className="pt-2 border-t border-border flex items-center justify-between">
             <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
               <Sparkles className="h-3 w-3 text-orange-500" />
-              <span>Each variation is unique AI output</span>
+              <span>Each image is a unique AI result</span>
             </div>
             <span className="text-[11px] text-orange-500 font-medium">
               {selectedOption.credits} credits
