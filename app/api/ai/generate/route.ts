@@ -547,13 +547,19 @@ export async function POST(request: NextRequest) {
 
     // Use Gemini 3 Pro Image Preview (Nano Banana Pro)
     // State-of-the-art image generation and editing model
-    // Pricing: Image Output $0.134 per image
+    // Pricing: 2K = $0.134/image (1120 tokens), 4K = $0.24/image (2000 tokens)
     const model = getGoogleAI().getGenerativeModel({
       model: 'gemini-3-pro-image-preview',
-      // Gemini 3 Pro Image requires responseModalities - cast to bypass SDK types
+      // Gemini 3 Pro Image requires responseModalities and imageConfig - cast to bypass SDK types
       generationConfig: {
         responseModalities: ['Text', 'Image'],
         temperature: 1.0,
+        // Request 2K resolution natively from Gemini (2048x2048)
+        // Must use uppercase 'K' - lowercase will be rejected
+        imageConfig: {
+          imageSize: '2K',
+          aspectRatio: '1:1',
+        },
       } as unknown as import('@google/generative-ai').GenerationConfig
     })
 
@@ -608,37 +614,23 @@ OUTPUT: Maximum resolution square image (2048x2048). This must look like a real 
     }
 
     if (generatedImageBase64) {
-      let finalImageBase64 = generatedImageBase64
-      let finalMimeType = generatedImageMimeType || 'image/png'
-      let wasUpscaled = false
-      let upscaleError: string | null = null
+      const finalImageBase64 = generatedImageBase64
+      const finalMimeType = generatedImageMimeType || 'image/png'
       let storedImages: StoredImages | null = null
       let optimizeError: string | null = null
 
-      // Step 1: Attempt to upscale the image to 2048x2048
-      if (process.env.REPLICATE_API_TOKEN) {
-        try {
-          console.log('[Generate] Step 1: Upscaling to 2048x2048...')
-          finalImageBase64 = await upscaleImage(generatedImageBase64, finalMimeType)
-          wasUpscaled = true
-          console.log('[Generate] Upscaling complete!')
-        } catch (error) {
-          // If upscaling fails, continue with original image
-          console.error('[Generate] Upscaling failed, continuing with original:', error)
-          upscaleError = (error as Error).message
-        }
-      } else {
-        console.log('[Generate] Skipping upscale - REPLICATE_API_TOKEN not configured')
-      }
+      // Gemini 3 Pro Image now generates at 2K (2048x2048) natively
+      // No need for Replicate upscaling for standard resolution
+      // Replicate is reserved for optional 4K upgrades (via /api/ai/upgrade-4k)
+      const nativeResolution = '2K' // 2048x2048
 
-      // Step 2: Upload to Supabase Storage with transformation URLs
-      // Stores original high-res image, provides URLs for web (1200) and thumb (400) sizes
+      // Upload to Supabase Storage with transformation URLs
+      // Stores original 2K image, provides URLs for web (1200) and thumb (400) sizes
       if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
         try {
-          console.log('[Generate] Step 2: Uploading to Supabase Storage...')
-          const imageDimensions = wasUpscaled
-            ? { width: 2048, height: 2048 }
-            : { width: 1024, height: 1024 }
+          console.log('[Generate] Uploading 2K image to Supabase Storage...')
+          // 2K = 2048x2048 native from Gemini
+          const imageDimensions = { width: 2048, height: 2048 }
           storedImages = await optimizeAndStore(finalImageBase64, finalMimeType, category, imageDimensions)
           console.log('[Generate] Upload complete! Image ID:', storedImages.imageId)
         } catch (error) {
@@ -666,12 +658,10 @@ OUTPUT: Maximum resolution square image (2048x2048). This must look like a real 
         imageDataUrl,
         textResponse,
         model: 'gemini-3-pro-image-preview',
-        upscaled: wasUpscaled,
-        resolution: wasUpscaled ? '2048x2048' : '1024x1024',
+        resolution: nativeResolution, // Native 2K from Gemini
         optimized: !!storedImages,
-        upscaleError,
         optimizeError,
-        message: `AI-generated ${category} food photo${wasUpscaled ? ' (2048x2048)' : ''}${storedImages ? ' - stored in Supabase' : ''}`
+        message: `AI-generated ${category} food photo (${nativeResolution})${storedImages ? ' - stored in Supabase' : ''}`
       })
     }
 
