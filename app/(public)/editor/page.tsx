@@ -23,7 +23,6 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { MainNavAuth } from '@/components/main-nav-auth'
 import { getTemplateById, type TemplateImage } from '@/lib/template-images'
-import { AspectRatioPicker } from '@/components/editor/aspect-ratio-picker'
 import { VariationsPicker } from '@/components/editor/variations-picker'
 import { SimplifiedStylePicker } from '@/components/editor/simplified-style-picker'
 import {
@@ -45,7 +44,6 @@ function EditorContent() {
   const [selectedStyles, setSelectedStyles] = useState<SimpleSelection>(emptySimpleSelection)
   const [enhancing, setEnhancing] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [aspectRatio, setAspectRatio] = useState('1:1')
   const [variations, setVariations] = useState(1)
   // Guard to prevent multiple file dialogs from opening
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false)
@@ -556,12 +554,6 @@ function EditorContent() {
               </div>
 
               <div className="flex items-center gap-4">
-                {/* Aspect Ratio Picker */}
-                <AspectRatioPicker
-                  value={aspectRatio}
-                  onChange={setAspectRatio}
-                />
-
                 {/* Variations Picker */}
                 <VariationsPicker
                   value={variations}
