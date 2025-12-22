@@ -7,7 +7,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { sendWelcomeEmail } from '@/lib/email'
 
 export async function GET(request: NextRequest) {
-  // One-time test - send to specific email
   const testEmail = 'lexsgd@gmail.com'
 
   const result = await sendWelcomeEmail({
@@ -21,7 +20,7 @@ export async function GET(request: NextRequest) {
       success: true,
       message: `Welcome email sent to ${testEmail}`,
       messageId: result.messageId,
-      note: 'Logo should now be properly sized (120x40px max)'
+      note: 'Using smaller email-optimized logo (200x116px)'
     })
   } else {
     return NextResponse.json({
