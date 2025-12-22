@@ -37,7 +37,7 @@ interface ImageEditorProps {
   onDownloadComplete?: () => void
 }
 
-type DownloadOption = '2K' | '4K' | 'PNG'
+type DownloadOption = '2K' | '4K' | 'PNG' | 'PNG_HD'
 
 export function ImageEditor({
   imageId,
@@ -210,16 +210,19 @@ export function ImageEditor({
       const imageBlob = await imageResponse.blob()
 
       // Remove background with progress tracking
+      // Using 'medium' model for better edge detection quality
+      // ISNet with fp16 precision provides cleaner edges on complex images
       const resultBlob = await bgModule.removeBackground(URL.createObjectURL(imageBlob), {
         debug: false,
         progress: (_key: string, current: number, total: number) => {
           setBgRemovalProgress(Math.round((current / total) * 100))
         },
-        model: 'isnet',
-        device: 'gpu',
+        model: 'medium',  // Better quality than 'small', ~80MB model
+        device: 'gpu',    // WebGPU acceleration
         output: {
           format: 'image/png',
-          quality: 1
+          quality: 1,     // Maximum quality
+          type: 'foreground'  // Return foreground with transparency
         }
       })
 
@@ -243,6 +246,57 @@ export function ImageEditor({
       setBgRemovalProgress(0)
     }
   }, [enhancedUrl, originalFilename, onDownloadComplete, loadBgRemovalModule])
+
+  // Download PNG HD (cloud Remove.bg API - 1 credit, better quality)
+  const handleDownloadPNGHD = useCallback(async () => {
+    if (!enhancedUrl) return
+
+    // Check credits
+    if (creditsRemaining < 1) {
+      setError('Insufficient credits. HD background removal requires 1 credit.')
+      return
+    }
+
+    setIsDownloading(true)
+    setDownloadingOption('PNG_HD')
+    setError(null)
+
+    try {
+      // Call HD background removal API
+      const response = await fetch('/api/ai/background-remove', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageId }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'HD background removal failed')
+      }
+
+      // Download the HD PNG
+      const imageResponse = await fetch(data.nobgUrl)
+      const blob = await imageResponse.blob()
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `zazzles-hd-nobg-${originalFilename}.png`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      onDownloadComplete?.()
+    } catch (err) {
+      setError((err as Error).message || 'HD background removal failed.')
+      console.error('PNG HD download error:', err)
+    } finally {
+      setIsDownloading(false)
+      setDownloadingOption(null)
+    }
+  }, [imageId, enhancedUrl, originalFilename, creditsRemaining, onDownloadComplete])
 
   const displayUrl = enhancedUrl || originalUrl
   const hasEnhanced = !!enhancedUrl
@@ -365,6 +419,7 @@ export function ImageEditor({
                   <span>
                     {downloadingOption === '4K' ? 'Generating 4K...' :
                      downloadingOption === 'PNG' ? `Removing BG${bgRemovalProgress > 0 ? ` ${bgRemovalProgress}%` : '...'}` :
+                     downloadingOption === 'PNG_HD' ? 'HD Processing...' :
                      'Downloading...'}
                   </span>
                 </div>
@@ -428,7 +483,7 @@ export function ImageEditor({
 
             <DropdownMenuSeparator />
 
-            {/* PNG with Background Removal */}
+            {/* PNG with Background Removal - Standard (Free) */}
             <DropdownMenuItem
               onClick={handleDownloadPNG}
               disabled={isDownloading}
@@ -437,14 +492,45 @@ export function ImageEditor({
               <div className="h-5 w-5 mt-0.5 bg-[url('/checkerboard.svg')] bg-repeat rounded border border-border" />
               <div className="flex-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium">Download PNG</span>
-                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-purple-500/20 text-purple-600">
-                    No BG
+                  <span className="font-medium">PNG (Standard)</span>
+                  <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-500/20 text-green-600">
+                    Free
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Transparent background • Perfect for overlays
+                  Transparent background • Good for most uses
                 </p>
+              </div>
+            </DropdownMenuItem>
+
+            {/* PNG with Background Removal - HD Quality (1 credit) */}
+            <DropdownMenuItem
+              onClick={handleDownloadPNGHD}
+              disabled={isDownloading || creditsRemaining < 1}
+              className="flex items-start gap-3 p-3 cursor-pointer"
+            >
+              <div className="relative h-5 w-5 mt-0.5">
+                <div className="h-5 w-5 bg-[url('/checkerboard.svg')] bg-repeat rounded border border-border" />
+                <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-purple-500" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">PNG (HD Quality)</span>
+                  <Badge
+                    variant={creditsRemaining >= 1 ? "outline" : "destructive"}
+                    className="text-[10px] px-1.5 py-0"
+                  >
+                    1 credit
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Professional edges • Perfect for product shots
+                </p>
+                {creditsRemaining < 1 && (
+                  <p className="text-xs text-destructive mt-1">
+                    Not enough credits
+                  </p>
+                )}
               </div>
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -1,7 +1,7 @@
 export const config = {
   // Version tracking
-  version: '0.44.9',
-  internalBuild: '2.40',
+  version: '0.45.0',
+  internalBuild: '2.41',
 
   // App info
   appName: 'Zazzles',

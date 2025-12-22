@@ -17,7 +17,7 @@ import {
   ExternalLink,
   Wand2,
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
+import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -73,7 +73,6 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
 
   const router = useRouter()
   const supabase = createClient()
-  const { toast } = useToast()
 
   const loadImage = useCallback(async () => {
     setLoading(true)
@@ -303,8 +302,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       setSocialPostCaption(fullCaption)
 
       // Show success toast
-      toast({
-        title: 'Caption generated!',
+      toast.success('Caption generated!', {
         description: `${data.captionsRemaining} free caption${data.captionsRemaining === 1 ? '' : 's'} remaining for this image.`,
       })
 
