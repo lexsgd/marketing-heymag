@@ -32,7 +32,7 @@ function getServiceSupabase() {
 
 export async function POST(request: NextRequest) {
   try {
-    const { imageId, language = 'en', platform = 'instagram', tone = 'engaging' } = await request.json()
+    const { imageId, language = 'en', platform = 'instagram', tone = 'engaging', userInstructions } = await request.json()
 
     if (!imageId) {
       return NextResponse.json({ error: 'Image ID is required' }, { status: 400 })
@@ -209,11 +209,40 @@ CALL-TO-ACTION OPTIONS (include one appropriate CTA):
 - Save: "Save this for your next food adventure"
 - Share: "Send this to your foodie bestie"`
 
+    // Extract enhancement metadata from image (contains AI analysis from Gemini)
+    const enhancementSettings = image.enhancement_settings as Record<string, unknown> | null
+    const aiSuggestions = image.ai_suggestions as string[] | null
+    const detectedAngle = enhancementSettings?.detectedAngle as string || 'hero'
+    const styleInfo = enhancementSettings?.stylePreset as string || image.style_preset || 'general'
+
+    // Build context from Gemini's image analysis
+    let imageAnalysisContext = ''
+    if (enhancementSettings || aiSuggestions) {
+      imageAnalysisContext = `
+IMAGE ANALYSIS (from AI enhancement):
+- Camera Angle: ${detectedAngle} (${detectedAngle === 'overhead' ? 'top-down view' : detectedAngle === 'hero' ? '45° classic food photography angle' : 'eye-level view'})
+- Style Applied: ${styleInfo}
+${aiSuggestions?.length ? `- AI Suggestions: ${aiSuggestions.join(', ')}` : ''}
+`
+    }
+
+    // Build user instructions section
+    let userInstructionsSection = ''
+    if (userInstructions && typeof userInstructions === 'string' && userInstructions.trim()) {
+      userInstructionsSection = `
+═══════════════════════════════════════════════════════════════════════════════
+USER'S SPECIFIC INSTRUCTIONS (PRIORITIZE THESE):
+${userInstructions.trim()}
+═══════════════════════════════════════════════════════════════════════════════
+The above instructions from the user should be incorporated into the caption.
+`
+    }
+
     const systemPrompt = `You are an elite social media copywriter who creates viral food content. Your captions consistently achieve high engagement because you understand the psychology of food marketing.
 
 BUSINESS: ${business.business_name}
-STYLE: ${image.style_preset || 'general'}
-
+STYLE: ${styleInfo}
+${imageAnalysisContext}
 ${sensoryLanguage}
 
 ${hookFormulas}
@@ -227,20 +256,22 @@ LANGUAGE: ${languageInstructions[language] || languageInstructions.en}
 
 TONE STYLE:
 ${toneGuidelines[tone] || toneGuidelines.engaging}
-
+${userInstructionsSection}
 YOUR TASK:
 1. ANALYZE the image carefully - identify specific food items, colors, textures, presentation style, setting
-2. CRAFT a caption that:
+2. INCORPORATE any user instructions provided above
+3. CRAFT a caption that:
    - Opens with an irresistible hook (first 125 chars are critical)
    - Uses sensory language that triggers cravings
    - Describes what makes THIS specific dish special (not generic food praise)
    - Includes emotional connection or storytelling element
    - Ends with appropriate call-to-action
-3. SELECT hashtags strategically:
+   - Incorporates user's specific requests if provided
+4. SELECT hashtags strategically:
    - Mix of broad reach (#foodporn, #foodie) and niche (#[specific cuisine], #[dish name])
    - Include trending food hashtags when relevant
    - Platform-appropriate quantity
-4. PROVIDE 2 alternative versions with different angles:
+5. PROVIDE 2 alternative versions with different angles:
    - One more casual/playful
    - One more descriptive/storytelling
 
@@ -250,6 +281,7 @@ IMPORTANT RULES:
 - Make it specific: "golden crispy fried chicken" not "delicious food"
 - Keep authenticity - overly polished content underperforms
 - Match the energy to the food (street food = casual, fine dining = elevated)
+- If user provided instructions, make sure to incorporate them naturally
 
 Respond with JSON:
 {
@@ -290,7 +322,11 @@ First, analyze what you ACTUALLY see:
 - What's the setting/backdrop?
 - What makes this visually appealing?
 
-Then create captions that describe THIS specific food, not generic food content. The photo was styled for "${image.style_preset || 'delivery'}" aesthetic.`
+Then create captions that describe THIS specific food, not generic food content. The photo was styled for "${styleInfo}" aesthetic.${userInstructions ? `
+
+USER'S ADDITIONAL INSTRUCTIONS:
+${userInstructions}
+Make sure to incorporate these instructions naturally into the caption.` : ''}`
             }
           ],
         }

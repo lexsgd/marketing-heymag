@@ -73,6 +73,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   // Social account connection status
   const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([])
   const [loadingConnections, setLoadingConnections] = useState(false)
+  // Caption generation with user instructions
+  const [captionInstructions, setCaptionInstructions] = useState('')
+  const [captionsRemaining, setCaptionsRemaining] = useState<number | null>(null)
 
   const router = useRouter()
   const supabase = createClient()
@@ -213,9 +216,13 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       return
     }
     setSocialPostCaption('')
+    setCaptionInstructions('')
     setSelectedSocialPlatforms([])
     setPostError(null)
     setPostSuccess(null)
+    // Calculate remaining captions (10 max per enhanced image)
+    const captionCount = image.caption_count || 0
+    setCaptionsRemaining(Math.max(0, 10 - captionCount))
     setSocialDialogOpen(true)
     // Fetch connection status when dialog opens
     fetchConnectedAccounts()
@@ -294,6 +301,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const handleGenerateCaption = async () => {
     if (!image?.id || !image?.enhanced_url) return
 
+    // Check if captions remaining
+    if (captionsRemaining !== null && captionsRemaining <= 0) {
+      setPostError('No AI caption generations remaining for this image. Upload a new image to get 10 more.')
+      return
+    }
+
     setGeneratingCaption(true)
     setPostError(null)
 
@@ -309,6 +322,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           language: 'en',
           platform,
           tone: 'engaging',
+          // Send user instructions to combine with AI image analysis
+          userInstructions: captionInstructions.trim() || undefined,
         }),
       })
 
@@ -322,9 +337,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       const fullCaption = data.caption + (data.hashtags?.length > 0 ? '\n\n' + data.hashtags.map((h: string) => `#${h}`).join(' ') : '')
       setSocialPostCaption(fullCaption)
 
+      // Update remaining captions counter
+      setCaptionsRemaining(data.captionsRemaining)
+
       // Show success toast
       toast.success('Caption generated!', {
-        description: `${data.captionsRemaining} free caption${data.captionsRemaining === 1 ? '' : 's'} remaining for this image.`,
+        description: `${data.captionsRemaining} generation${data.captionsRemaining === 1 ? '' : 's'} remaining`,
       })
 
       // Highlight caption section and scroll to it
@@ -471,126 +489,169 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         onDownloadComplete={handleCreditsRefresh}
       />
 
-      {/* Social Posting Dialog */}
+      {/* Social Posting Dialog - Redesigned for lower friction */}
       <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Share2 className="h-5 w-5 text-orange-500" />
               Post to Social Media
             </DialogTitle>
             <DialogDescription>
-              Share your enhanced food photo to your connected social accounts.
+              Generate AI captions and share to your connected accounts.
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
-            {/* Image Preview */}
-            {image?.enhanced_url && (
-              <div className="relative aspect-video w-full rounded-lg overflow-hidden bg-muted">
-                <img
-                  src={image.enhanced_url}
-                  alt="Preview"
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            )}
+          <div className="space-y-5 py-4">
+            {/* Top Row: Image Preview + Platform Selection */}
+            <div className="flex gap-4">
+              {/* Image Preview - Compact */}
+              {image?.enhanced_url && (
+                <div className="relative w-24 h-24 flex-shrink-0 rounded-lg overflow-hidden bg-muted">
+                  <img
+                    src={image.enhanced_url}
+                    alt="Preview"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
 
-            {/* Platform Selection */}
-            <div className="space-y-3">
-              <Label>Select Platforms</Label>
-              <div className="flex flex-col gap-3">
-                <div
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
-                    selectedSocialPlatforms.includes('instagram')
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                      : 'border-border hover:border-muted-foreground/50',
-                    !connectedPlatforms.includes('instagram') && 'opacity-60'
-                  )}
-                  onClick={() => handleTogglePlatform('instagram')}
-                >
-                  <Checkbox
-                    checked={selectedSocialPlatforms.includes('instagram')}
-                    onCheckedChange={() => handleTogglePlatform('instagram')}
-                  />
-                  <Instagram className="h-5 w-5 text-pink-500" />
-                  <span className="font-medium">Instagram</span>
-                  {loadingConnections ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />
-                  ) : !connectedPlatforms.includes('instagram') && (
-                    <Badge variant="outline" className="ml-auto text-xs text-muted-foreground">
-                      Not connected
-                    </Badge>
-                  )}
+              {/* Platform Selection - Compact horizontal */}
+              <div className="flex-1 space-y-2">
+                <Label className="text-sm">Post to</Label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-lg border transition-all',
+                      selectedSocialPlatforms.includes('instagram')
+                        ? 'border-pink-500 bg-pink-50 dark:bg-pink-950/20'
+                        : 'border-border hover:border-muted-foreground/50',
+                      !connectedPlatforms.includes('instagram') && 'opacity-50'
+                    )}
+                    onClick={() => handleTogglePlatform('instagram')}
+                  >
+                    <Instagram className="h-4 w-4 text-pink-500" />
+                    <span className="text-sm font-medium">Instagram</span>
+                    {loadingConnections ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : !connectedPlatforms.includes('instagram') ? (
+                      <span className="text-[10px] text-muted-foreground">(Not connected)</span>
+                    ) : selectedSocialPlatforms.includes('instagram') && (
+                      <Check className="h-3 w-3 text-pink-500" />
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    className={cn(
+                      'flex items-center gap-2 px-3 py-2 rounded-lg border transition-all',
+                      selectedSocialPlatforms.includes('facebook')
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                        : 'border-border hover:border-muted-foreground/50',
+                      !connectedPlatforms.includes('facebook') && 'opacity-50'
+                    )}
+                    onClick={() => handleTogglePlatform('facebook')}
+                  >
+                    <Facebook className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium">Facebook</span>
+                    {loadingConnections ? (
+                      <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />
+                    ) : !connectedPlatforms.includes('facebook') ? (
+                      <span className="text-[10px] text-muted-foreground">(Not connected)</span>
+                    ) : selectedSocialPlatforms.includes('facebook') && (
+                      <Check className="h-3 w-3 text-blue-500" />
+                    )}
+                  </button>
                 </div>
-                <div
-                  className={cn(
-                    'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
-                    selectedSocialPlatforms.includes('facebook')
-                      ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                      : 'border-border hover:border-muted-foreground/50',
-                    !connectedPlatforms.includes('facebook') && 'opacity-60'
-                  )}
-                  onClick={() => handleTogglePlatform('facebook')}
-                >
-                  <Checkbox
-                    checked={selectedSocialPlatforms.includes('facebook')}
-                    onCheckedChange={() => handleTogglePlatform('facebook')}
-                  />
-                  <Facebook className="h-5 w-5 text-blue-600" />
-                  <span className="font-medium">Facebook</span>
-                  {loadingConnections ? (
-                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />
-                  ) : !connectedPlatforms.includes('facebook') && (
-                    <Badge variant="outline" className="ml-auto text-xs text-muted-foreground">
-                      Not connected
-                    </Badge>
-                  )}
-                </div>
+                {/* Connect link */}
+                {(!connectedPlatforms.includes('instagram') || !connectedPlatforms.includes('facebook')) && (
+                  <Link href="/social" className="text-xs text-orange-500 hover:underline inline-flex items-center gap-1">
+                    Connect accounts
+                    <ExternalLink className="h-3 w-3" />
+                  </Link>
+                )}
               </div>
             </div>
 
-            {/* Caption */}
+            {/* AI Caption Generator - Main Section */}
+            <div className="space-y-3 p-4 bg-muted/50 rounded-lg border">
+              {/* Header with counter */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Wand2 className="h-4 w-4 text-orange-500" />
+                  <Label className="text-sm font-medium">AI Caption Generator</Label>
+                </div>
+                {captionsRemaining !== null && (
+                  <Badge
+                    variant={captionsRemaining > 3 ? 'secondary' : captionsRemaining > 0 ? 'outline' : 'destructive'}
+                    className="text-xs"
+                  >
+                    {captionsRemaining}/10 remaining
+                  </Badge>
+                )}
+              </div>
+
+              {/* User Instructions Input */}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-muted-foreground">
+                  Add context or instructions (optional)
+                </Label>
+                <Textarea
+                  value={captionInstructions}
+                  onChange={(e) => setCaptionInstructions(e.target.value)}
+                  placeholder="E.g., 'Mention our weekend brunch special' or 'Use playful tone with food puns'"
+                  rows={2}
+                  className="resize-none text-sm"
+                />
+              </div>
+
+              {/* Generate Button */}
+              <Button
+                onClick={handleGenerateCaption}
+                disabled={generatingCaption || !image?.enhanced_url || (captionsRemaining !== null && captionsRemaining <= 0)}
+                className="w-full bg-orange-500 hover:bg-orange-600"
+              >
+                {generatingCaption ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Analyzing image & generating caption...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="mr-2 h-4 w-4" />
+                    Generate Caption & Hashtags
+                  </>
+                )}
+              </Button>
+
+              <p className="text-[11px] text-muted-foreground text-center">
+                AI analyzes your enhanced photo and combines it with your instructions for the perfect caption.
+              </p>
+            </div>
+
+            {/* Generated Caption - Editable */}
             <div
               ref={captionRef}
               className={cn(
-                "space-y-2 p-3 -mx-3 rounded-lg transition-all duration-500",
-                captionHighlight && "bg-orange-50 dark:bg-orange-950/20 ring-2 ring-orange-500"
+                "space-y-2 transition-all duration-500",
+                captionHighlight && "ring-2 ring-orange-500 rounded-lg p-2 -m-2 bg-orange-50 dark:bg-orange-950/20"
               )}
             >
               <div className="flex items-center justify-between">
-                <Label>Caption</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateCaption}
-                  disabled={generatingCaption || !image?.enhanced_url}
-                  className="h-7 gap-1.5"
-                >
-                  {generatingCaption ? (
-                    <>
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      <span className="text-xs">Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Wand2 className="h-3.5 w-3.5" />
-                      <span className="text-xs">AI Generate</span>
-                    </>
-                  )}
-                </Button>
+                <Label className="text-sm">Caption & Hashtags</Label>
+                {socialPostCaption && (
+                  <span className="text-xs text-muted-foreground">
+                    {socialPostCaption.length} characters
+                  </span>
+                )}
               </div>
               <Textarea
                 value={socialPostCaption}
                 onChange={(e) => setSocialPostCaption(e.target.value)}
-                placeholder="Write a caption or click 'AI Generate' for smart suggestions..."
-                rows={4}
+                placeholder="Your caption will appear here after generation, or write your own..."
+                rows={5}
                 className="resize-none"
               />
-              <p className="text-xs text-muted-foreground">
-                Each enhanced image includes 10 free AI caption generations.
-              </p>
             </div>
 
             {/* Error */}
@@ -616,7 +677,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                         )}
                         <span className="capitalize">{result.platform}</span>
                         <span className="text-muted-foreground">
-                          {result.success ? '- Posted successfully!' : '- Failed to post'}
+                          {result.success ? '- Posted!' : '- Failed'}
                         </span>
                       </div>
                     ))}
@@ -624,18 +685,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                 </AlertDescription>
               </Alert>
             )}
-
-            {/* Connect accounts hint */}
-            <p className="text-xs text-muted-foreground">
-              Need to connect your accounts?{' '}
-              <Link href="/social" className="text-orange-500 hover:underline inline-flex items-center gap-1">
-                Manage connected accounts
-                <ExternalLink className="h-3 w-3" />
-              </Link>
-            </p>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2 sm:gap-0">
             <Button variant="outline" onClick={() => setSocialDialogOpen(false)}>
               Cancel
             </Button>
