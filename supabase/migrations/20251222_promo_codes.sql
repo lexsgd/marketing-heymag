@@ -66,6 +66,11 @@ CREATE INDEX IF NOT EXISTS idx_promo_redemptions_code ON promo_redemptions(promo
 ALTER TABLE promo_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE promo_redemptions ENABLE ROW LEVEL SECURITY;
 
+-- Drop existing policies first (safe for re-runs)
+DROP POLICY IF EXISTS "Anyone can view active promo codes" ON promo_codes;
+DROP POLICY IF EXISTS "Users can view own redemptions" ON promo_redemptions;
+DROP POLICY IF EXISTS "Users can redeem promo codes" ON promo_redemptions;
+
 -- Promo codes: Anyone can view active promo codes (for validation)
 CREATE POLICY "Anyone can view active promo codes" ON promo_codes
   FOR SELECT USING (is_active = TRUE);

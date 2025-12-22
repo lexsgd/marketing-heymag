@@ -362,14 +362,14 @@ export default function SettingsPage() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-6 lg:p-8">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {/* Mobile Tab Navigation */}
-          <div className="lg:hidden mb-6">
-            <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="lg:hidden mb-4 sm:mb-6 -mx-4 px-4 sm:mx-0 sm:px-0">
+            <div className="flex gap-1.5 sm:gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {[
                 { id: 'profile', label: 'Profile', icon: Building2 },
-                { id: 'preferences', label: 'Preferences', icon: Palette },
-                { id: 'notifications', label: 'Notifications', icon: Bell },
+                { id: 'preferences', label: 'Prefs', icon: Palette },
+                { id: 'notifications', label: 'Alerts', icon: Bell },
                 { id: 'account', label: 'Account', icon: Shield },
               ].map((tab) => (
                 <Button
@@ -377,9 +377,12 @@ export default function SettingsPage() {
                   variant={activeTab === tab.id ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setActiveTab(tab.id as SettingsTab)}
-                  className="shrink-0"
+                  className={cn(
+                    "shrink-0 text-xs sm:text-sm",
+                    activeTab === tab.id && "bg-orange-500 hover:bg-orange-600"
+                  )}
                 >
-                  <tab.icon className="h-4 w-4 mr-2" />
+                  <tab.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 mr-1.5 sm:mr-2" />
                   {tab.label}
                 </Button>
               ))}
@@ -387,30 +390,30 @@ export default function SettingsPage() {
           </div>
 
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">
+          <div className="mb-4 sm:mb-6">
+            <h1 className="text-xl sm:text-2xl font-bold">
               {activeTab === 'profile' && 'Business Profile'}
               {activeTab === 'preferences' && 'Preferences'}
               {activeTab === 'notifications' && 'Notifications'}
               {activeTab === 'account' && 'Account Security'}
             </h1>
-            <p className="text-muted-foreground">
-              {activeTab === 'profile' && 'Update your business details that appear on captions and exports'}
-              {activeTab === 'preferences' && 'Configure default options for new images and posts'}
-              {activeTab === 'notifications' && 'Choose what emails you want to receive'}
-              {activeTab === 'account' && 'Manage your password and security settings'}
+            <p className="text-sm sm:text-base text-muted-foreground">
+              {activeTab === 'profile' && 'Update your business details'}
+              {activeTab === 'preferences' && 'Configure default options'}
+              {activeTab === 'notifications' && 'Choose what emails you receive'}
+              {activeTab === 'account' && 'Manage your security settings'}
             </p>
           </div>
 
           {/* Business Profile Content */}
           {activeTab === 'profile' && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-4 sm:space-y-6 max-w-2xl">
               <Card>
-                <CardHeader>
-                  <CardTitle>Business Information</CardTitle>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Business Information</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="business_name">Business Name</Label>
                       <Input
@@ -436,7 +439,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number</Label>
                       <Input
@@ -480,7 +483,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600"
                 >
                   {saving ? (
                     <>
@@ -505,10 +508,10 @@ export default function SettingsPage() {
 
           {/* Preferences Content */}
           {activeTab === 'preferences' && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-4 sm:space-y-6 max-w-2xl">
               <Card>
-                <CardHeader>
-                  <CardTitle>Default Settings</CardTitle>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Default Settings</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
@@ -534,9 +537,9 @@ export default function SettingsPage() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>AI Enhancement</CardTitle>
-                  <CardDescription>Automation features coming soon</CardDescription>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">AI Enhancement</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Automation features coming soon</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between opacity-50">
@@ -570,9 +573,9 @@ export default function SettingsPage() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Export Settings</CardTitle>
-                  <CardDescription>Export customization coming soon</CardDescription>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Export Settings</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">Export customization coming soon</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between opacity-50">
@@ -609,7 +612,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600"
                 >
                   {saving ? (
                     <>
@@ -629,10 +632,10 @@ export default function SettingsPage() {
 
           {/* Notifications Content */}
           {activeTab === 'notifications' && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-4 sm:space-y-6 max-w-2xl">
               <Card>
-                <CardHeader>
-                  <CardTitle>Email Notifications</CardTitle>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Email Notifications</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -703,7 +706,7 @@ export default function SettingsPage() {
                 <Button
                   onClick={handleSave}
                   disabled={saving}
-                  className="bg-orange-500 hover:bg-orange-600"
+                  className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600"
                 >
                   {saving ? (
                     <>
@@ -723,21 +726,22 @@ export default function SettingsPage() {
 
           {/* Account Content */}
           {activeTab === 'account' && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-4 sm:space-y-6 max-w-2xl">
               <Card>
-                <CardHeader>
-                  <CardTitle>Password & Security</CardTitle>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Password & Security</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:justify-between">
                     <div>
-                      <p className="font-medium">Password</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm sm:text-base">Password</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         Update your account password
                       </p>
                     </div>
                     <Button
                       variant="outline"
+                      className="w-full sm:w-auto"
                       onClick={() => {
                         resetPasswordDialog()
                         setPasswordDialogOpen(true)
@@ -856,25 +860,25 @@ export default function SettingsPage() {
               </Dialog>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Sessions</CardTitle>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg">Sessions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                        <Globe className="h-5 w-5 text-green-600" />
+                      <div className="h-9 w-9 sm:h-10 sm:w-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                        <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium">Current Session</p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="font-medium text-sm sm:text-base">Current Session</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">
                           Active now
                         </p>
                       </div>
                     </div>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="outline" className="text-destructive">
+                        <Button variant="outline" className="w-full sm:w-auto text-destructive">
                           <LogOut className="mr-2 h-4 w-4" />
                           Sign Out
                         </Button>
@@ -899,23 +903,23 @@ export default function SettingsPage() {
               </Card>
 
               <Card className="border-destructive/50">
-                <CardHeader>
-                  <CardTitle className="text-destructive">Danger Zone</CardTitle>
-                  <CardDescription>
+                <CardHeader className="pb-3 sm:pb-6">
+                  <CardTitle className="text-base sm:text-lg text-destructive">Danger Zone</CardTitle>
+                  <CardDescription className="text-xs sm:text-sm">
                     Irreversible and destructive actions
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
                     <div>
-                      <p className="font-medium">Delete Account</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="font-medium text-sm sm:text-base">Delete Account</p>
+                      <p className="text-xs sm:text-sm text-muted-foreground">
                         Permanently delete your account and all data
                       </p>
                     </div>
                     <Button
                       variant="outline"
-                      className="text-destructive hover:bg-destructive/10"
+                      className="w-full sm:w-auto text-destructive hover:bg-destructive/10"
                       onClick={() => window.open('mailto:support@zazzles.ai?subject=Account Deletion Request', '_blank')}
                     >
                       <Mail className="mr-2 h-4 w-4" />
