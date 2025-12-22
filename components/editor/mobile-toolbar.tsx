@@ -88,18 +88,18 @@ export function MobileToolbar({
             </TooltipTrigger>
             <TooltipContent
               side="top"
-              className="max-w-[220px] bg-popover text-popover-foreground border border-border shadow-lg"
+              className="max-w-[220px] !bg-zinc-900 !text-zinc-100 border border-zinc-700 shadow-xl"
             >
               <div className="space-y-2 p-1">
                 <div>
-                  <p className="text-xs font-medium">Optimized for Enhancement</p>
-                  <p className="text-[11px] text-muted-foreground">Photo enhancement produces consistent results. Multiple images would look nearly identical.</p>
+                  <p className="text-xs font-medium text-zinc-100">Optimized for Enhancement</p>
+                  <p className="text-[11px] text-zinc-400">Photo enhancement produces consistent results. Multiple images would look nearly identical.</p>
                 </div>
-                <div className="border-t border-border pt-2">
-                  <p className="text-xs font-medium flex items-center gap-1">
+                <div className="border-t border-zinc-700 pt-2">
+                  <p className="text-xs font-medium text-zinc-100 flex items-center gap-1">
                     <span>✨</span> Creative Mode Coming Soon
                   </p>
-                  <p className="text-[11px] text-muted-foreground">Generate multiple unique variations for ads, posters, and artistic reimaginings.</p>
+                  <p className="text-[11px] text-zinc-400">Generate multiple unique variations for ads, posters, and artistic reimaginings.</p>
                 </div>
               </div>
             </TooltipContent>
