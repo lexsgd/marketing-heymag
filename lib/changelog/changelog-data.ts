@@ -25,6 +25,31 @@ export interface ChangelogEntry {
 
 export const changelogData: ChangelogEntry[] = [
   {
+    version: '0.44.0',
+    date: '2025-12-22',
+    title: 'Promo Code System & Signup Improvements',
+    description: 'New promo code redemption system and streamlined signup experience.',
+    major: true,
+    internalBuild: '2.31',
+    changes: [
+      {
+        type: 'feature',
+        title: 'Promo Code System',
+        description: 'Redeem promo codes to get extra credits. Use codes like ZAZZLES5 for 5 bonus credits!',
+      },
+      {
+        type: 'improvement',
+        title: 'Streamlined Signup',
+        description: 'Simplified signup process - removed unnecessary business type selection.',
+      },
+      {
+        type: 'improvement',
+        title: 'Updated Free Trial',
+        description: 'New users now receive 2 free credits to start, with promo codes available for additional credits.',
+      },
+    ],
+  },
+  {
     version: '0.29.0',
     date: '2025-12-19',
     title: 'Security & Stability Update',

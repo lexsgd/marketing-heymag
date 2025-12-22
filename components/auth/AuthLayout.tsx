@@ -75,7 +75,7 @@ export function AuthLayout({ children, showBackButton = true }: AuthLayoutProps)
               Start Free Today
             </p>
             <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-sm text-white/80">
-              <span>✓ 5 Free Credits</span>
+              <span>✓ 2 Free Credits</span>
               <span>✓ No Credit Card</span>
               <span>✓ Cancel Anytime</span>
             </div>
