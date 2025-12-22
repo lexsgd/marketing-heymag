@@ -456,3 +456,17 @@ export function getStyleById(styleId: string): { category: StyleCategory; style:
   }
   return null
 }
+
+// ============================================
+// DISPLAY ORDER (Issue #6 - UAT reorder request)
+// ============================================
+// Original order: venue, delivery, social, seasonal, background, technique
+// New order: technique, background, venue, seasonal, social, delivery
+// This puts Photography Style and Background first (most used),
+// followed by Venue (required), then optional categories.
+const categoryDisplayOrder = ['technique', 'background', 'venue', 'seasonal', 'social', 'delivery']
+
+// Reordered categories for display in the UI
+export const orderedStyleCategories: StyleCategory[] = categoryDisplayOrder
+  .map(id => styleCategories.find(cat => cat.id === id))
+  .filter((cat): cat is StyleCategory => cat !== undefined)

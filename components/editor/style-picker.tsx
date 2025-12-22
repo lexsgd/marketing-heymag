@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import {
   styleCategories,
+  orderedStyleCategories,
   searchStyles,
   getSelectedCount,
   type SelectedStyles,
@@ -23,7 +24,7 @@ interface StylePickerProps {
 
 export function StylePicker({ selection, onSelectionChange }: StylePickerProps) {
   const [searchQuery, setSearchQuery] = useState('')
-  const [expandedCategories, setExpandedCategories] = useState<string[]>(['venue'])
+  const [expandedCategories, setExpandedCategories] = useState<string[]>(['technique'])
   const [isTouchDevice, setIsTouchDevice] = useState(false)
 
   // Mobile sheet state
@@ -332,9 +333,9 @@ export function StylePicker({ selection, onSelectionChange }: StylePickerProps) 
               )}
             </div>
           ) : (
-            /* Category Accordions */
+            /* Category Accordions - uses orderedStyleCategories for Issue #6 */
             <div className="py-2">
-              {styleCategories.map(category => {
+              {orderedStyleCategories.map(category => {
                 const isExpanded = expandedCategories.includes(category.id)
                 const hasSelection = category.selectionType === 'single'
                   ? !!(selection[category.id as keyof SelectedStyles])
@@ -388,7 +389,7 @@ export function StylePicker({ selection, onSelectionChange }: StylePickerProps) 
         {/* Footer with style count */}
         <div className="p-4 border-t border-border bg-muted/30">
           <p className="text-xs text-muted-foreground text-center">
-            {styleCategories.reduce((acc, cat) => acc + cat.styles.length, 0)} styles across {styleCategories.length} categories
+            {orderedStyleCategories.reduce((acc, cat) => acc + cat.styles.length, 0)} styles across {orderedStyleCategories.length} categories
           </p>
         </div>
       </div>
