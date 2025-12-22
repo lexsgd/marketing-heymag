@@ -122,22 +122,22 @@ export function VariationsPicker({
             <Lock className="h-3 w-3 text-muted-foreground/50" />
           </div>
         </TooltipTrigger>
-        <TooltipContent side="top" className="max-w-[280px] p-4">
+        <TooltipContent side="top" className="max-w-[280px] p-4 !bg-zinc-900 !text-zinc-100 border border-zinc-700 shadow-xl">
           <div className="space-y-3">
             <div className="flex items-start gap-2">
-              <Sparkles className="h-4 w-4 text-orange-500 mt-0.5 flex-shrink-0" />
+              <Sparkles className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium text-sm">Optimized for Enhancement</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="font-medium text-sm text-zinc-100">Optimized for Enhancement</p>
+                <p className="text-xs text-zinc-400 mt-1">
                   Photo enhancement produces consistent results. Multiple images would look nearly identical.
                 </p>
               </div>
             </div>
-            <div className="flex items-start gap-2 pt-2 border-t border-border">
-              <Wand2 className="h-4 w-4 text-purple-500 mt-0.5 flex-shrink-0" />
+            <div className="flex items-start gap-2 pt-2 border-t border-zinc-700">
+              <Wand2 className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium text-sm">Creative Mode Coming Soon</p>
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="font-medium text-sm text-zinc-100">Creative Mode Coming Soon</p>
+                <p className="text-xs text-zinc-400 mt-1">
                   Generate multiple unique variations for ads, posters, and artistic reimaginings.
                 </p>
               </div>
