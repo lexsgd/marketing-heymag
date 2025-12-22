@@ -19,6 +19,9 @@ import {
   Send,
   Image as ImageIcon,
   Link2,
+  Bell,
+  BellRing,
+  Users,
 } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -162,6 +165,68 @@ function SocialPageContent() {
   const [socialAccounts, setSocialAccounts] = useState<SocialAccount[]>([])
   const [disconnectDialog, setDisconnectDialog] = useState<SocialAccount | null>(null)
   const [activeFilter, setActiveFilter] = useState<'all' | 'connected' | 'available'>('all')
+  const [platformInterest, setPlatformInterest] = useState<string[]>([])
+  const [interestCounts, setInterestCounts] = useState<Record<string, number>>({})
+  const [requestingPlatform, setRequestingPlatform] = useState<string | null>(null)
+
+  const fetchInterestData = useCallback(async () => {
+    try {
+      const response = await fetch('/api/platform-interest')
+      if (response.ok) {
+        const data = await response.json()
+        setPlatformInterest(data.userInterests || [])
+        setInterestCounts(data.counts || {})
+      }
+    } catch (error) {
+      console.error('Error fetching platform interest:', error)
+    }
+  }, [])
+
+  const handleNotifyMe = async (platform: string) => {
+    if (!user) {
+      toast.error('Please sign in to request this platform')
+      return
+    }
+
+    setRequestingPlatform(platform)
+    try {
+      const alreadyRequested = platformInterest.includes(platform)
+
+      if (alreadyRequested) {
+        // Remove interest
+        const response = await fetch(`/api/platform-interest?platform=${platform}`, {
+          method: 'DELETE',
+        })
+        if (response.ok) {
+          setPlatformInterest(prev => prev.filter(p => p !== platform))
+          setInterestCounts(prev => ({
+            ...prev,
+            [platform]: Math.max(0, (prev[platform] || 0) - 1)
+          }))
+          toast.success(`Removed interest in ${platformConfig[platform as PlatformId]?.name}`)
+        }
+      } else {
+        // Add interest
+        const response = await fetch('/api/platform-interest', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ platform }),
+        })
+        if (response.ok) {
+          setPlatformInterest(prev => [...prev, platform])
+          setInterestCounts(prev => ({
+            ...prev,
+            [platform]: (prev[platform] || 0) + 1
+          }))
+          toast.success(`We'll notify you when ${platformConfig[platform as PlatformId]?.name} is available!`)
+        }
+      }
+    } catch (error) {
+      toast.error('Failed to update preference')
+    } finally {
+      setRequestingPlatform(null)
+    }
+  }
 
   const syncAccounts = useCallback(async () => {
     setSyncing(true)
@@ -186,6 +251,7 @@ function SocialPageContent() {
         if (user) {
           setUser({ email: user.email })
           await syncAccounts()
+          await fetchInterestData()
         }
       } catch (error) {
         console.error('Error fetching social data:', error)
@@ -194,7 +260,7 @@ function SocialPageContent() {
       }
     }
     fetchData()
-  }, [syncAccounts])
+  }, [syncAccounts, fetchInterestData])
 
   useEffect(() => {
     const connected = searchParams.get('connected')
@@ -428,14 +494,16 @@ function SocialPageContent() {
                 const isComingSoon = platform.status === 'coming_soon'
                 const Icon = platform.icon
 
+                const hasRequestedPlatform = platformInterest.includes(platformId)
+                const platformInterestCount = interestCounts[platformId] || 0
+
                 return (
                   <div
                     key={platformId}
                     className="break-inside-avoid mb-4 group"
                   >
                     <div className={cn(
-                      "relative overflow-hidden rounded-xl bg-muted",
-                      isComingSoon && "opacity-60"
+                      "relative overflow-hidden rounded-xl bg-muted"
                     )}>
                       {/* Platform Visual - Using gradient background */}
                       <div className={cn(
@@ -463,15 +531,67 @@ function SocialPageContent() {
                           </div>
                         )}
                         {isComingSoon && (
-                          <div className="absolute top-3 right-3">
+                          <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
                             <Badge variant="secondary" className="text-xs">
                               <Clock className="h-3 w-3 mr-1" />
                               Coming Soon
                             </Badge>
+                            {platformInterestCount > 0 && (
+                              <Badge variant="outline" className="text-[10px] bg-background/80 backdrop-blur-sm">
+                                <Users className="h-2.5 w-2.5 mr-1" />
+                                {platformInterestCount} {platformInterestCount === 1 ? 'request' : 'requests'}
+                              </Badge>
+                            )}
                           </div>
                         )}
 
-                        {/* Hover Overlay - Matching Explore pattern */}
+                        {/* Hover Overlay - Coming Soon Platforms */}
+                        {isComingSoon && (
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            <div className="absolute bottom-0 left-0 right-0 p-4">
+                              <h3 className="text-white font-medium text-sm mb-1">
+                                {platform.name}
+                              </h3>
+                              <p className="text-white/70 text-xs mb-3">
+                                {platform.description}
+                              </p>
+
+                              <Button
+                                size="sm"
+                                className={cn(
+                                  "w-full h-8 text-xs transition-colors",
+                                  hasRequestedPlatform
+                                    ? "bg-green-500 hover:bg-green-600 text-white"
+                                    : "bg-white text-black hover:bg-white/90"
+                                )}
+                                onClick={() => handleNotifyMe(platformId)}
+                                disabled={requestingPlatform === platformId || !user}
+                              >
+                                {requestingPlatform === platformId ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : hasRequestedPlatform ? (
+                                  <>
+                                    <BellRing className="h-3 w-3 mr-1" />
+                                    Requested
+                                  </>
+                                ) : (
+                                  <>
+                                    <Bell className="h-3 w-3 mr-1" />
+                                    Notify Me
+                                  </>
+                                )}
+                              </Button>
+
+                              {!user && (
+                                <p className="text-white/50 text-[10px] text-center mt-2">
+                                  Sign in to request
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Hover Overlay - Available Platforms */}
                         {!isComingSoon && (
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                             <div className="absolute bottom-0 left-0 right-0 p-4">
