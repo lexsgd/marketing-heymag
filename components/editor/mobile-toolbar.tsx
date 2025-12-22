@@ -70,14 +70,13 @@ export function MobileToolbar({
             <span className="text-[10px] font-medium">Prompt</span>
           </Button>
 
-          {/* Images Count Button - Locked with tooltip */}
+          {/* Images Count Button - Locked with tooltip (not disabled to allow tooltip hover) */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 variant="ghost"
-                onClick={handleImagesClick}
-                disabled={true}
-                className="flex flex-col items-center gap-0.5 h-auto py-2 px-4 min-w-[60px] opacity-40 relative"
+                onClick={(e) => e.preventDefault()}
+                className="flex flex-col items-center gap-0.5 h-auto py-2 px-4 min-w-[60px] opacity-40 cursor-not-allowed relative"
               >
                 <div className="relative">
                   <ImageIcon className="h-5 w-5" />
