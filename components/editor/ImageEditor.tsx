@@ -248,19 +248,14 @@ export function ImageEditor({
   const hasEnhanced = !!enhancedUrl
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4 md:gap-6 pb-20 md:pb-0">
       {/* Main Comparison Area */}
       {hasEnhanced ? (
         <>
           {/* Before/After Comparison Slider */}
-          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black">
-            <div
-              className="relative"
-              style={{
-                height: 'calc(100vh - 320px)',
-                minHeight: '400px'
-              }}
-            >
+          <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+            {/* Mobile: Fixed height, Desktop: viewport-based */}
+            <div className="relative h-[300px] sm:h-[350px] md:h-[calc(100vh-320px)] md:min-h-[400px]">
               <BeforeAfterSlider
                 beforeUrl={originalUrl}
                 afterUrl={enhancedUrl}
@@ -270,8 +265,8 @@ export function ImageEditor({
             </div>
           </div>
 
-          {/* Side-by-Side Comparison */}
-          <div className="grid grid-cols-2 gap-4">
+          {/* Side-by-Side Comparison - stacked on mobile, side-by-side on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
             {/* Original */}
             <div className="group relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-800 to-gray-900">
               <div className="aspect-[4/3] relative flex items-center justify-center p-4">
@@ -320,14 +315,9 @@ export function ImageEditor({
         </>
       ) : (
         /* Single View Mode - no enhanced yet */
-        <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black">
-          <div
-            className="relative flex items-center justify-center"
-            style={{
-              height: 'calc(100vh - 280px)',
-              minHeight: '400px'
-            }}
-          >
+        <div className="relative rounded-xl md:rounded-2xl overflow-hidden bg-gradient-to-br from-gray-900 to-black">
+          {/* Mobile: Fixed height, Desktop: viewport-based */}
+          <div className="relative flex items-center justify-center h-[300px] sm:h-[350px] md:h-[calc(100vh-280px)] md:min-h-[400px]">
             <img
               src={displayUrl}
               alt="Preview"
@@ -344,8 +334,12 @@ export function ImageEditor({
         </div>
       )}
 
-      {/* Action Bar */}
-      <div className="flex items-center justify-between p-4 rounded-2xl bg-card border border-border">
+      {/* Action Bar - Sticky on mobile */}
+      <div className={cn(
+        "flex items-center justify-between p-4 rounded-xl md:rounded-2xl bg-card border border-border",
+        // Mobile: Fixed at bottom
+        "fixed bottom-0 left-0 right-0 z-40 rounded-b-none border-b-0 md:relative md:rounded-2xl md:border-b"
+      )}>
         {/* Credits indicator */}
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
