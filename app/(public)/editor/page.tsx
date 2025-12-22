@@ -25,6 +25,9 @@ import { MainNavAuth } from '@/components/main-nav-auth'
 import { getTemplateById, type TemplateImage } from '@/lib/template-images'
 import { VariationsPicker } from '@/components/editor/variations-picker'
 import { SimplifiedStylePicker } from '@/components/editor/simplified-style-picker'
+import { MobileToolbar } from '@/components/editor/mobile-toolbar'
+import { StyleBottomSheet } from '@/components/editor/style-bottom-sheet'
+import { PromptBottomSheet } from '@/components/editor/prompt-bottom-sheet'
 import {
   type SimpleSelection,
   emptySimpleSelection,
@@ -49,10 +52,15 @@ function EditorContent() {
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false)
   // Sidebar visibility state - closed by default on mobile
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  // Mobile bottom sheet states
+  const [styleSheetOpen, setStyleSheetOpen] = useState(false)
+  const [promptSheetOpen, setPromptSheetOpen] = useState(false)
+  // Prompt text for AI enhancement
+  const [prompt, setPrompt] = useState('')
 
-  // Initialize sidebar state based on screen size
+  // Initialize sidebar state based on screen size (lg = 1024px)
   useEffect(() => {
-    const mediaQuery = window.matchMedia('(min-width: 768px)')
+    const mediaQuery = window.matchMedia('(min-width: 1024px)')
     setSidebarOpen(mediaQuery.matches)
 
     const handler = (e: MediaQueryListEvent) => setSidebarOpen(e.matches)
@@ -270,41 +278,17 @@ function EditorContent() {
       <MainNavAuth />
 
       <div className="flex-1 flex pt-16 relative">
-        {/* Mobile Sidebar Backdrop */}
+        {/* Desktop Sidebar - Only visible on lg screens */}
         {sidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/50 z-40 md:hidden"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-
-        {/* Left Sidebar - Different modes for Template vs Custom */}
-        {sidebarOpen ? (
-          <aside className={cn(
-            "flex flex-col bg-card z-50",
-            // Mobile: Fixed full-screen overlay
-            "fixed inset-y-0 left-0 w-full pt-16",
-            // Desktop: Static sidebar
-            "md:relative md:w-80 md:pt-0 md:border-r md:border-border"
-          )}>
+          <aside className="hidden lg:flex lg:flex-col lg:w-80 lg:border-r lg:border-border bg-card">
             {template ? (
               /* Template Mode - Show template info */
               <div className="flex flex-col h-full">
                 {/* Header */}
                 <div className="p-3 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Wand2 className="h-4 w-4 text-orange-500" />
-                      <h3 className="font-semibold text-sm">Using Template</h3>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setSidebarOpen(false)}
-                      className="h-7 w-7 -mr-1"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
+                  <div className="flex items-center gap-2">
+                    <Wand2 className="h-4 w-4 text-orange-500" />
+                    <h3 className="font-semibold text-sm">Using Template</h3>
                   </div>
                 </div>
 
@@ -376,13 +360,14 @@ function EditorContent() {
               <SimplifiedStylePicker
                 selection={selectedStyles}
                 onSelectionChange={setSelectedStyles}
-                onClose={() => setSidebarOpen(false)}
               />
             )}
           </aside>
-        ) : (
-          /* Collapsed sidebar toggle button - hidden on mobile (uses floating button instead) */
-          <div className="hidden md:flex border-r border-border bg-card items-start p-2">
+        )}
+
+        {/* Collapsed sidebar toggle button - only on desktop */}
+        {!sidebarOpen && (
+          <div className="hidden lg:flex border-r border-border bg-card items-start p-2">
             <Button
               variant="ghost"
               size="icon"
@@ -395,23 +380,10 @@ function EditorContent() {
           </div>
         )}
 
-        {/* Mobile Floating Style Button - only shows when sidebar is closed */}
-        {!sidebarOpen && (
-          <div className="fixed bottom-24 left-4 z-30 md:hidden">
-            <Button
-              onClick={() => setSidebarOpen(true)}
-              className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 shadow-lg"
-              size="icon"
-            >
-              {template ? <Wand2 className="h-5 w-5" /> : <Palette className="h-5 w-5" />}
-            </Button>
-          </div>
-        )}
-
         {/* Main Canvas Area */}
         <main className="flex-1 flex flex-col overflow-auto">
-          {/* Canvas - reduced padding on mobile */}
-          <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
+          {/* Canvas - reduced padding on mobile, extra bottom padding for mobile toolbar */}
+          <div className="flex-1 flex items-center justify-center p-4 pb-20 lg:pb-4 lg:p-8 relative">
             {/* Two-Panel Layout when template is selected */}
             {template ? (
               <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-stretch">
@@ -642,8 +614,8 @@ function EditorContent() {
             )}
           </div>
 
-          {/* Bottom Toolbar */}
-          <div className="border-t border-border p-4">
+          {/* Desktop Bottom Toolbar - Hidden on mobile */}
+          <div className="hidden lg:block border-t border-border p-4">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <div className="flex items-center gap-6">
                 {/* Add Image */}
@@ -661,6 +633,8 @@ function EditorContent() {
                   <input
                     type="text"
                     placeholder="Describe your image..."
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
                     className="w-full bg-transparent border-0 text-sm placeholder:text-muted-foreground focus:outline-none"
                   />
                 </div>
@@ -718,7 +692,41 @@ function EditorContent() {
             )}
           </div>
         </main>
+
+        {/* Mobile Fixed Bottom Toolbar */}
+        <div className="fixed bottom-0 left-0 right-0 z-40 lg:hidden">
+          <MobileToolbar
+            onStyleClick={() => setStyleSheetOpen(true)}
+            onPromptClick={() => setPromptSheetOpen(true)}
+            onTransformClick={handleUploadAndEnhance}
+            hasImage={!!selectedFile}
+            hasStyleSelected={hasStylesSelected || !!template}
+            isProcessing={uploading || enhancing}
+            disabled={false}
+          />
+          {/* Progress Bar for mobile */}
+          {(uploading || enhancing) && (
+            <div className="absolute top-0 left-0 right-0">
+              <Progress value={uploadProgress} className="h-1 rounded-none" />
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Mobile Bottom Sheets */}
+      <StyleBottomSheet
+        isOpen={styleSheetOpen}
+        onClose={() => setStyleSheetOpen(false)}
+        selection={selectedStyles}
+        onSelectionChange={setSelectedStyles}
+      />
+
+      <PromptBottomSheet
+        isOpen={promptSheetOpen}
+        onClose={() => setPromptSheetOpen(false)}
+        prompt={prompt}
+        onPromptChange={setPrompt}
+      />
     </div>
   )
 }
