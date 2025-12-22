@@ -83,15 +83,26 @@ export default async function DashboardPage() {
     <div className="min-h-screen bg-background">
       <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
       <div className="pt-16 p-6 space-y-6">
+      {/* Mobile: Upload button at top (Issue #4) */}
+      <div className="md:hidden">
+        <Button asChild className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-base">
+          <Link href="/editor">
+            <Plus className="mr-2 h-5 w-5" />
+            Upload New Photo
+          </Link>
+        </Button>
+      </div>
+
       {/* Welcome Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Welcome back!</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl md:text-3xl font-bold">Welcome back!</h1>
+          <p className="text-sm md:text-base text-muted-foreground">
             Here's what's happening with your food photos
           </p>
         </div>
-        <Button asChild className="bg-orange-500 hover:bg-orange-600">
+        {/* Desktop: Upload button in header */}
+        <Button asChild className="hidden md:flex bg-orange-500 hover:bg-orange-600">
           <Link href="/editor">
             <Plus className="mr-2 h-4 w-4" />
             Upload New Photo
@@ -140,8 +151,54 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      {/* Stats Grid - Mobile optimized (Issue #5) */}
+      {/* Mobile: Credits card prominent, others compact */}
+      <div className="md:hidden space-y-3">
+        {/* Credits - full width and prominent on mobile */}
+        <Card className="border-orange-200 dark:border-orange-900/50">
+          <CardContent className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+                <Sparkles className="h-5 w-5 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Credits Remaining</p>
+                <p className="text-2xl font-bold">{creditsRemaining}</p>
+              </div>
+            </div>
+            <Button asChild size="sm" variant="outline" className="border-orange-300">
+              <Link href="/billing">Get More</Link>
+            </Button>
+          </CardContent>
+        </Card>
+        {/* Other stats - compact 3-column grid */}
+        <div className="grid grid-cols-3 gap-2">
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="h-4 w-4 text-muted-foreground" />
+              <span className="text-lg font-bold">{totalImages || 0}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Images</p>
+          </Card>
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-lg font-bold">{enhancedImages || 0}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Enhanced</p>
+          </Card>
+          <Card className="p-3">
+            <div className="flex items-center gap-2">
+              <Share2 className="h-4 w-4 text-muted-foreground" />
+              <span className="text-lg font-bold">{totalPosts || 0}</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Posts</p>
+          </Card>
+        </div>
+      </div>
+
+      {/* Desktop: Original 4-column grid */}
+      <div className="hidden md:grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Credits Remaining</CardTitle>
