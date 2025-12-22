@@ -86,8 +86,22 @@ export function MobileToolbar({
                 <span className="text-[10px] font-medium">{variations} Image</span>
               </Button>
             </TooltipTrigger>
-            <TooltipContent side="top" className="max-w-[200px] text-center">
-              <p className="text-xs">Multiple images coming soon! Currently transforms 1 image at a time.</p>
+            <TooltipContent
+              side="top"
+              className="max-w-[220px] bg-popover text-popover-foreground border border-border shadow-lg"
+            >
+              <div className="space-y-2 p-1">
+                <div>
+                  <p className="text-xs font-medium">Optimized for Enhancement</p>
+                  <p className="text-[11px] text-muted-foreground">Photo enhancement produces consistent results. Multiple images would look nearly identical.</p>
+                </div>
+                <div className="border-t border-border pt-2">
+                  <p className="text-xs font-medium flex items-center gap-1">
+                    <span>✨</span> Creative Mode Coming Soon
+                  </p>
+                  <p className="text-[11px] text-muted-foreground">Generate multiple unique variations for ads, posters, and artistic reimaginings.</p>
+                </div>
+              </div>
             </TooltipContent>
           </Tooltip>
 
