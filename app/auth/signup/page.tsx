@@ -195,7 +195,7 @@ export default function SignupPage() {
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold">Create your account</h1>
           <p className="text-muted-foreground">
-            Get 5 free credits to start. No credit card required.
+            Get 2 free credits to start. No credit card required.
           </p>
         </div>
 
@@ -452,19 +452,6 @@ export default function SignupPage() {
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="businessType">Business Type (Optional)</Label>
-                <Input
-                  id="businessType"
-                  type="text"
-                  placeholder="e.g., Restaurant, Cafe, Bakery, Food Truck"
-                  value={formData.businessType}
-                  onChange={(e) => setFormData({ ...formData, businessType: e.target.value })}
-                  className="h-11"
-                  disabled={loading}
-                />
-              </div>
-
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -517,7 +504,7 @@ export default function SignupPage() {
                     <div className="flex gap-3">
                       <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
                       <div className="text-sm text-muted-foreground">
-                        <strong>5 free image credits</strong> to enhance your food photos
+                        <strong>2 free image credits</strong> to enhance your food photos
                       </div>
                     </div>
                     <div className="flex gap-3">

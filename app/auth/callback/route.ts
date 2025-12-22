@@ -6,12 +6,21 @@ export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/dashboard'
+  const type = searchParams.get('type') // 'signup', 'recovery', 'email_change', etc.
+
+  console.log('[Auth Callback] Received callback:', { code: code ? 'present' : 'missing', next, type })
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: sessionData, error } = await supabase.auth.exchangeCodeForSession(code)
 
-    if (!error) {
+    console.log('[Auth Callback] Session exchange result:', {
+      success: !error,
+      hasSession: !!sessionData?.session,
+      error: error?.message
+    })
+
+    if (!error && sessionData?.session) {
       // Check if user has a business account
       const { data: { user } } = await supabase.auth.getUser()
 

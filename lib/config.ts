@@ -1,7 +1,7 @@
 export const config = {
   // Version tracking
-  version: '0.43.4',
-  internalBuild: '2.30',
+  version: '0.44.0',
+  internalBuild: '2.31',
 
   // App info
   appName: 'Zazzles',
@@ -152,5 +152,5 @@ export const config = {
   ],
 
   // Free trial credits
-  freeTrialCredits: 5,
+  freeTrialCredits: 2,
 }

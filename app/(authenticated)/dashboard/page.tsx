@@ -9,12 +9,14 @@ import {
   Sparkles,
   ArrowRight,
   Plus,
-  TrendingUp
+  TrendingUp,
+  Gift
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MainNav } from '@/components/main-nav'
+import { PromoCodeInput } from '@/components/PromoCodeInput'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -100,9 +102,9 @@ export default async function DashboardPage() {
       {/* Trial Banner */}
       {isTrialing && (
         <Card className="border-orange-200 bg-gradient-to-r from-orange-50 to-amber-50 dark:from-orange-950/30 dark:to-amber-950/30 dark:border-orange-900/50">
-          <CardContent className="flex items-center justify-between p-4">
+          <CardContent className="flex flex-col gap-4 p-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center">
+              <div className="h-10 w-10 rounded-full bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center shrink-0">
                 <Sparkles className="h-5 w-5 text-orange-500" />
               </div>
               <div>
@@ -121,6 +123,22 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Promo Code Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <Gift className="h-5 w-5 text-orange-500" />
+            <CardTitle className="text-lg">Have a promo code?</CardTitle>
+          </div>
+          <CardDescription>
+            Enter your promo code to get extra credits
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PromoCodeInput />
+        </CardContent>
+      </Card>
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
