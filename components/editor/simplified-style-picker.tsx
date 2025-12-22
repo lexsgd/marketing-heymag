@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Check, Sparkles, AlertTriangle, Info } from 'lucide-react'
+import { ChevronDown, ChevronRight, Check, Sparkles, AlertTriangle, Info, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -33,6 +33,7 @@ interface SimplifiedStylePickerProps {
   selection: SimpleSelection
   onSelectionChange: (selection: SimpleSelection) => void
   disabled?: boolean
+  onClose?: () => void
 }
 
 // Category data mapping
@@ -50,6 +51,7 @@ export function SimplifiedStylePicker({
   selection,
   onSelectionChange,
   disabled = false,
+  onClose,
 }: SimplifiedStylePickerProps) {
   // First two categories expanded by default
   const [expandedCategories, setExpandedCategories] = useState<string[]>([
@@ -264,20 +266,33 @@ export function SimplifiedStylePicker({
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between">
             <h3 className="font-semibold text-sm">Style Settings</h3>
-            {/* Status indicator on the right */}
-            {status.message && status.isValid && !status.hasWarnings ? (
-              <div className="flex items-center gap-1.5 text-xs text-green-600">
-                <Check className="h-3 w-3" />
-                <span>Ready</span>
-              </div>
-            ) : selectedCount > 0 ? (
-              <Badge
-                variant="secondary"
-                className="bg-orange-500/20 text-orange-500 text-xs"
-              >
-                {selectedCount}
-              </Badge>
-            ) : null}
+            <div className="flex items-center gap-2">
+              {/* Status indicator */}
+              {status.message && status.isValid && !status.hasWarnings ? (
+                <div className="flex items-center gap-1.5 text-xs text-green-600">
+                  <Check className="h-3 w-3" />
+                  <span>Ready</span>
+                </div>
+              ) : selectedCount > 0 ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-orange-500/20 text-orange-500 text-xs"
+                >
+                  {selectedCount}
+                </Badge>
+              ) : null}
+              {/* Close button */}
+              {onClose && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onClose}
+                  className="h-7 w-7 -mr-1"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Warning status if any */}

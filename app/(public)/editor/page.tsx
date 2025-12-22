@@ -44,6 +44,8 @@ function EditorContent() {
   const [variations, setVariations] = useState(1)
   // Guard to prevent multiple file dialogs from opening
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false)
+  // Sidebar visibility state
+  const [sidebarOpen, setSidebarOpen] = useState(true)
 
   const router = useRouter()
 
@@ -256,12 +258,28 @@ function EditorContent() {
 
       <div className="flex-1 flex pt-16">
         {/* Left Sidebar - Simplified Style Picker */}
-        <aside className="w-80 border-r border-border flex flex-col bg-card">
-          <SimplifiedStylePicker
-            selection={selectedStyles}
-            onSelectionChange={setSelectedStyles}
-          />
-        </aside>
+        {sidebarOpen ? (
+          <aside className="w-80 border-r border-border flex flex-col bg-card">
+            <SimplifiedStylePicker
+              selection={selectedStyles}
+              onSelectionChange={setSelectedStyles}
+              onClose={() => setSidebarOpen(false)}
+            />
+          </aside>
+        ) : (
+          /* Collapsed sidebar toggle button */
+          <div className="border-r border-border bg-card flex items-start p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSidebarOpen(true)}
+              className="h-9 w-9"
+              title="Open Style Settings"
+            >
+              <Palette className="h-5 w-5" />
+            </Button>
+          </div>
+        )}
 
         {/* Main Canvas Area */}
         <main className="flex-1 flex flex-col overflow-auto">
