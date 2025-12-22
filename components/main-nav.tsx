@@ -20,7 +20,7 @@ import {
   Camera,
   Compass,
   Share2,
-  Images,
+  Image,
   CreditCard,
   Settings,
   LogOut,
@@ -45,7 +45,7 @@ const mobileNavItems = [
   { name: 'Explore Styles', href: '/explore', icon: Compass },
   { name: 'Photography', href: '/editor', icon: Camera },
   { name: 'Social', href: '/social', icon: Share2 },
-  { name: 'Library', href: '/gallery', icon: Images },
+  { name: 'Library', href: '/gallery', icon: Image },
   { name: 'Billing', href: '/billing', icon: CreditCard },
   { name: 'Settings', href: '/settings', icon: Settings },
 ]
