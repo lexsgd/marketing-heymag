@@ -703,6 +703,8 @@ function EditorContent() {
             hasStyleSelected={hasStylesSelected || !!template}
             isProcessing={uploading || enhancing}
             disabled={false}
+            variations={variations}
+            onVariationsChange={setVariations}
           />
           {/* Progress Bar for mobile */}
           {(uploading || enhancing) && (
