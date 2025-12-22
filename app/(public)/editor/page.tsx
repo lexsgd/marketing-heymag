@@ -47,8 +47,18 @@ function EditorContent() {
   const [variations, setVariations] = useState(1)
   // Guard to prevent multiple file dialogs from opening
   const [isFileDialogOpen, setIsFileDialogOpen] = useState(false)
-  // Sidebar visibility state
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  // Sidebar visibility state - closed by default on mobile
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+
+  // Initialize sidebar state based on screen size
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 768px)')
+    setSidebarOpen(mediaQuery.matches)
+
+    const handler = (e: MediaQueryListEvent) => setSidebarOpen(e.matches)
+    mediaQuery.addEventListener('change', handler)
+    return () => mediaQuery.removeEventListener('change', handler)
+  }, [])
 
   const router = useRouter()
 
@@ -259,10 +269,24 @@ function EditorContent() {
       {/* Top Navigation */}
       <MainNavAuth />
 
-      <div className="flex-1 flex pt-16">
+      <div className="flex-1 flex pt-16 relative">
+        {/* Mobile Sidebar Backdrop */}
+        {sidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-40 md:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
         {/* Left Sidebar - Different modes for Template vs Custom */}
         {sidebarOpen ? (
-          <aside className="w-80 border-r border-border flex flex-col bg-card">
+          <aside className={cn(
+            "flex flex-col bg-card z-50",
+            // Mobile: Fixed full-screen overlay
+            "fixed inset-y-0 left-0 w-full pt-16",
+            // Desktop: Static sidebar
+            "md:relative md:w-80 md:pt-0 md:border-r md:border-border"
+          )}>
             {template ? (
               /* Template Mode - Show template info */
               <div className="flex flex-col h-full">
@@ -357,8 +381,8 @@ function EditorContent() {
             )}
           </aside>
         ) : (
-          /* Collapsed sidebar toggle button */
-          <div className="border-r border-border bg-card flex items-start p-2">
+          /* Collapsed sidebar toggle button - hidden on mobile (uses floating button instead) */
+          <div className="hidden md:flex border-r border-border bg-card items-start p-2">
             <Button
               variant="ghost"
               size="icon"
@@ -371,10 +395,23 @@ function EditorContent() {
           </div>
         )}
 
+        {/* Mobile Floating Style Button - only shows when sidebar is closed */}
+        {!sidebarOpen && (
+          <div className="fixed bottom-24 left-4 z-30 md:hidden">
+            <Button
+              onClick={() => setSidebarOpen(true)}
+              className="h-12 w-12 rounded-full bg-orange-500 hover:bg-orange-600 shadow-lg"
+              size="icon"
+            >
+              {template ? <Wand2 className="h-5 w-5" /> : <Palette className="h-5 w-5" />}
+            </Button>
+          </div>
+        )}
+
         {/* Main Canvas Area */}
         <main className="flex-1 flex flex-col overflow-auto">
-          {/* Canvas */}
-          <div className="flex-1 flex items-center justify-center p-8 relative">
+          {/* Canvas - reduced padding on mobile */}
+          <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
             {/* Two-Panel Layout when template is selected */}
             {template ? (
               <div className="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-stretch">
