@@ -70,6 +70,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [generatingCaption, setGeneratingCaption] = useState(false)
   const [captionHighlight, setCaptionHighlight] = useState(false)
   const captionRef = useRef<HTMLDivElement>(null)
+  // Social account connection status
+  const [connectedPlatforms, setConnectedPlatforms] = useState<string[]>([])
+  const [loadingConnections, setLoadingConnections] = useState(false)
 
   const router = useRouter()
   const supabase = createClient()
@@ -187,6 +190,22 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     }
   }, [businessId, supabase])
 
+  // Fetch connected social accounts
+  const fetchConnectedAccounts = useCallback(async () => {
+    setLoadingConnections(true)
+    try {
+      const response = await fetch('/api/social/accounts')
+      if (response.ok) {
+        const data = await response.json()
+        setConnectedPlatforms(data.connected || [])
+      }
+    } catch (err) {
+      console.error('Error fetching social accounts:', err)
+    } finally {
+      setLoadingConnections(false)
+    }
+  }, [])
+
   // Open social posting dialog
   const handleOpenSocialDialog = () => {
     if (!image?.enhanced_url) {
@@ -198,6 +217,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     setPostError(null)
     setPostSuccess(null)
     setSocialDialogOpen(true)
+    // Fetch connection status when dialog opens
+    fetchConnectedAccounts()
   }
 
   // Toggle platform selection
@@ -484,7 +505,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                     'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
                     selectedSocialPlatforms.includes('instagram')
                       ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                      : 'border-border hover:border-muted-foreground/50'
+                      : 'border-border hover:border-muted-foreground/50',
+                    !connectedPlatforms.includes('instagram') && 'opacity-60'
                   )}
                   onClick={() => handleTogglePlatform('instagram')}
                 >
@@ -494,13 +516,21 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   />
                   <Instagram className="h-5 w-5 text-pink-500" />
                   <span className="font-medium">Instagram</span>
+                  {loadingConnections ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />
+                  ) : !connectedPlatforms.includes('instagram') && (
+                    <Badge variant="outline" className="ml-auto text-xs text-muted-foreground">
+                      Not connected
+                    </Badge>
+                  )}
                 </div>
                 <div
                   className={cn(
                     'flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all',
                     selectedSocialPlatforms.includes('facebook')
                       ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
-                      : 'border-border hover:border-muted-foreground/50'
+                      : 'border-border hover:border-muted-foreground/50',
+                    !connectedPlatforms.includes('facebook') && 'opacity-60'
                   )}
                   onClick={() => handleTogglePlatform('facebook')}
                 >
@@ -510,6 +540,13 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   />
                   <Facebook className="h-5 w-5 text-blue-600" />
                   <span className="font-medium">Facebook</span>
+                  {loadingConnections ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-muted-foreground ml-auto" />
+                  ) : !connectedPlatforms.includes('facebook') && (
+                    <Badge variant="outline" className="ml-auto text-xs text-muted-foreground">
+                      Not connected
+                    </Badge>
+                  )}
                 </div>
               </div>
             </div>
