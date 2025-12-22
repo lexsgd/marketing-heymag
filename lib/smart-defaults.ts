@@ -359,7 +359,7 @@ export function buildSmartPrompt(selection: SimpleSelection): string {
 
   const sections: string[] = []
 
-  // Header
+  // Header with strong style emphasis
   sections.push(`
 ╔═══════════════════════════════════════════════════════════════════════════════╗
 ║                    FOODSNAP AI PHOTO ENHANCEMENT                              ║
@@ -375,12 +375,33 @@ ABSOLUTE RULES:
 4. ONLY enhance: lighting, colors, textures, background styling, and overall polish
 5. Make the food look MORE appetizing, not different
 6. NO HUMANS - Do NOT add any people, hands, arms, or body parts. Remove any visible humans from the background. The photo should show ONLY food, props, and surfaces.
+
+★★★ CRITICAL: STRICTLY APPLY THE FOLLOWING STYLE SETTINGS ★★★
+The client has specifically chosen these style settings. The output MUST visually
+reflect these choices. Do NOT default to generic food photography - apply the
+SPECIFIC style requested below.
 `)
 
-  // Technical specifications
+  // Clear style summary for AI
+  const businessType = selection.businessType || 'restaurant'
+  const moodLabel = selection.mood && selection.mood !== 'auto' ? selection.mood.toUpperCase() : 'AUTO (use business defaults)'
+  const seasonalLabel = selection.seasonal && selection.seasonal !== 'none' ? selection.seasonal.toUpperCase() : 'NONE'
+
   sections.push(`
 ═══════════════════════════════════════════════════════════════════════════════
-TECHNICAL SPECIFICATIONS
+★ STYLE SELECTION (USER'S CHOICES - MUST BE APPLIED) ★
+═══════════════════════════════════════════════════════════════════════════════
+
+BUSINESS TYPE: ${businessType.toUpperCase()}
+MOOD/LOOK: ${moodLabel}
+SEASONAL THEME: ${seasonalLabel}
+FORMAT: ${defaults.format.aspectRatio}
+
+These are NOT suggestions - these are the CLIENT'S EXPLICIT CHOICES.
+The enhanced image MUST clearly reflect these style settings.
+
+═══════════════════════════════════════════════════════════════════════════════
+TECHNICAL SPECIFICATIONS (Based on style selection)
 ═══════════════════════════════════════════════════════════════════════════════
 
 LENS: ${defaults.elements.lens}

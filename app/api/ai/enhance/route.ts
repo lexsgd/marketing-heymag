@@ -417,11 +417,26 @@ export async function POST(request: NextRequest) {
         // NEW: Use simplified prompt builder for new 3-category system
         simplifiedResult = buildSimplifiedPrompt(simpleSelection, undefined)
         stylePrompt = simplifiedResult.prompt
+
+        // Enhanced logging for style debugging (Issue #9 investigation)
         logger.info('Using simplified prompt builder', {
           selection: JSON.stringify(simpleSelection),
           isValid: simplifiedResult.isValid,
           warnings: simplifiedResult.warnings.length,
           format: simplifiedResult.formatConfig.aspectRatio,
+          // Log key style elements being applied
+          styleDetails: {
+            businessType: simpleSelection.businessType,
+            mood: simpleSelection.mood || 'auto (AI-selected)',
+            seasonal: simpleSelection.seasonal || 'none',
+            format: simpleSelection.format || 'square (default)',
+          },
+        })
+
+        // Log prompt preview for debugging (first 500 chars)
+        logger.debug('Style prompt preview', {
+          promptLength: stylePrompt.length,
+          preview: stylePrompt.substring(0, 500).replace(/\n/g, ' '),
         })
       } else if (styleIds && Array.isArray(styleIds) && styleIds.length > 0) {
         // Use multi-style prompt builder for array of style IDs
