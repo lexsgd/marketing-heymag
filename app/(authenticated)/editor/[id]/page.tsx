@@ -346,20 +346,21 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   }
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" asChild className="h-9 w-9">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 pb-24 md:pb-6">
+      {/* Header - Mobile Responsive */}
+      <div className="space-y-3 md:space-y-0 md:flex md:items-center md:justify-between">
+        {/* Top row: Back button + Title */}
+        <div className="flex items-start gap-3 md:gap-4">
+          <Button variant="ghost" size="icon" asChild className="h-8 w-8 md:h-9 md:w-9 flex-shrink-0 mt-0.5">
             <Link href="/gallery">
-              <ArrowLeft className="h-5 w-5" />
+              <ArrowLeft className="h-4 w-4 md:h-5 md:w-5" />
             </Link>
           </Button>
-          <div>
-            <h1 className="text-2xl font-bold">{image.original_filename || 'Untitled'}</h1>
-            <div className="flex items-center gap-2 mt-1">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-lg md:text-2xl font-bold truncate">{image.original_filename || 'Untitled'}</h1>
+            <div className="flex flex-wrap items-center gap-2 mt-1">
               {image.status === 'completed' && (
-                <Badge className="bg-orange-500 text-white">
+                <Badge className="bg-orange-500 text-white text-xs">
                   <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
                   </svg>
@@ -367,15 +368,15 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                 </Badge>
               )}
               {image.status === 'processing' && (
-                <Badge className="bg-orange-500">Processing</Badge>
+                <Badge className="bg-orange-500 text-xs">Processing</Badge>
               )}
               {image.status === 'pending' && (
-                <Badge variant="outline">Pending</Badge>
+                <Badge variant="outline" className="text-xs">Pending</Badge>
               )}
               {image.status === 'failed' && (
-                <Badge variant="destructive">Failed</Badge>
+                <Badge variant="destructive" className="text-xs">Failed</Badge>
               )}
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs md:text-sm text-muted-foreground">
                 {image.style_preset && config.stylePresets.find(p => p.id === image.style_preset)?.name}
               </span>
             </div>
@@ -414,7 +415,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             )}
           </div>
         </div>
-        <div className="flex gap-2">
+        {/* Desktop: Post button in header */}
+        <div className="hidden md:flex gap-2 flex-shrink-0">
           <Button
             className="bg-orange-500 hover:bg-orange-600"
             onClick={handleOpenSocialDialog}
@@ -424,6 +426,18 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             Post to Social
           </Button>
         </div>
+      </div>
+
+      {/* Mobile: Sticky bottom bar with Post button */}
+      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border p-4 pb-safe">
+        <Button
+          className="w-full bg-orange-500 hover:bg-orange-600"
+          onClick={handleOpenSocialDialog}
+          disabled={!image?.enhanced_url}
+        >
+          <Share2 className="mr-2 h-4 w-4" />
+          Post to Social
+        </Button>
       </div>
 
       {/* Image Editor */}
