@@ -169,6 +169,9 @@ function SocialPageContent() {
   const [interestCounts, setInterestCounts] = useState<Record<string, number>>({})
   const [requestingPlatform, setRequestingPlatform] = useState<string | null>(null)
 
+  // Check if user is admin (can see request counts)
+  const isAdmin = user?.email === 'lex@heymag.app' || user?.email?.endsWith('@zazzles.ai')
+
   const fetchInterestData = useCallback(async () => {
     try {
       const response = await fetch('/api/platform-interest')
@@ -536,7 +539,8 @@ function SocialPageContent() {
                               <Clock className="h-3 w-3 mr-1" />
                               Coming Soon
                             </Badge>
-                            {platformInterestCount > 0 && (
+                            {/* Only show request count to admins */}
+                            {isAdmin && platformInterestCount > 0 && (
                               <Badge variant="outline" className="text-[10px] bg-background/80 backdrop-blur-sm">
                                 <Users className="h-2.5 w-2.5 mr-1" />
                                 {platformInterestCount} {platformInterestCount === 1 ? 'request' : 'requests'}
