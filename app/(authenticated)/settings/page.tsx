@@ -536,28 +536,35 @@ export default function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>AI Enhancement</CardTitle>
+                  <CardDescription>Automation features coming soon</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between opacity-50">
                     <div className="space-y-0.5">
-                      <Label>Auto-enhance on upload</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Auto-enhance on upload</Label>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">Coming Soon</span>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Automatically enhance images when uploaded
                       </p>
                     </div>
-                    <Switch />
+                    <Switch disabled />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between opacity-50">
                     <div className="space-y-0.5">
-                      <Label>Generate caption automatically</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Generate caption automatically</Label>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">Coming Soon</span>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Auto-generate captions after enhancement
                       </p>
                     </div>
-                    <Switch />
+                    <Switch disabled />
                   </div>
                 </CardContent>
               </Card>
@@ -565,28 +572,35 @@ export default function SettingsPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Export Settings</CardTitle>
+                  <CardDescription>Export customization coming soon</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between opacity-50">
                     <div className="space-y-0.5">
-                      <Label>Add watermark</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Add watermark</Label>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">Coming Soon</span>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Add your business name watermark to exports
                       </p>
                     </div>
-                    <Switch />
+                    <Switch disabled />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between opacity-50">
                     <div className="space-y-0.5">
-                      <Label>High-resolution export</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>High-resolution export</Label>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">Coming Soon</span>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Export at maximum resolution (uses more credits)
                       </p>
                     </div>
-                    <Switch />
+                    <Switch disabled />
                   </div>
                 </CardContent>
               </Card>
@@ -655,26 +669,32 @@ export default function SettingsPage() {
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between opacity-50">
                     <div className="space-y-0.5">
-                      <Label>Credit Alerts</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Credit Alerts</Label>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">Coming Soon</span>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Notifications when credits are running low
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch disabled defaultChecked />
                   </div>
 
                   <Separator />
 
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between opacity-50">
                     <div className="space-y-0.5">
-                      <Label>Post Confirmations</Label>
+                      <div className="flex items-center gap-2">
+                        <Label>Post Confirmations</Label>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase bg-muted px-1.5 py-0.5 rounded">Coming Soon</span>
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         Email when scheduled posts are published
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch disabled defaultChecked />
                   </div>
                 </CardContent>
               </Card>
@@ -893,29 +913,18 @@ export default function SettingsPage() {
                         Permanently delete your account and all data
                       </p>
                     </div>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="destructive">
-                          Delete Account
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete your
-                            account, all your images, posts, and remove all associated data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction className="bg-destructive hover:bg-destructive/90">
-                            Delete Account
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button
+                      variant="outline"
+                      className="text-destructive hover:bg-destructive/10"
+                      onClick={() => window.open('mailto:support@zazzles.ai?subject=Account Deletion Request', '_blank')}
+                    >
+                      <Mail className="mr-2 h-4 w-4" />
+                      Contact Support
+                    </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-3">
+                    To delete your account, please contact our support team. We'll help you export your data and process your request within 48 hours.
+                  </p>
                 </CardContent>
               </Card>
             </div>

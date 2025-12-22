@@ -303,7 +303,10 @@ function BillingPageContent() {
                     </p>
                   </div>
                 </div>
-                <Button className="bg-orange-500 hover:bg-orange-600">
+                <Button
+                  className="bg-orange-500 hover:bg-orange-600"
+                  onClick={() => setActiveTab('plans')}
+                >
                   <Crown className="mr-2 h-4 w-4" />
                   Upgrade Now
                 </Button>
