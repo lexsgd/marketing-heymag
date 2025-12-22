@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
@@ -14,8 +14,10 @@ import {
   Sparkles,
   Image as ImageIcon,
   AlertCircle,
-  ExternalLink
+  ExternalLink,
+  Wand2,
 } from 'lucide-react'
+import { useToast } from '@/hooks/use-toast'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -64,9 +66,14 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [posting, setPosting] = useState(false)
   const [postError, setPostError] = useState<string | null>(null)
   const [postSuccess, setPostSuccess] = useState<{ platform: string; success: boolean }[] | null>(null)
+  // AI Caption generation state
+  const [generatingCaption, setGeneratingCaption] = useState(false)
+  const [captionHighlight, setCaptionHighlight] = useState(false)
+  const captionRef = useRef<HTMLDivElement>(null)
 
   const router = useRouter()
   const supabase = createClient()
+  const { toast } = useToast()
 
   const loadImage = useCallback(async () => {
     setLoading(true)
@@ -263,6 +270,59 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     }
   }
 
+  // Generate AI caption
+  const handleGenerateCaption = async () => {
+    if (!image?.id || !image?.enhanced_url) return
+
+    setGeneratingCaption(true)
+    setPostError(null)
+
+    try {
+      // Determine platform for caption style (use first selected or default to instagram)
+      const platform = selectedSocialPlatforms[0] || 'instagram'
+
+      const response = await fetch('/api/ai/caption', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageId: image.id,
+          language: 'en',
+          platform,
+          tone: 'engaging',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || 'Caption generation failed')
+      }
+
+      // Set the generated caption
+      const fullCaption = data.caption + (data.hashtags?.length > 0 ? '\n\n' + data.hashtags.map((h: string) => `#${h}`).join(' ') : '')
+      setSocialPostCaption(fullCaption)
+
+      // Show success toast
+      toast({
+        title: 'Caption generated!',
+        description: `${data.captionsRemaining} free caption${data.captionsRemaining === 1 ? '' : 's'} remaining for this image.`,
+      })
+
+      // Highlight caption section and scroll to it
+      setCaptionHighlight(true)
+      setTimeout(() => {
+        captionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }, 100)
+      setTimeout(() => setCaptionHighlight(false), 2000)
+
+    } catch (err) {
+      console.error('Caption generation error:', err)
+      setPostError((err as Error).message || 'Failed to generate caption.')
+    } finally {
+      setGeneratingCaption(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -443,15 +503,45 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             </div>
 
             {/* Caption */}
-            <div className="space-y-2">
-              <Label>Caption</Label>
+            <div
+              ref={captionRef}
+              className={cn(
+                "space-y-2 p-3 -mx-3 rounded-lg transition-all duration-500",
+                captionHighlight && "bg-orange-50 dark:bg-orange-950/20 ring-2 ring-orange-500"
+              )}
+            >
+              <div className="flex items-center justify-between">
+                <Label>Caption</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateCaption}
+                  disabled={generatingCaption || !image?.enhanced_url}
+                  className="h-7 gap-1.5"
+                >
+                  {generatingCaption ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      <span className="text-xs">Generating...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="h-3.5 w-3.5" />
+                      <span className="text-xs">AI Generate</span>
+                    </>
+                  )}
+                </Button>
+              </div>
               <Textarea
                 value={socialPostCaption}
                 onChange={(e) => setSocialPostCaption(e.target.value)}
-                placeholder="Write a caption for your post..."
+                placeholder="Write a caption or click 'AI Generate' for smart suggestions..."
                 rows={4}
                 className="resize-none"
               />
+              <p className="text-xs text-muted-foreground">
+                Each enhanced image includes 10 free AI caption generations.
+              </p>
             </div>
 
             {/* Error */}
