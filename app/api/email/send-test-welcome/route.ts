@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
       success: true,
       message: `Welcome email sent to ${testEmail}`,
       messageId: result.messageId,
-      note: 'Check email for updated branding with logo, social links, and zazzles.ai URLs'
+      note: 'Logo should now be properly sized (120x40px max)'
     })
   } else {
     return NextResponse.json({

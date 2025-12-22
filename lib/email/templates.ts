@@ -177,7 +177,7 @@ function getEmailStyles(): string {
 function getEmailHeader(title: string): string {
   return `
     <div class="header">
-      <img src="https://zazzles.ai/logos/Zazzles-White.png" alt="Zazzles" style="height: 48px;" />
+      <img src="https://zazzles.ai/logos/Zazzles-White.png" alt="Zazzles" width="120" height="40" style="height: 40px; width: auto; max-width: 120px; display: block; margin: 0 auto 12px auto;" />
       <h1>${title}</h1>
     </div>
   `
