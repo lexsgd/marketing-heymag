@@ -175,9 +175,10 @@ function getEmailStyles(): string {
 
 // Shared header
 function getEmailHeader(title: string): string {
+  // Using 400x233 image displayed at 200x116 for retina sharpness
   return `
     <div class="header">
-      <img src="https://zazzles.ai/logos/Zazzles-White-Email.png" alt="Zazzles" width="200" height="116" style="display: block; margin: 0 auto 12px auto;" />
+      <img src="https://zazzles.ai/logos/Zazzles-White-Email.png" alt="Zazzles" width="200" height="116" style="width: 200px; height: auto; display: block; margin: 0 auto 12px auto;" />
       <h1>${title}</h1>
     </div>
   `
