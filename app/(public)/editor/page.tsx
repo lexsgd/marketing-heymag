@@ -13,6 +13,9 @@ import {
   Plus,
   ArrowRight,
   Palette,
+  Wand2,
+  Check,
+  Settings2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Progress } from '@/components/ui/progress'
@@ -257,14 +260,101 @@ function EditorContent() {
       <MainNavAuth />
 
       <div className="flex-1 flex pt-16">
-        {/* Left Sidebar - Simplified Style Picker */}
+        {/* Left Sidebar - Different modes for Template vs Custom */}
         {sidebarOpen ? (
           <aside className="w-80 border-r border-border flex flex-col bg-card">
-            <SimplifiedStylePicker
-              selection={selectedStyles}
-              onSelectionChange={setSelectedStyles}
-              onClose={() => setSidebarOpen(false)}
-            />
+            {template ? (
+              /* Template Mode - Show template info */
+              <div className="flex flex-col h-full">
+                {/* Header */}
+                <div className="p-3 border-b border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Wand2 className="h-4 w-4 text-orange-500" />
+                      <h3 className="font-semibold text-sm">Using Template</h3>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setSidebarOpen(false)}
+                      className="h-7 w-7 -mr-1"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Template Info */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {/* Template Preview */}
+                  <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                    <Image
+                      src={template.thumbUrl}
+                      alt={template.name}
+                      fill
+                      className="object-cover"
+                    />
+                    <Badge className="absolute top-2 left-2 bg-orange-500 text-white border-0">
+                      <Palette className="h-3 w-3 mr-1" />
+                      Style Target
+                    </Badge>
+                  </div>
+
+                  <div>
+                    <h4 className="font-medium text-sm">{template.name}</h4>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {template.description}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1 capitalize">
+                      {template.category.replace('-', ' ')} style
+                    </p>
+                  </div>
+
+                  {/* Auto-styling Explanation */}
+                  <div className="bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900/50 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-green-800 dark:text-green-400">
+                          Styles applied automatically
+                        </p>
+                        <p className="text-xs text-green-700 dark:text-green-500 mt-1">
+                          Your photo will be transformed to match this template's lighting, colors, and atmosphere.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Change Template Link */}
+                  <Button variant="outline" size="sm" className="w-full" asChild>
+                    <Link href="/explore">
+                      <Sparkles className="h-3.5 w-3.5 mr-2" />
+                      Browse Other Templates
+                    </Link>
+                  </Button>
+                </div>
+
+                {/* Switch to Custom Mode */}
+                <div className="p-3 border-t border-border bg-muted/30">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full text-xs text-muted-foreground"
+                    onClick={clearTemplate}
+                  >
+                    <Settings2 className="h-3.5 w-3.5 mr-2" />
+                    Switch to Custom Style
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              /* Custom Mode - Show SimplifiedStylePicker */
+              <SimplifiedStylePicker
+                selection={selectedStyles}
+                onSelectionChange={setSelectedStyles}
+                onClose={() => setSidebarOpen(false)}
+              />
+            )}
           </aside>
         ) : (
           /* Collapsed sidebar toggle button */
@@ -274,9 +364,9 @@ function EditorContent() {
               size="icon"
               onClick={() => setSidebarOpen(true)}
               className="h-9 w-9"
-              title="Open Style Settings"
+              title={template ? "Show Template Info" : "Open Style Settings"}
             >
-              <Palette className="h-5 w-5" />
+              {template ? <Wand2 className="h-5 w-5" /> : <Palette className="h-5 w-5" />}
             </Button>
           </div>
         )}

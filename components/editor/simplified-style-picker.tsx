@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Check, Sparkles, AlertTriangle, Info, X } from 'lucide-react'
+import Link from 'next/link'
+import { ChevronDown, ChevronRight, Check, Sparkles, AlertTriangle, Info, X, Wand2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -265,7 +266,12 @@ export function SimplifiedStylePicker({
         {/* Header - Compact Design */}
         <div className="p-3 border-b border-border">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-sm">Style Settings</h3>
+            <div>
+              <h3 className="font-semibold text-sm">Custom Style</h3>
+              <p className="text-[10px] text-muted-foreground mt-0.5">
+                Build your own style recipe
+              </p>
+            </div>
             <div className="flex items-center gap-2">
               {/* Status indicator */}
               {status.message && status.isValid && !status.hasWarnings ? (
@@ -418,8 +424,8 @@ export function SimplifiedStylePicker({
           </div>
         )}
 
-        {/* Footer with info */}
-        <div className="p-3 border-t border-border bg-muted/30">
+        {/* Footer with info and template link */}
+        <div className="p-3 border-t border-border bg-muted/30 space-y-2">
           <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
             <Tooltip>
               <TooltipTrigger asChild>
@@ -437,6 +443,12 @@ export function SimplifiedStylePicker({
             </Tooltip>
             <span>Smart defaults applied automatically</span>
           </div>
+          <Button variant="ghost" size="sm" className="w-full text-xs" asChild>
+            <Link href="/explore">
+              <Wand2 className="h-3.5 w-3.5 mr-2" />
+              Or use a template instead
+            </Link>
+          </Button>
         </div>
       </div>
     </TooltipProvider>
