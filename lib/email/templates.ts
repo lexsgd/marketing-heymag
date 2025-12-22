@@ -177,7 +177,7 @@ function getEmailStyles(): string {
 function getEmailHeader(title: string): string {
   return `
     <div class="header">
-      <img src="https://marketing.heymag.app/logo-white.png" alt="Zazzles" />
+      <img src="https://zazzles.ai/logos/Zazzles-White.png" alt="Zazzles" style="height: 48px;" />
       <h1>${title}</h1>
     </div>
   `
@@ -189,14 +189,14 @@ function getEmailFooter(): string {
   return `
     <div class="footer">
       <div class="social-links">
-        <a href="https://instagram.com/zazzles.app">Instagram</a> |
-        <a href="https://youtube.com/@zazzles">YouTube</a> |
-        <a href="https://linkedin.com/company/zazzles">LinkedIn</a>
+        <a href="https://www.instagram.com/zazzles.ai/">Instagram</a> |
+        <a href="https://www.facebook.com/profile.php?id=61585304495941">Facebook</a> |
+        <a href="https://www.tiktok.com/@zazzles.ai">TikTok</a>
       </div>
       <p style="margin: 16px 0 8px;">
-        <a href="https://marketing.heymag.app">Visit Zazzles</a> |
-        <a href="https://marketing.heymag.app/help">Help Center</a> |
-        <a href="https://marketing.heymag.app/settings">Manage Preferences</a>
+        <a href="https://zazzles.ai">Visit Zazzles</a> |
+        <a href="https://zazzles.ai/help">Help Center</a> |
+        <a href="https://zazzles.ai/settings">Manage Preferences</a>
       </p>
       <p style="margin: 0;">
         &copy; ${currentYear} Zazzles. All rights reserved.<br>
@@ -255,7 +255,7 @@ export function getWelcomeEmail(data: WelcomeEmailData): { html: string; text: s
       </ul>
 
       <div style="text-align: center;">
-        <a href="https://marketing.heymag.app/dashboard" class="button">Start Creating</a>
+        <a href="https://zazzles.ai/dashboard" class="button">Start Creating</a>
       </div>
 
       <div class="info-box">
@@ -265,7 +265,7 @@ export function getWelcomeEmail(data: WelcomeEmailData): { html: string; text: s
       <div class="divider"></div>
 
       <p style="color: ${BRAND.textLight}; font-size: 14px;">
-        Need help? Check out our <a href="https://marketing.heymag.app/help">Help Center</a> or reply to this email - we're here for you!
+        Need help? Check out our <a href="https://zazzles.ai/help">Help Center</a> or reply to this email - we're here for you!
       </p>
     </div>
     ${getEmailFooter()}
@@ -283,9 +283,9 @@ Here's what you can do:
 - Generate multilingual captions with AI
 - Post directly to Instagram & Facebook
 
-Start creating: https://marketing.heymag.app/dashboard
+Start creating: https://zazzles.ai/dashboard
 
-Need help? Visit https://marketing.heymag.app/help
+Need help? Visit https://zazzles.ai/help
 
 - The Zazzles Team
   `
@@ -338,7 +338,7 @@ export function getPurchaseConfirmationEmail(data: PurchaseConfirmationData): { 
       ` : ''}
 
       <div style="text-align: center;">
-        <a href="https://marketing.heymag.app/dashboard" class="button">Use Your Credits</a>
+        <a href="https://zazzles.ai/dashboard" class="button">Use Your Credits</a>
       </div>
     </div>
     ${getEmailFooter()}
@@ -359,7 +359,7 @@ Order Details:
 
 ${data.receiptUrl ? `View Receipt: ${data.receiptUrl}` : ''}
 
-Start using your credits: https://marketing.heymag.app/dashboard
+Start using your credits: https://zazzles.ai/dashboard
 
 - The Zazzles Team
   `
@@ -412,7 +412,7 @@ export function getSubscriptionActivatedEmail(data: SubscriptionActivatedData): 
       </div>
 
       <div style="text-align: center;">
-        <a href="https://marketing.heymag.app/dashboard" class="button">Start Creating</a>
+        <a href="https://zazzles.ai/dashboard" class="button">Start Creating</a>
       </div>
     </div>
     ${getEmailFooter()}
@@ -431,7 +431,7 @@ Plan Details:
 - Amount: ${formattedAmount}/month
 - Next Billing: ${data.nextBillingDate}
 
-Start creating: https://marketing.heymag.app/dashboard
+Start creating: https://zazzles.ai/dashboard
 
 - The Zazzles Team
   `
@@ -461,13 +461,13 @@ export function getSubscriptionCancelledEmail(data: SubscriptionCancelledData): 
       <p>Changed your mind? You can resubscribe anytime:</p>
 
       <div style="text-align: center;">
-        <a href="https://marketing.heymag.app/pricing" class="button">Resubscribe</a>
+        <a href="https://zazzles.ai/pricing" class="button">Resubscribe</a>
       </div>
 
       <div class="divider"></div>
 
       <p style="color: ${BRAND.textLight}; font-size: 14px;">
-        We'd love to know why you cancelled. <a href="https://marketing.heymag.app/feedback">Share your feedback</a> - it helps us improve.
+        We'd love to know why you cancelled. <a href="https://zazzles.ai/feedback">Share your feedback</a> - it helps us improve.
       </p>
     </div>
     ${getEmailFooter()}
@@ -483,7 +483,7 @@ Your ${data.planName} subscription has been cancelled. Your plan will remain act
 - Remaining credits: ${data.remainingCredits}
 - Access until: ${data.effectiveDate}
 
-Changed your mind? Resubscribe: https://marketing.heymag.app/pricing
+Changed your mind? Resubscribe: https://zazzles.ai/pricing
 
 - The Zazzles Team
   `
@@ -515,7 +515,7 @@ export function getCreditsAddedEmail(data: CreditsAddedData): { html: string; te
       </div>
 
       <div style="text-align: center;">
-        <a href="https://marketing.heymag.app/dashboard" class="button">Create Something Amazing</a>
+        <a href="https://zazzles.ai/dashboard" class="button">Create Something Amazing</a>
       </div>
     </div>
     ${getEmailFooter()}
@@ -531,7 +531,7 @@ ${data.creditsAdded} credits have been added to your account.
 Source: ${sourceLabels[data.source]}
 Total Credits: ${data.totalCredits}
 
-Start creating: https://marketing.heymag.app/dashboard
+Start creating: https://zazzles.ai/dashboard
 
 - The Zazzles Team
   `
@@ -564,7 +564,7 @@ export function getLowCreditsWarningEmail(data: LowCreditsWarningData): { html: 
 
       <p style="color: ${BRAND.textLight}; font-size: 14px;">
         Or upgrade to a subscription plan for automatic monthly credits and savings.
-        <a href="https://marketing.heymag.app/pricing">View Plans</a>
+        <a href="https://zazzles.ai/pricing">View Plans</a>
       </p>
     </div>
     ${getEmailFooter()}
@@ -581,7 +581,7 @@ Recommended: ${data.suggestedPack}
 
 Get more credits: ${data.buyUrl}
 
-Or view subscription plans: https://marketing.heymag.app/pricing
+Or view subscription plans: https://zazzles.ai/pricing
 
 - The Zazzles Team
   `
@@ -746,7 +746,7 @@ export function getTrialExpiredEmail(data: TrialExpiredData): { html: string; te
       <div class="divider"></div>
 
       <p style="color: ${BRAND.textLight}; font-size: 14px;">
-        Not ready to commit? You can also buy credit packs with no subscription. <a href="https://marketing.heymag.app/pricing#credits">View Credit Packs</a>
+        Not ready to commit? You can also buy credit packs with no subscription. <a href="https://zazzles.ai/pricing#credits">View Credit Packs</a>
       </p>
     </div>
     ${getEmailFooter()}
@@ -761,7 +761,7 @@ Your free trial has expired, but your account is still saved.
 
 View plans and continue: ${data.upgradeUrl}
 
-Not ready? Buy credit packs instead: https://marketing.heymag.app/pricing#credits
+Not ready? Buy credit packs instead: https://zazzles.ai/pricing#credits
 
 - The Zazzles Team
   `
