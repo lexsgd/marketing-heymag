@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       success: true,
       message: 'Welcome email sent',
       messageId: result.messageId,
-      note: 'Using 2x retina logo (400px displayed at 200px)'
+      note: 'Using original 1200x700 logo displayed at 200px width for maximum sharpness'
     })
   } else {
     return NextResponse.json({ success: false, error: result.error }, { status: 500 })
