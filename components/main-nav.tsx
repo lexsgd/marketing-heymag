@@ -163,8 +163,8 @@ export function MainNav({ user, credits, subscriptionStatus, loading }: MainNavP
             </SheetContent>
           </Sheet>
 
-          {/* Logo */}
-          <Logo width={100} height={58} />
+          {/* Logo - Links to dashboard when logged in, homepage when not */}
+          <Logo width={100} height={58} linkTo={user ? '/dashboard' : '/'} />
         </div>
 
         {/* Center Navigation Tabs - Absolutely positioned to prevent shift */}
