@@ -82,7 +82,7 @@ export default async function DashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
-      <div className="pt-16 p-6 space-y-6">
+      <div className="pt-20 p-6 space-y-6">
       {/* Mobile: Upload button at top (Issue #4) */}
       <div className="md:hidden">
         <Button asChild className="w-full bg-orange-500 hover:bg-orange-600 h-12 text-base">

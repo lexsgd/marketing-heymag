@@ -150,7 +150,7 @@ function BillingPageContent() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavAuth />
-        <div className="pt-16 flex items-center justify-center min-h-[60vh]">
+        <div className="pt-20 flex items-center justify-center min-h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-orange-500" />
         </div>
       </div>
@@ -166,9 +166,9 @@ function BillingPageContent() {
         <SuccessToast />
       </Suspense>
 
-      <div className="pt-16 flex">
+      <div className="pt-20 flex">
         {/* Left Sidebar - Matching Explore pattern */}
-        <aside className="hidden lg:block w-64 border-r border-border h-[calc(100vh-64px)] sticky top-16 overflow-y-auto p-6">
+        <aside className="hidden lg:block w-64 border-r border-border h-[calc(100vh-80px)] sticky top-20 overflow-y-auto p-6">
           {/* Billing Section */}
           <div className="mb-8">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">

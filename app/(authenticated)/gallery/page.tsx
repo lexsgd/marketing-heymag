@@ -37,7 +37,7 @@ export default async function GalleryPage() {
   return (
     <div className="min-h-screen bg-background">
       <MainNav user={user} credits={creditsRemaining} subscriptionStatus={business?.subscription_status} />
-      <div className="pt-16">
+      <div className="pt-20">
         <GalleryClient initialImages={images || []} />
       </div>
     </div>
