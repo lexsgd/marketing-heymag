@@ -467,19 +467,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         </div>
       </div>
 
-      {/* Mobile: Sticky bottom bar with Post button */}
-      <div className="fixed bottom-0 left-0 right-0 z-40 md:hidden bg-background/95 backdrop-blur-sm border-t border-border p-4 pb-safe">
-        <Button
-          className="w-full bg-orange-500 hover:bg-orange-600"
-          onClick={handleOpenSocialDialog}
-          disabled={!image?.enhanced_url}
-        >
-          <Share2 className="mr-2 h-4 w-4" />
-          Post to Social
-        </Button>
-      </div>
-
-      {/* Image Editor */}
+      {/* Image Editor - includes Share dropdown with Post to Social + Download options */}
       <ImageEditor
         imageId={image.id}
         originalUrl={image.original_url}
@@ -487,6 +475,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         originalFilename={image.original_filename}
         creditsRemaining={creditsBalance}
         onDownloadComplete={handleCreditsRefresh}
+        onPostToSocial={handleOpenSocialDialog}
       />
 
       {/* Social Posting Dialog - Redesigned for lower friction */}

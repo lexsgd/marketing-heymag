@@ -16,6 +16,9 @@ import {
   ImageIcon,
   Sparkles,
   Check,
+  Share2,
+  Instagram,
+  Facebook,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BeforeAfterSlider } from './BeforeAfterSlider'
@@ -35,6 +38,8 @@ interface ImageEditorProps {
   creditsRemaining?: number
   /** Called after successful download */
   onDownloadComplete?: () => void
+  /** Called when user clicks Post to Social */
+  onPostToSocial?: () => void
 }
 
 type DownloadOption = '2K' | '4K' | 'PNG' | 'PNG_HD'
@@ -46,6 +51,7 @@ export function ImageEditor({
   originalFilename = 'image',
   creditsRemaining = 0,
   onDownloadComplete,
+  onPostToSocial,
 }: ImageEditorProps) {
   // UI state
   const [isDownloading, setIsDownloading] = useState(false)
@@ -405,7 +411,7 @@ export function ImageEditor({
           </div>
         </div>
 
-        {/* Download Dropdown */}
+        {/* Share Dropdown - Combines Post to Social + Download options */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -425,14 +431,36 @@ export function ImageEditor({
                 </div>
               ) : (
                 <>
-                  <Download className="mr-2 h-4 w-4" />
-                  Download
+                  <Share2 className="mr-2 h-4 w-4" />
+                  Share
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </>
               )}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-72">
+            {/* Post to Social Media - Primary action */}
+            <DropdownMenuItem
+              onClick={onPostToSocial}
+              disabled={isDownloading}
+              className="flex items-start gap-3 p-3 cursor-pointer"
+            >
+              <div className="flex -space-x-1 mt-0.5">
+                <Instagram className="h-4 w-4 text-pink-500" />
+                <Facebook className="h-4 w-4 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Post to Social Media</span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Generate captions & share to Instagram, Facebook
+                </p>
+              </div>
+            </DropdownMenuItem>
+
+            <DropdownMenuSeparator />
+
             {/* 2K Option */}
             <DropdownMenuItem
               onClick={handleDownload2K}
