@@ -15,6 +15,7 @@ import {
   Check,
   Zap,
   Settings,
+  Gift,
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -27,6 +28,7 @@ import { PortalButton } from '@/components/billing/portal-button'
 import { SuccessToast } from '@/components/billing/success-toast'
 import { AutoTopUpSettings } from '@/components/billing/auto-topup-settings'
 import { PricingPlans } from '@/components/billing/pricing-plans'
+import { PromoCodeInput } from '@/components/PromoCodeInput'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
 
@@ -402,6 +404,22 @@ function BillingPageContent() {
                       </Card>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Promo Code */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-5 w-5 text-orange-500" />
+                    <CardTitle className="text-lg">Have a promo code?</CardTitle>
+                  </div>
+                  <CardDescription>
+                    Enter your promo code to get extra credits
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <PromoCodeInput />
                 </CardContent>
               </Card>
 

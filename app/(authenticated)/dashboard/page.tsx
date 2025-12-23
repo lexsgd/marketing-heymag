@@ -10,13 +10,11 @@ import {
   ArrowRight,
   Plus,
   TrendingUp,
-  Gift
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { MainNav } from '@/components/main-nav'
-import { PromoCodeInput } from '@/components/PromoCodeInput'
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -134,22 +132,6 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
       )}
-
-      {/* Promo Code Section */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Gift className="h-5 w-5 text-orange-500" />
-            <CardTitle className="text-lg">Have a promo code?</CardTitle>
-          </div>
-          <CardDescription>
-            Enter your promo code to get extra credits
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PromoCodeInput />
-        </CardContent>
-      </Card>
 
       {/* Stats Grid - Mobile optimized (Issue #5) */}
       {/* Mobile: Credits card prominent, others compact */}
