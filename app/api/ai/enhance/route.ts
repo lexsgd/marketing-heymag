@@ -492,6 +492,9 @@ The user wants a specific background style for their food photo.
 
 USER'S BACKGROUND DESCRIPTION: "${backgroundConfig.description}"
 
+CRITICAL RESTRICTION:
+- DO NOT add any text, words, or brand names, logos or symbols unless explicitly described.
+
 INSTRUCTIONS:
 - Interpret this description creatively and apply an appropriate background
 - The background should complement the food, not distract from it
@@ -499,6 +502,7 @@ INSTRUCTIONS:
 - Apply appropriate lighting that matches the background environment
 - Ensure the background feels natural and physically realistic for the camera angle
 - The background should enhance the overall appetizing quality of the image
+- "Branded" or "professional" means styled appearance, NOT adding text/logos
 
 EXAMPLES OF INTERPRETATION:
 - "white marble" → Clean white marble surface/backdrop with subtle veining
@@ -835,6 +839,14 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
               seasonal: simpleSelection.seasonal,
             },
             formatConfig: simplifiedResult?.formatConfig,
+          } : {}),
+          // Store background config for debugging (v0.54.0)
+          ...(backgroundConfig ? {
+            backgroundConfig: {
+              mode: backgroundConfig.mode,
+              description: backgroundConfig.description || null,
+              // Don't store uploadedUrl to save space - it's in the image record if needed
+            },
           } : {}),
         },
         suggestions: aiSuggestions.length > 0 ? aiSuggestions : defaultEnhancements.suggestions
