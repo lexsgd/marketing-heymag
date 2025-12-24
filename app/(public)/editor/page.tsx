@@ -64,6 +64,8 @@ function EditorContent() {
   const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>(defaultBackgroundConfig)
   // Background processing state
   const [applyingBackground, setApplyingBackground] = useState(false)
+  // Background replacement error - for showing retry option
+  const [backgroundError, setBackgroundError] = useState<string | null>(null)
   // Preferences loading state
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
 
@@ -312,15 +314,25 @@ function EditorContent() {
         setUploadProgress(90)
 
         // If custom background was uploaded, apply it now
+        let backgroundApplied = false
         if (backgroundConfig.mode === 'upload' && backgroundConfig.uploadedUrl && enhanceData.enhancedUrl) {
           setApplyingBackground(true)
           try {
+            console.log('[Editor] Starting background replacement...')
+            console.log('[Editor] Enhanced URL:', enhanceData.enhancedUrl.substring(0, 50) + '...')
+            console.log('[Editor] Background URL:', backgroundConfig.uploadedUrl.substring(0, 50) + '...')
+
             // Apply custom background using client-side processing
             const compositedUrl = await replaceBackgroundImage(
               enhanceData.enhancedUrl,
               backgroundConfig.uploadedUrl,
-              { quality: 'medium' }
+              {
+                quality: 'medium',
+                onProgress: (progress: number) => console.log(`[Editor] Background removal: ${progress}%`)
+              }
             )
+
+            console.log('[Editor] Background replacement successful, uploading result...')
 
             // Upload the composited result back to the server
             const blob = await fetch(compositedUrl).then(r => r.blob())
@@ -330,20 +342,37 @@ function EditorContent() {
             updateFormData.append('file', compositedFile)
             updateFormData.append('imageId', imageRecord.id)
 
-            await fetch('/api/images/update-enhanced', {
+            const updateResponse = await fetch('/api/images/update-enhanced', {
               method: 'POST',
               body: updateFormData,
             })
+
+            if (!updateResponse.ok) {
+              const errorData = await updateResponse.json().catch(() => ({}))
+              throw new Error(errorData.error || 'Failed to save composited image')
+            }
+
+            console.log('[Editor] Composited image saved successfully')
+            backgroundApplied = true
           } catch (bgError) {
-            console.error('Background replacement failed:', bgError)
-            // Continue anyway - user can still see the enhanced image without custom background
+            console.error('[Editor] Background replacement failed:', bgError)
+            setBackgroundError((bgError as Error).message || 'Failed to apply custom background')
+            // Don't fail the whole process - user can retry from the result page
           } finally {
             setApplyingBackground(false)
           }
         }
 
         setUploadProgress(100)
-        router.push(`/editor/${imageRecord.id}`)
+
+        // Navigate to result, with flag if background replacement failed
+        if (backgroundConfig.mode === 'upload' && backgroundConfig.uploadedUrl && !backgroundApplied) {
+          // Pass the uploaded background URL as a query param so user can retry
+          const bgParam = encodeURIComponent(backgroundConfig.uploadedUrl)
+          router.push(`/editor/${imageRecord.id}?pendingBackground=true&bgUrl=${bgParam}`)
+        } else {
+          router.push(`/editor/${imageRecord.id}`)
+        }
       } catch (fetchError: unknown) {
         clearTimeout(timeoutId)
         if ((fetchError as Error).name === 'AbortError') {

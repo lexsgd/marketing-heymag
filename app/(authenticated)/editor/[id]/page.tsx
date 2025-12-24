@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import {
@@ -16,6 +16,7 @@ import {
   AlertCircle,
   ExternalLink,
   Wand2,
+  ImagePlus,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
@@ -36,6 +37,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
 import { config } from '@/lib/config'
 import { ImageEditor } from '@/components/editor'
+import { replaceBackgroundImage } from '@/lib/background-removal'
 
 interface ImageData {
   id: string
@@ -76,8 +78,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   // Caption generation with user instructions
   const [captionInstructions, setCaptionInstructions] = useState('')
   const [captionsRemaining, setCaptionsRemaining] = useState<number | null>(null)
+  // Pending background replacement (when upload mode failed)
+  const [pendingBackgroundUrl, setPendingBackgroundUrl] = useState<string | null>(null)
+  const [applyingBackground, setApplyingBackground] = useState(false)
 
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   const loadImage = useCallback(async () => {
@@ -137,6 +143,75 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   useEffect(() => {
     loadImage()
   }, [loadImage])
+
+  // Check for pending background replacement from query params
+  useEffect(() => {
+    const pendingBackground = searchParams.get('pendingBackground')
+    const bgUrl = searchParams.get('bgUrl')
+    if (pendingBackground === 'true' && bgUrl) {
+      setPendingBackgroundUrl(decodeURIComponent(bgUrl))
+      // Show toast notification
+      toast.warning('Custom background could not be applied automatically', {
+        description: 'Click "Apply Custom Background" to try again.',
+        duration: 10000,
+      })
+    }
+  }, [searchParams])
+
+  // Handle background replacement retry
+  const handleApplyBackground = async () => {
+    if (!pendingBackgroundUrl || !image?.enhanced_url) return
+
+    setApplyingBackground(true)
+    try {
+      console.log('[Editor] Retrying background replacement...')
+
+      // Apply custom background using client-side processing
+      const compositedUrl = await replaceBackgroundImage(
+        image.enhanced_url,
+        pendingBackgroundUrl,
+        {
+          quality: 'medium',
+          onProgress: (progress: number) => console.log(`[Editor] Background removal: ${progress}%`)
+        }
+      )
+
+      console.log('[Editor] Background replacement successful, uploading result...')
+
+      // Upload the composited result back to the server
+      const blob = await fetch(compositedUrl).then(r => r.blob())
+      const compositedFile = new File([blob], 'composited.jpg', { type: 'image/jpeg' })
+
+      const updateFormData = new FormData()
+      updateFormData.append('file', compositedFile)
+      updateFormData.append('imageId', image.id)
+
+      const updateResponse = await fetch('/api/images/update-enhanced', {
+        method: 'POST',
+        body: updateFormData,
+      })
+
+      if (!updateResponse.ok) {
+        const errorData = await updateResponse.json().catch(() => ({}))
+        throw new Error(errorData.error || 'Failed to save composited image')
+      }
+
+      // Reload image and clear pending state
+      await loadImage()
+      setPendingBackgroundUrl(null)
+      // Clear query params
+      router.replace(`/editor/${params.id}`, { scroll: false })
+
+      toast.success('Custom background applied successfully!')
+    } catch (err) {
+      console.error('[Editor] Background replacement failed:', err)
+      toast.error('Failed to apply custom background', {
+        description: (err as Error).message || 'Please try again.',
+      })
+    } finally {
+      setApplyingBackground(false)
+    }
+  }
 
   // Trigger AI enhancement for pending/failed images
   const handleEnhanceWithAI = async () => {
@@ -450,6 +525,32 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 AI enhancement in progress...
+              </div>
+            )}
+            {/* Show Apply Custom Background button when background replacement failed */}
+            {pendingBackgroundUrl && image.status === 'completed' && (
+              <div className="mt-2">
+                <Button
+                  onClick={handleApplyBackground}
+                  disabled={applyingBackground}
+                  className="bg-orange-500 hover:bg-orange-600"
+                  size="sm"
+                >
+                  {applyingBackground ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Applying Background...
+                    </>
+                  ) : (
+                    <>
+                      <ImagePlus className="mr-2 h-4 w-4" />
+                      Apply Custom Background
+                    </>
+                  )}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Your custom background was not applied. Click to try again.
+                </p>
               </div>
             )}
           </div>

@@ -144,17 +144,24 @@ export function BeforeAfterSlider({
 
         Note: object-contain ensures both images are positioned identically,
         so the comparison works even with different aspect ratios.
+
+        The wrapper div with gradient background ensures that letterbox areas
+        show the gradient, NOT the original image showing through.
       */}
-      <img
-        src={afterUrl}
-        alt={`${alt} - Enhanced`}
-        className="absolute inset-0 w-full h-full object-contain object-center"
+      <div
+        className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black"
         style={{
           clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`
         }}
-        onLoad={() => setImagesLoaded(prev => ({ ...prev, after: true }))}
-        draggable={false}
-      />
+      >
+        <img
+          src={afterUrl}
+          alt={`${alt} - Enhanced`}
+          className="absolute inset-0 w-full h-full object-contain object-center"
+          onLoad={() => setImagesLoaded(prev => ({ ...prev, after: true }))}
+          draggable={false}
+        />
+      </div>
 
       {/* Slider Handle - Vertical line with draggable circle */}
       <div
