@@ -19,12 +19,15 @@ import {
   Palette,
   Image as ImageIcon,
   Layers,
-  Check
+  Check,
+  Upload,
+  X
 } from 'lucide-react'
 import {
   removeImageBackground,
   replaceBackground,
   replaceBackgroundGradient,
+  replaceBackgroundImage,
   presetBackgrounds,
   presetGradients,
   type BackgroundRemovalOptions
@@ -40,7 +43,7 @@ interface BackgroundRemoverProps {
   disabled?: boolean
 }
 
-type BackgroundTab = 'remove' | 'solid' | 'gradient'
+type BackgroundTab = 'remove' | 'solid' | 'gradient' | 'custom'
 
 export function BackgroundRemover({
   imageUrl,
@@ -53,6 +56,7 @@ export function BackgroundRemover({
   const [selectedColor, setSelectedColor] = useState<string | null>(null)
   const [selectedGradient, setSelectedGradient] = useState<string | null>(null)
   const [quality, setQuality] = useState<'low' | 'medium' | 'high'>('medium')
+  const [customBackground, setCustomBackground] = useState<string | null>(null)
 
   const handleRemoveBackground = async () => {
     setProcessing(true)
@@ -117,6 +121,37 @@ export function BackgroundRemover({
     }
   }
 
+  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onload = () => setCustomBackground(reader.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  const handleReplaceWithImage = async () => {
+    if (!customBackground) return
+
+    setProcessing(true)
+    setProgress(0)
+
+    try {
+      const options: BackgroundRemovalOptions = {
+        quality,
+        onProgress: setProgress
+      }
+
+      const result = await replaceBackgroundImage(imageUrl, customBackground, options)
+      onResult(result)
+    } catch (error) {
+      console.error('Background replacement with image failed:', error)
+    } finally {
+      setProcessing(false)
+      setProgress(0)
+    }
+  }
+
   const colorGroups = {
     'Clean Whites': ['cleanWhite', 'softWhite', 'warmWhite'],
     'Neutral Grays': ['lightGray', 'mediumGray'],
@@ -175,18 +210,22 @@ export function BackgroundRemover({
 
         {/* Tab Options */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as BackgroundTab)}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="remove" disabled={processing || disabled}>
-              <Layers className="mr-2 h-4 w-4" />
+              <Layers className="mr-1 h-4 w-4" />
               Remove
             </TabsTrigger>
             <TabsTrigger value="solid" disabled={processing || disabled}>
-              <Palette className="mr-2 h-4 w-4" />
+              <Palette className="mr-1 h-4 w-4" />
               Solid
             </TabsTrigger>
             <TabsTrigger value="gradient" disabled={processing || disabled}>
-              <ImageIcon className="mr-2 h-4 w-4" />
+              <ImageIcon className="mr-1 h-4 w-4" />
               Gradient
+            </TabsTrigger>
+            <TabsTrigger value="custom" disabled={processing || disabled}>
+              <Upload className="mr-1 h-4 w-4" />
+              Custom
             </TabsTrigger>
           </TabsList>
 
@@ -288,6 +327,67 @@ export function BackgroundRemover({
                 )
               })}
             </div>
+          </TabsContent>
+
+          {/* Custom Background Tab */}
+          <TabsContent value="custom" className="mt-4 space-y-4">
+            {/* Preview of uploaded background */}
+            {customBackground && (
+              <div className="relative aspect-video rounded-lg overflow-hidden border">
+                <img
+                  src={customBackground}
+                  alt="Custom background"
+                  className="object-cover w-full h-full"
+                />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-8 w-8 bg-background/80 hover:bg-background"
+                  onClick={() => setCustomBackground(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+
+            {/* Upload zone */}
+            {!customBackground && (
+              <label className="flex flex-col items-center justify-center h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                <span className="text-sm text-muted-foreground">Upload your background</span>
+                <span className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleBackgroundUpload}
+                  disabled={processing || disabled}
+                />
+              </label>
+            )}
+
+            {/* Apply button */}
+            <Button
+              onClick={handleReplaceWithImage}
+              disabled={!customBackground || processing || disabled}
+              className="w-full bg-orange-500 hover:bg-orange-600"
+            >
+              {processing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Applying Background...
+                </>
+              ) : (
+                <>
+                  <ImageIcon className="mr-2 h-4 w-4" />
+                  Apply Custom Background
+                </>
+              )}
+            </Button>
+
+            <p className="text-xs text-muted-foreground text-center">
+              FREE - Your food will be placed on this background
+            </p>
           </TabsContent>
         </Tabs>
 
