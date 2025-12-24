@@ -3,7 +3,7 @@ import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 import { getMultiStylePrompt, parseStyleIds, buildSimplifiedPrompt } from '@/lib/multi-style-prompt-builder'
-import type { SimpleSelection } from '@/lib/simplified-styles'
+import type { SimpleSelection, BackgroundConfig } from '@/lib/simplified-styles'
 import { checkAndExecuteAutoTopUp } from '@/lib/auto-topup'
 import { getAngleAwareVenuePrompt, hasAngleAwareStyling, getAllAnglePrompts } from '@/lib/ai/angle-aware-styles'
 import {
@@ -300,6 +300,8 @@ export async function POST(request: NextRequest) {
     const aspectRatio = body.aspectRatio as string | undefined
     // Flag indicating user will apply custom background after enhancement
     const hasCustomBackground = body.hasCustomBackground as boolean | undefined
+    // Background configuration for describe/upload modes
+    const backgroundConfig = body.backgroundConfig as BackgroundConfig | undefined
 
     // imageId is required by schema, but double-check for safety
     if (!imageId) {
@@ -477,6 +479,40 @@ CRITICAL: The background will be completely replaced, so:
 - Make the food "pop" against the simple background
 `
         logger.debug('Added custom background instructions to prompt')
+      }
+
+      // Handle "describe" background mode - AI interprets user's description
+      if (backgroundConfig?.mode === 'describe' && backgroundConfig.description) {
+        stylePrompt += `
+
+═══════════════════════════════════════════════════════════════════════════════
+CUSTOM BACKGROUND DESCRIPTION - USER REQUEST
+═══════════════════════════════════════════════════════════════════════════════
+The user wants a specific background style for their food photo.
+
+USER'S BACKGROUND DESCRIPTION: "${backgroundConfig.description}"
+
+INSTRUCTIONS:
+- Interpret this description creatively and apply an appropriate background
+- The background should complement the food, not distract from it
+- Maintain the food as the clear focal point
+- Apply appropriate lighting that matches the background environment
+- Ensure the background feels natural and physically realistic for the camera angle
+- The background should enhance the overall appetizing quality of the image
+
+EXAMPLES OF INTERPRETATION:
+- "white marble" → Clean white marble surface/backdrop with subtle veining
+- "rustic wood" → Warm wooden table/background with natural grain texture
+- "dark moody" → Deep, elegant dark background with dramatic lighting
+- "bright kitchen" → Light, airy kitchen environment with soft natural light
+- "outdoor cafe" → Blurred cafe/patio setting with bokeh effect
+- "Christmas theme" → Festive elements, warm tones, holiday atmosphere
+
+Create a professional, appetizing result that incorporates the user's requested background style.
+`
+        logger.debug('Added describe background instructions to prompt', {
+          description: backgroundConfig.description.substring(0, 50),
+        })
       }
 
       // Fetch the original image

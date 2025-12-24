@@ -16,6 +16,8 @@ export interface SimpleStyle {
   name: string
   emoji: string
   description: string
+  /** Detailed explanation for users who aren't photographers */
+  detailedHelp?: string
   examples?: string[] // Platform examples for formats
 }
 
@@ -38,30 +40,35 @@ export const businessTypes: SimpleStyle[] = [
     name: 'Restaurant',
     emoji: '🍽️',
     description: 'Casual to fine dining, plated dishes',
+    detailedHelp: 'AI will emphasize plate presentation and garnishes. Works best for dishes that are artfully arranged on plates. The lighting will highlight textures and create depth.',
   },
   {
     id: 'cafe',
     name: 'Cafe & Bakery',
     emoji: '☕',
     description: 'Coffee, pastries, brunch spots',
+    detailedHelp: 'AI will add soft, dreamy lighting with warm tones. Perfect for lattes, croissants, cakes, and brunch items. Creates an Instagram-worthy, inviting aesthetic.',
   },
   {
     id: 'hawker',
     name: 'Hawker & Street Food',
     emoji: '🍜',
     description: 'Hawker centres, kopitiams, street vendors',
+    detailedHelp: 'AI will capture the authentic, hearty appeal of local food. Emphasizes generous portions and rich colors. Makes dishes look appetizing without being overly polished.',
   },
   {
     id: 'fastfood',
     name: 'Fast Food',
     emoji: '🍔',
     description: 'Burgers, fried chicken, quick service',
+    detailedHelp: 'AI will make food look fresh and craveable. Highlights crispy textures, melty cheese, and juicy meats. Uses bold colors and punchy lighting typical of fast food ads.',
   },
   {
     id: 'dessert',
     name: 'Desserts & Sweets',
     emoji: '🍰',
     description: 'Cakes, ice cream, sweet treats',
+    detailedHelp: 'AI will enhance sweetness and indulgence. Perfect lighting to show glossy glazes, creamy textures, and vibrant colors. Makes desserts look irresistible.',
   },
 ]
 
@@ -138,30 +145,35 @@ export const moods: SimpleStyle[] = [
     name: 'Auto',
     emoji: '✨',
     description: 'Let AI choose the best look (Recommended)',
+    detailedHelp: 'AI analyzes your food type and automatically selects the most appealing look. Best for most users - the AI is trained on millions of successful food photos.',
   },
   {
     id: 'bright',
     name: 'Bright & Fresh',
     emoji: '☀️',
     description: 'Clean, cheerful, high-energy',
+    detailedHelp: 'Think "cafe in the morning sun". Uses white/light backgrounds, high brightness, and minimal shadows. Makes food look clean and healthy. Great for salads, smoothies, light dishes, and cafes.',
   },
   {
     id: 'warm',
     name: 'Warm & Cozy',
     emoji: '🔥',
     description: 'Inviting, comfortable, homestyle',
+    detailedHelp: 'Think "grandma\'s kitchen". Uses wood textures, golden lighting, and earthy tones. Makes food look comforting and homemade. Perfect for soups, baked goods, comfort food, and family restaurants.',
   },
   {
     id: 'elegant',
     name: 'Dark & Elegant',
     emoji: '🌙',
     description: 'Sophisticated, dramatic, premium',
+    detailedHelp: 'Think "fine dining magazine". Uses dark/black backgrounds with dramatic lighting that highlights the food. Creates contrast and luxury feel. Best for premium dishes, steaks, and upscale restaurants.',
   },
   {
     id: 'natural',
     name: 'Natural Light',
     emoji: '🪟',
     description: 'Authentic, soft, organic feel',
+    detailedHelp: 'Think "by the window on a sunny day". Uses soft, diffused lighting that mimics natural sunlight. Keeps colors true-to-life. Perfect for organic food, farm-to-table, and health-focused brands.',
   },
 ]
 
@@ -175,42 +187,49 @@ export const seasonalThemes: SimpleStyle[] = [
     name: 'No Theme',
     emoji: '➖',
     description: 'Keep it simple, no seasonal styling',
+    detailedHelp: 'No seasonal decorations added. Use this for evergreen content that you can reuse year-round.',
   },
   {
     id: 'christmas',
     name: 'Christmas',
     emoji: '🎄',
     description: 'Festive red & green, cozy winter vibes',
+    detailedHelp: 'AI adds Christmas elements like pine branches, ornaments, fairy lights, and red/green/gold accents. Creates a warm, festive atmosphere.',
   },
   {
     id: 'cny',
     name: 'Chinese New Year',
     emoji: '🧧',
     description: 'Prosperous red & gold styling',
+    detailedHelp: 'AI adds auspicious elements like red lanterns, gold coins, cherry blossoms, and traditional Chinese patterns. Creates prosperity and celebration vibes.',
   },
   {
     id: 'valentines',
     name: "Valentine's Day",
     emoji: '💝',
     description: 'Romantic pink & red hearts',
+    detailedHelp: 'AI adds romantic elements like hearts, roses, pink lighting, and soft bokeh effects. Perfect for couple-sized portions and romantic dining promotions.',
   },
   {
     id: 'hari-raya',
     name: 'Hari Raya',
     emoji: '🌙',
     description: 'Elegant green & gold celebration',
+    detailedHelp: 'AI adds traditional Malay elements with green and gold colors, ketupat motifs, and elegant celebration styling. Perfect for Eid promotions.',
   },
   {
     id: 'deepavali',
     name: 'Deepavali',
     emoji: '🪔',
     description: 'Vibrant festival of lights',
+    detailedHelp: 'AI adds diya lamps, rangoli patterns, and warm golden lighting. Uses vibrant jewel tones to celebrate the festival of lights.',
   },
   {
     id: 'mid-autumn',
     name: 'Mid-Autumn',
     emoji: '🥮',
     description: 'Mooncake season elegance',
+    detailedHelp: 'AI adds moon motifs, lanterns, and elegant Chinese elements. Uses deep jewel tones and moonlight ambiance. Perfect for mooncake and tea promotions.',
   },
 ]
 
@@ -262,6 +281,73 @@ export interface SimpleSelection {
   format: string | null
   mood: string | null
   seasonal: string | null
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// BACKGROUND CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export type BackgroundMode = 'auto' | 'describe' | 'upload'
+
+export interface BackgroundConfig {
+  /** How the background should be handled */
+  mode: BackgroundMode
+  /** User's description for AI (only for 'describe' mode) */
+  description?: string
+  /** Uploaded background URL (only for 'upload' mode) */
+  uploadedUrl?: string
+  /** Whether to save this as default for future uploads */
+  saveAsDefault?: boolean
+}
+
+export const defaultBackgroundConfig: BackgroundConfig = {
+  mode: 'auto',
+  description: undefined,
+  uploadedUrl: undefined,
+  saveAsDefault: false,
+}
+
+/** Mood recommendations based on background mode/description */
+export const backgroundMoodRecommendations: Record<string, { mood: string; reason: string }> = {
+  // Keywords that suggest bright mood
+  'white': { mood: 'bright', reason: 'White backgrounds work best with bright, clean lighting' },
+  'clean': { mood: 'bright', reason: 'Clean backgrounds pair well with bright, fresh styling' },
+  'minimal': { mood: 'bright', reason: 'Minimalist backgrounds look best with bright lighting' },
+  'light': { mood: 'bright', reason: 'Light backgrounds complement bright, airy styling' },
+
+  // Keywords that suggest warm mood
+  'wood': { mood: 'warm', reason: 'Wood backgrounds pair beautifully with warm, cozy lighting' },
+  'rustic': { mood: 'warm', reason: 'Rustic backgrounds look best with warm, homestyle lighting' },
+  'cozy': { mood: 'warm', reason: 'Cozy themes naturally pair with warm lighting' },
+  'homestyle': { mood: 'warm', reason: 'Homestyle backgrounds work well with warm, inviting light' },
+
+  // Keywords that suggest elegant mood
+  'dark': { mood: 'elegant', reason: 'Dark backgrounds create dramatic, elegant contrast' },
+  'black': { mood: 'elegant', reason: 'Black backgrounds look stunning with elegant, moody lighting' },
+  'marble': { mood: 'elegant', reason: 'Marble backgrounds suit sophisticated, elegant styling' },
+  'luxury': { mood: 'elegant', reason: 'Luxury themes pair with dark, elegant atmospheres' },
+  'premium': { mood: 'elegant', reason: 'Premium branding looks best with elegant, dramatic lighting' },
+
+  // Keywords that suggest natural mood
+  'natural': { mood: 'natural', reason: 'Natural themes pair with soft, natural lighting' },
+  'organic': { mood: 'natural', reason: 'Organic backgrounds work best with natural light styling' },
+  'garden': { mood: 'natural', reason: 'Garden themes complement natural, outdoor lighting' },
+  'outdoor': { mood: 'natural', reason: 'Outdoor settings look best with natural light' },
+}
+
+/**
+ * Get mood recommendation based on background description
+ */
+export function getMoodRecommendationFromBackground(description: string): { mood: string; reason: string } | null {
+  const lowerDesc = description.toLowerCase()
+
+  for (const [keyword, recommendation] of Object.entries(backgroundMoodRecommendations)) {
+    if (lowerDesc.includes(keyword)) {
+      return recommendation
+    }
+  }
+
+  return null
 }
 
 export const emptySimpleSelection: SimpleSelection = {

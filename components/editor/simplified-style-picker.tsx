@@ -25,21 +25,28 @@ import {
   moods,
   seasonalThemes,
   countSelections,
+  getMoodRecommendationFromBackground,
+  defaultBackgroundConfig,
   type SimpleSelection,
   type SimpleStyle,
   type FormatStyle,
+  type BackgroundConfig,
+  type BackgroundMode,
 } from '@/lib/simplified-styles'
 import { validateSelection, getSmartSuggestions, getSelectionStatus } from '@/lib/conflict-rules'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
 
 interface SimplifiedStylePickerProps {
   selection: SimpleSelection
   onSelectionChange: (selection: SimpleSelection) => void
   disabled?: boolean
   onClose?: () => void
-  /** Optional custom background URL for branded backgrounds */
-  customBackground?: string | null
-  /** Callback when custom background changes */
-  onBackgroundChange?: (url: string | null) => void
+  /** Background configuration */
+  backgroundConfig?: BackgroundConfig
+  /** Callback when background config changes */
+  onBackgroundConfigChange?: (config: BackgroundConfig) => void
 }
 
 // Category data mapping
@@ -58,8 +65,8 @@ export function SimplifiedStylePicker({
   onSelectionChange,
   disabled = false,
   onClose,
-  customBackground,
-  onBackgroundChange,
+  backgroundConfig = defaultBackgroundConfig,
+  onBackgroundConfigChange,
 }: SimplifiedStylePickerProps) {
   // First two categories expanded by default
   const [expandedCategories, setExpandedCategories] = useState<string[]>([
@@ -69,10 +76,39 @@ export function SimplifiedStylePicker({
   const [backgroundExpanded, setBackgroundExpanded] = useState(false)
   const backgroundInputRef = useRef<HTMLInputElement>(null)
 
+  // Get mood recommendation based on background description
+  const moodRecommendation = useMemo(() => {
+    if (backgroundConfig.mode === 'describe' && backgroundConfig.description) {
+      return getMoodRecommendationFromBackground(backgroundConfig.description)
+    }
+    return null
+  }, [backgroundConfig.mode, backgroundConfig.description])
+
+  // Update background config helper
+  const updateBackgroundConfig = (updates: Partial<BackgroundConfig>) => {
+    if (onBackgroundConfigChange) {
+      onBackgroundConfigChange({ ...backgroundConfig, ...updates })
+    }
+  }
+
+  // Handle background mode change
+  const handleModeChange = (mode: BackgroundMode) => {
+    if (onBackgroundConfigChange) {
+      onBackgroundConfigChange({
+        ...backgroundConfig,
+        mode,
+        // Clear description if switching away from describe mode
+        description: mode === 'describe' ? backgroundConfig.description : undefined,
+        // Clear upload if switching away from upload mode
+        uploadedUrl: mode === 'upload' ? backgroundConfig.uploadedUrl : undefined,
+      })
+    }
+  }
+
   // Handle background file upload
   const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !onBackgroundChange) return
+    if (!file || !onBackgroundConfigChange) return
 
     // Validate file
     if (!file.type.startsWith('image/')) {
@@ -84,7 +120,11 @@ export function SimplifiedStylePicker({
 
     const reader = new FileReader()
     reader.onload = () => {
-      onBackgroundChange(reader.result as string)
+      onBackgroundConfigChange({
+        ...backgroundConfig,
+        mode: 'upload',
+        uploadedUrl: reader.result as string,
+      })
     }
     reader.readAsDataURL(file)
 
@@ -93,8 +133,11 @@ export function SimplifiedStylePicker({
   }
 
   const clearBackground = () => {
-    if (onBackgroundChange) {
-      onBackgroundChange(null)
+    if (onBackgroundConfigChange) {
+      onBackgroundConfigChange({
+        ...backgroundConfig,
+        uploadedUrl: undefined,
+      })
     }
   }
 
@@ -234,6 +277,15 @@ export function SimplifiedStylePicker({
             <p className="text-sm text-muted-foreground">
               {style.description}
             </p>
+
+            {/* Detailed help for laymen */}
+            {style.detailedHelp && (
+              <div className="p-2 bg-muted/50 rounded-md">
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  {style.detailedHelp}
+                </p>
+              </div>
+            )}
 
             {/* Format-specific details */}
             {isFormat && (
@@ -436,8 +488,8 @@ export function SimplifiedStylePicker({
               )
             })}
 
-            {/* Custom Background Section - Only show if onBackgroundChange is provided */}
-            {onBackgroundChange && (
+            {/* Background Section - Only show if onBackgroundConfigChange is provided */}
+            {onBackgroundConfigChange && (
               <div className="border-b border-border last:border-0">
                 {/* Background Header */}
                 <button
@@ -453,18 +505,22 @@ export function SimplifiedStylePicker({
                   <div className="flex-1 text-left">
                     <div className="flex items-center gap-2">
                       <span className="font-medium text-sm">
-                        Custom Background
+                        Background
                       </span>
                       <span className="text-[10px] text-muted-foreground font-medium">
                         Optional
                       </span>
-                      {customBackground && (
+                      {(backgroundConfig.mode !== 'auto' || backgroundConfig.uploadedUrl || backgroundConfig.description) && (
                         <div className="w-2 h-2 rounded-full bg-orange-500" />
                       )}
                     </div>
-                    {!backgroundExpanded && customBackground && (
+                    {!backgroundExpanded && (
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        Background uploaded
+                        {backgroundConfig.mode === 'auto' && 'AI Auto (default)'}
+                        {backgroundConfig.mode === 'describe' && backgroundConfig.description && `"${backgroundConfig.description.substring(0, 30)}${backgroundConfig.description.length > 30 ? '...' : ''}"`}
+                        {backgroundConfig.mode === 'describe' && !backgroundConfig.description && 'Describe your background'}
+                        {backgroundConfig.mode === 'upload' && backgroundConfig.uploadedUrl && 'Custom background uploaded'}
+                        {backgroundConfig.mode === 'upload' && !backgroundConfig.uploadedUrl && 'Upload your background'}
                       </p>
                     )}
                   </div>
@@ -472,7 +528,7 @@ export function SimplifiedStylePicker({
                   <ImageIcon className="h-4 w-4 text-muted-foreground" />
                 </button>
 
-                {/* Background Upload Content */}
+                {/* Background Content - 3 Modes */}
                 {backgroundExpanded && (
                   <div className="px-4 pb-3 space-y-3">
                     {/* Hidden file input */}
@@ -485,57 +541,236 @@ export function SimplifiedStylePicker({
                       disabled={disabled}
                     />
 
-                    {customBackground ? (
-                      /* Preview uploaded background */
-                      <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
-                        <Image
-                          src={customBackground}
-                          alt="Custom background"
-                          fill
-                          className="object-cover"
-                        />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="absolute top-2 right-2 h-7 w-7 bg-background/80 hover:bg-background"
-                          onClick={clearBackground}
-                          disabled={disabled}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <Badge className="absolute bottom-2 left-2 bg-green-500 text-white border-0 text-[10px]">
-                          <Check className="h-3 w-3 mr-1" />
-                          Ready
-                        </Badge>
-                      </div>
-                    ) : (
-                      /* Upload zone */
-                      <label
+                    {/* Mode Selection - Radio Buttons */}
+                    <div className="space-y-2">
+                      {/* AI Auto Mode */}
+                      <button
+                        onClick={() => handleModeChange('auto')}
+                        disabled={disabled}
                         className={cn(
-                          'flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors',
+                          'w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left',
+                          backgroundConfig.mode === 'auto'
+                            ? 'border-orange-500 bg-orange-500/10'
+                            : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50',
                           disabled && 'opacity-50 cursor-not-allowed'
                         )}
                       >
-                        <Upload className="h-6 w-6 text-muted-foreground mb-1" />
-                        <span className="text-xs text-muted-foreground">Upload branded background</span>
-                        <span className="text-[10px] text-muted-foreground mt-0.5">PNG, JPG up to 10MB</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={handleBackgroundUpload}
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div
+                            className={cn(
+                              'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                              backgroundConfig.mode === 'auto'
+                                ? 'border-orange-500 bg-orange-500'
+                                : 'border-muted-foreground/40'
+                            )}
+                          >
+                            {backgroundConfig.mode === 'auto' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="h-3.5 w-3.5 text-orange-500" />
+                            <span className="font-medium text-sm">AI Auto</span>
+                            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400">
+                              Recommended
+                            </Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Let AI choose the perfect background based on your food type and mood
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Describe Mode */}
+                      <button
+                        onClick={() => handleModeChange('describe')}
+                        disabled={disabled}
+                        className={cn(
+                          'w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left',
+                          backgroundConfig.mode === 'describe'
+                            ? 'border-orange-500 bg-orange-500/10'
+                            : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50',
+                          disabled && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div
+                            className={cn(
+                              'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                              backgroundConfig.mode === 'describe'
+                                ? 'border-orange-500 bg-orange-500'
+                                : 'border-muted-foreground/40'
+                            )}
+                          >
+                            {backgroundConfig.mode === 'describe' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Wand2 className="h-3.5 w-3.5 text-purple-500" />
+                            <span className="font-medium text-sm">Describe Background</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Tell AI what background you want (e.g., "red Thai-styled wooden table")
+                          </p>
+                        </div>
+                      </button>
+
+                      {/* Upload Mode */}
+                      <button
+                        onClick={() => handleModeChange('upload')}
+                        disabled={disabled}
+                        className={cn(
+                          'w-full flex items-start gap-3 p-3 rounded-lg border transition-all text-left',
+                          backgroundConfig.mode === 'upload'
+                            ? 'border-orange-500 bg-orange-500/10'
+                            : 'border-border hover:border-muted-foreground/50 hover:bg-muted/50',
+                          disabled && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div
+                            className={cn(
+                              'w-4 h-4 rounded-full border-2 flex items-center justify-center',
+                              backgroundConfig.mode === 'upload'
+                                ? 'border-orange-500 bg-orange-500'
+                                : 'border-muted-foreground/40'
+                            )}
+                          >
+                            {backgroundConfig.mode === 'upload' && <div className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <Upload className="h-3.5 w-3.5 text-blue-500" />
+                            <span className="font-medium text-sm">Upload Your Own</span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Use your branded background image for consistent branding
+                          </p>
+                        </div>
+                      </button>
+                    </div>
+
+                    {/* Describe Mode - Text Input */}
+                    {backgroundConfig.mode === 'describe' && (
+                      <div className="space-y-2 pt-2 border-t border-border">
+                        <Label htmlFor="bg-description" className="text-xs font-medium">
+                          Describe your background
+                        </Label>
+                        <Textarea
+                          id="bg-description"
+                          placeholder="e.g., Red Thai-styled wooden table with gold accents, or white marble surface with soft shadows"
+                          value={backgroundConfig.description || ''}
+                          onChange={(e) => updateBackgroundConfig({ description: e.target.value })}
                           disabled={disabled}
+                          className="min-h-[80px] text-sm resize-none"
                         />
-                      </label>
+                        <p className="text-[10px] text-muted-foreground">
+                          Be specific about colors, materials, and style. AI will generate the perfect background.
+                        </p>
+
+                        {/* Mood Recommendation */}
+                        {moodRecommendation && (
+                          <div className="flex items-start gap-2 p-2 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                            <Sparkles className="h-3.5 w-3.5 text-purple-500 flex-shrink-0 mt-0.5" />
+                            <div>
+                              <p className="text-[10px] text-purple-700 dark:text-purple-400 font-medium">
+                                Mood suggestion: {moods.find(m => m.id === moodRecommendation.mood)?.name}
+                              </p>
+                              <p className="text-[10px] text-purple-600 dark:text-purple-500 mt-0.5">
+                                {moodRecommendation.reason}
+                              </p>
+                              {selection.mood !== moodRecommendation.mood && selection.mood !== 'auto' && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 mt-1 text-[10px] text-purple-600 hover:text-purple-700"
+                                  onClick={() => onSelectionChange({ ...selection, mood: moodRecommendation.mood })}
+                                >
+                                  Apply suggestion
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     )}
 
-                    {/* Info text */}
-                    <div className="flex items-start gap-2 p-2 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                      <Sparkles className="h-3.5 w-3.5 text-orange-500 flex-shrink-0 mt-0.5" />
-                      <p className="text-[10px] text-orange-700 dark:text-orange-400">
-                        Your food will be automatically placed on this background after enhancement
-                      </p>
-                    </div>
+                    {/* Upload Mode - File Upload */}
+                    {backgroundConfig.mode === 'upload' && (
+                      <div className="space-y-3 pt-2 border-t border-border">
+                        {backgroundConfig.uploadedUrl ? (
+                          /* Preview uploaded background */
+                          <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
+                            <Image
+                              src={backgroundConfig.uploadedUrl}
+                              alt="Custom background"
+                              fill
+                              className="object-cover"
+                            />
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute top-2 right-2 h-7 w-7 bg-background/80 hover:bg-background"
+                              onClick={clearBackground}
+                              disabled={disabled}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                            <Badge className="absolute bottom-2 left-2 bg-green-500 text-white border-0 text-[10px]">
+                              <Check className="h-3 w-3 mr-1" />
+                              Ready
+                            </Badge>
+                          </div>
+                        ) : (
+                          /* Upload zone */
+                          <label
+                            className={cn(
+                              'flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors',
+                              disabled && 'opacity-50 cursor-not-allowed'
+                            )}
+                          >
+                            <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                            <span className="text-xs text-muted-foreground">Upload your background</span>
+                            <span className="text-[10px] text-muted-foreground mt-0.5">PNG, JPG up to 10MB</span>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={handleBackgroundUpload}
+                              disabled={disabled}
+                            />
+                          </label>
+                        )}
+
+                        {/* Info text for upload mode */}
+                        <div className="flex items-start gap-2 p-2 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                          <Info className="h-3.5 w-3.5 text-blue-500 flex-shrink-0 mt-0.5" />
+                          <p className="text-[10px] text-blue-700 dark:text-blue-400">
+                            Your food will be automatically extracted and placed on this background
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Save as default checkbox */}
+                    {(backgroundConfig.mode !== 'auto' || backgroundConfig.description || backgroundConfig.uploadedUrl) && (
+                      <div className="flex items-center gap-2 pt-2 border-t border-border">
+                        <Checkbox
+                          id="save-default"
+                          checked={backgroundConfig.saveAsDefault || false}
+                          onCheckedChange={(checked) => updateBackgroundConfig({ saveAsDefault: checked === true })}
+                          disabled={disabled}
+                        />
+                        <Label
+                          htmlFor="save-default"
+                          className="text-xs text-muted-foreground cursor-pointer"
+                        >
+                          Save as default for future uploads
+                        </Label>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -30,7 +30,9 @@ import { StyleBottomSheet } from '@/components/editor/style-bottom-sheet'
 import { PromptBottomSheet } from '@/components/editor/prompt-bottom-sheet'
 import {
   type SimpleSelection,
+  type BackgroundConfig,
   emptySimpleSelection,
+  defaultBackgroundConfig,
   getFormatConfig,
 } from '@/lib/simplified-styles'
 import { replaceBackgroundImage } from '@/lib/background-removal'
@@ -58,10 +60,71 @@ function EditorContent() {
   const [promptSheetOpen, setPromptSheetOpen] = useState(false)
   // Prompt text for AI enhancement
   const [prompt, setPrompt] = useState('')
-  // Custom background for branded backgrounds (optional)
-  const [customBackground, setCustomBackground] = useState<string | null>(null)
+  // Background configuration for branded backgrounds
+  const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>(defaultBackgroundConfig)
   // Background processing state
   const [applyingBackground, setApplyingBackground] = useState(false)
+  // Preferences loading state
+  const [preferencesLoaded, setPreferencesLoaded] = useState(false)
+
+  // Load user preferences on mount
+  useEffect(() => {
+    async function loadPreferences() {
+      try {
+        const response = await fetch('/api/preferences')
+        if (response.ok) {
+          const data = await response.json()
+          if (data.preferences) {
+            // Apply saved background preferences
+            if (data.preferences.default_background_mode) {
+              setBackgroundConfig({
+                mode: data.preferences.default_background_mode,
+                description: data.preferences.default_background_description || undefined,
+                uploadedUrl: data.preferences.default_background_url || undefined,
+                saveAsDefault: false,
+              })
+            }
+            // Apply other saved preferences if available
+            if (data.preferences.default_business_type) {
+              setSelectedStyles(prev => ({
+                ...prev,
+                businessType: data.preferences.default_business_type,
+              }))
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load preferences:', error)
+      } finally {
+        setPreferencesLoaded(true)
+      }
+    }
+    loadPreferences()
+  }, [])
+
+  // Save preferences when saveAsDefault is checked
+  useEffect(() => {
+    if (!preferencesLoaded) return
+    if (!backgroundConfig.saveAsDefault) return
+
+    async function savePreferences() {
+      try {
+        await fetch('/api/preferences', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            default_background_mode: backgroundConfig.mode,
+            default_background_description: backgroundConfig.description,
+            default_background_url: backgroundConfig.uploadedUrl,
+          }),
+        })
+        console.log('Preferences saved as default')
+      } catch (error) {
+        console.error('Failed to save preferences:', error)
+      }
+    }
+    savePreferences()
+  }, [backgroundConfig.saveAsDefault, backgroundConfig.mode, backgroundConfig.description, backgroundConfig.uploadedUrl, preferencesLoaded])
 
   // Initialize sidebar state based on screen size (lg = 1024px)
   useEffect(() => {
@@ -219,8 +282,10 @@ function EditorContent() {
             aspectRatio: formatConfig.aspectRatio,
             templateId: template?.id,
             templateUrl: template?.webUrl,
-            // Tell AI to use simple background when custom background will be applied
-            hasCustomBackground: !!customBackground,
+            // Background configuration for custom backgrounds
+            backgroundConfig: backgroundConfig.mode !== 'auto' ? backgroundConfig : undefined,
+            // Tell AI to use simple background when custom background will be uploaded
+            hasCustomBackground: backgroundConfig.mode === 'upload' && !!backgroundConfig.uploadedUrl,
           }),
           signal: controller.signal,
         })
@@ -246,14 +311,14 @@ function EditorContent() {
 
         setUploadProgress(90)
 
-        // If custom background was provided, apply it now
-        if (customBackground && enhanceData.enhancedUrl) {
+        // If custom background was uploaded, apply it now
+        if (backgroundConfig.mode === 'upload' && backgroundConfig.uploadedUrl && enhanceData.enhancedUrl) {
           setApplyingBackground(true)
           try {
             // Apply custom background using client-side processing
             const compositedUrl = await replaceBackgroundImage(
               enhanceData.enhancedUrl,
-              customBackground,
+              backgroundConfig.uploadedUrl,
               { quality: 'medium' }
             )
 
@@ -401,8 +466,8 @@ function EditorContent() {
               <SimplifiedStylePicker
                 selection={selectedStyles}
                 onSelectionChange={setSelectedStyles}
-                customBackground={customBackground}
-                onBackgroundChange={setCustomBackground}
+                backgroundConfig={backgroundConfig}
+                onBackgroundConfigChange={setBackgroundConfig}
               />
             )}
           </aside>
