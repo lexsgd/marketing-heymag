@@ -298,6 +298,8 @@ export async function POST(request: NextRequest) {
     // Extract simpleSelection from body (not in Zod schema for backward compatibility)
     const simpleSelection = body.simpleSelection as SimpleSelection | undefined
     const aspectRatio = body.aspectRatio as string | undefined
+    // Flag indicating user will apply custom background after enhancement
+    const hasCustomBackground = body.hasCustomBackground as boolean | undefined
 
     // imageId is required by schema, but double-check for safety
     if (!imageId) {
@@ -450,6 +452,31 @@ export async function POST(request: NextRequest) {
         // Single style or template - use legacy method
         stylePrompt = getStylePrompt(stylePreset || 'delivery', undefined)
         logger.debug('Using single style prompt', { style: stylePreset || 'delivery' })
+      }
+
+      // If user will apply custom background, modify prompt to use simple background
+      if (hasCustomBackground) {
+        stylePrompt += `
+
+═══════════════════════════════════════════════════════════════════════════════
+CUSTOM BACKGROUND MODE - IMPORTANT
+═══════════════════════════════════════════════════════════════════════════════
+The user will apply their own branded background after enhancement.
+
+BACKGROUND REQUIREMENTS:
+- Use a CLEAN, SIMPLE, SOLID background (white, light gray, or neutral)
+- DO NOT add complex backgrounds, textures, or patterns
+- DO NOT add props, surfaces, or environmental elements
+- Keep the background PLAIN and EASY TO REMOVE
+- Focus ALL styling on the FOOD SUBJECT ONLY
+
+CRITICAL: The background will be completely replaced, so:
+- Ensure high contrast between food and background for clean edges
+- Keep food composition tight and centered
+- Apply all lighting, color grading, and enhancement to the FOOD ONLY
+- Make the food "pop" against the simple background
+`
+        logger.debug('Added custom background instructions to prompt')
       }
 
       // Fetch the original image

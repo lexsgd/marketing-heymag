@@ -219,6 +219,8 @@ function EditorContent() {
             aspectRatio: formatConfig.aspectRatio,
             templateId: template?.id,
             templateUrl: template?.webUrl,
+            // Tell AI to use simple background when custom background will be applied
+            hasCustomBackground: !!customBackground,
           }),
           signal: controller.signal,
         })
