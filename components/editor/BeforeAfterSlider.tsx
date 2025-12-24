@@ -173,7 +173,8 @@ export function BeforeAfterSlider({
         style={{
           left: `${sliderPosition}%`,
           transform: 'translateX(-50%)',
-          boxShadow: '0 0 10px rgba(0,0,0,0.3)'
+          boxShadow: '0 0 10px rgba(0,0,0,0.3)',
+          zIndex: 15
         }}
       >
         {/* Handle Circle */}
@@ -212,7 +213,7 @@ export function BeforeAfterSlider({
       {/* AI Enhanced label - bottom left (visible when slider reveals enhanced) */}
       <div
         className="absolute bottom-4 left-4 pointer-events-none transition-opacity duration-300"
-        style={{ opacity: Math.min(1, sliderPosition / 40) * 0.9 }}
+        style={{ opacity: Math.min(1, sliderPosition / 40) * 0.9, zIndex: 20 }}
       >
         <div className="px-3 py-1.5 bg-orange-500/90 text-white text-xs font-medium rounded-full flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
           <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor">
@@ -225,7 +226,7 @@ export function BeforeAfterSlider({
       {/* Original label - bottom right (visible when slider reveals original) */}
       <div
         className="absolute bottom-4 right-4 pointer-events-none transition-opacity duration-300"
-        style={{ opacity: Math.min(1, (100 - sliderPosition) / 40) * 0.9 }}
+        style={{ opacity: Math.min(1, (100 - sliderPosition) / 40) * 0.9, zIndex: 20 }}
       >
         <div className="px-3 py-1.5 bg-gray-800/90 text-gray-300 text-xs font-medium rounded-full shadow-lg backdrop-blur-sm">
           Original
