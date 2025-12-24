@@ -116,15 +116,25 @@ export async function POST(request: NextRequest) {
       .from('images')
       .getPublicUrl(fileName)
 
+    // First get current enhancement_settings to merge with
+    const { data: currentImage } = await supabase
+      .from('images')
+      .select('enhancement_settings')
+      .eq('id', imageId)
+      .single()
+
     // Update image record with new enhanced URL
     const { error: updateError } = await supabase
       .from('images')
       .update({
         enhanced_url: publicUrl,
-        metadata: {
+        enhancement_settings: {
+          ...(currentImage?.enhancement_settings || {}),
           hasCustomBackground: true,
-          compositedAt: new Date().toISOString()
-        }
+          customBackgroundAppliedAt: new Date().toISOString()
+        },
+        status: 'completed',
+        processed_at: new Date().toISOString()
       })
       .eq('id', imageId)
 
