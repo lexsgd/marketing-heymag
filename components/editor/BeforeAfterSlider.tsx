@@ -142,22 +142,26 @@ export function BeforeAfterSlider({
         - Drag RIGHT → sliderPosition increases → More Enhanced visible
         - Drag LEFT → sliderPosition decreases → More Original visible
 
-        Note: object-contain ensures both images are positioned identically,
-        so the comparison works even with different aspect ratios.
-
-        The wrapper div with gradient background ensures that letterbox areas
-        show the gradient, NOT the original image showing through.
+        CRITICAL FIX: Using solid black background (#000) with explicit z-index
+        to absolutely ensure the original image cannot show through letterbox areas.
+        The wrapper completely covers the original in the clipped region.
       */}
       <div
-        className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black"
+        className="absolute inset-0"
         style={{
-          clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`
+          clipPath: `polygon(0 0, ${sliderPosition}% 0, ${sliderPosition}% 100%, 0 100%)`,
+          zIndex: 10,
+          backgroundColor: '#000000',
         }}
       >
+        {/* Gradient overlay for visual polish */}
+        <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black" />
+        {/* Enhanced image */}
         <img
           src={afterUrl}
           alt={`${alt} - Enhanced`}
           className="absolute inset-0 w-full h-full object-contain object-center"
+          style={{ zIndex: 1 }}
           onLoad={() => setImagesLoaded(prev => ({ ...prev, after: true }))}
           draggable={false}
         />

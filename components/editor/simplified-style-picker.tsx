@@ -108,23 +108,35 @@ export function SimplifiedStylePicker({
   // Handle background file upload
   const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (!file || !onBackgroundConfigChange) return
+    console.log('[StylePicker] Background upload triggered, file:', file?.name, file?.size)
+    if (!file || !onBackgroundConfigChange) {
+      console.log('[StylePicker] No file or no callback, aborting')
+      return
+    }
 
     // Validate file
     if (!file.type.startsWith('image/')) {
+      console.log('[StylePicker] Invalid file type:', file.type)
       return
     }
     if (file.size > 10 * 1024 * 1024) {
+      console.log('[StylePicker] File too large:', file.size)
       return // Max 10MB
     }
 
     const reader = new FileReader()
     reader.onload = () => {
+      const dataUrl = reader.result as string
+      console.log('[StylePicker] Background file read successfully, data URL length:', dataUrl.length)
+      console.log('[StylePicker] Setting mode to upload with uploadedUrl')
       onBackgroundConfigChange({
         ...backgroundConfig,
         mode: 'upload',
-        uploadedUrl: reader.result as string,
+        uploadedUrl: dataUrl,
       })
+    }
+    reader.onerror = () => {
+      console.error('[StylePicker] FileReader error:', reader.error)
     }
     reader.readAsDataURL(file)
 

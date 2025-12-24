@@ -313,6 +313,18 @@ function EditorContent() {
 
         setUploadProgress(90)
 
+        // DIAGNOSTIC LOGGING: Check background config state before processing
+        console.log('[Editor] ========== BACKGROUND REPLACEMENT CHECK ==========')
+        console.log('[Editor] backgroundConfig.mode:', backgroundConfig.mode)
+        console.log('[Editor] backgroundConfig.uploadedUrl exists:', !!backgroundConfig.uploadedUrl)
+        console.log('[Editor] backgroundConfig.uploadedUrl length:', backgroundConfig.uploadedUrl?.length || 0)
+        console.log('[Editor] enhanceData.enhancedUrl exists:', !!enhanceData.enhancedUrl)
+        console.log('[Editor] Condition check: mode === upload:', backgroundConfig.mode === 'upload')
+        console.log('[Editor] Condition check: uploadedUrl truthy:', !!backgroundConfig.uploadedUrl)
+        console.log('[Editor] Condition check: enhancedUrl truthy:', !!enhanceData.enhancedUrl)
+        console.log('[Editor] WILL APPLY BACKGROUND:', backgroundConfig.mode === 'upload' && !!backgroundConfig.uploadedUrl && !!enhanceData.enhancedUrl)
+        console.log('[Editor] ====================================================')
+
         // If custom background was uploaded, apply it now
         let backgroundApplied = false
         if (backgroundConfig.mode === 'upload' && backgroundConfig.uploadedUrl && enhanceData.enhancedUrl) {
