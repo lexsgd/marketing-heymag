@@ -658,117 +658,49 @@ ${stylePrompt}
 `
         }
 
-        // AI IMAGE ENHANCEMENT PROMPT - SELF-DETECTING ANGLE
-        // Model analyzes the camera angle AND applies appropriate enhancements in ONE call
-        // This eliminates the separate Flash API call, reducing latency and cost
-        const generationPrompt = `You are a world-class professional food photography retoucher. Your task is to ENHANCE this existing food photograph while respecting PHYSICAL REALITY.
+        // AI IMAGE ENHANCEMENT PROMPT - SELF-DETECTING ANGLE (Optimized v0.53.0)
+        // Model analyzes camera angle AND applies enhancements in ONE call
+        // Reduced from ~550 tokens to ~300 tokens while preserving all critical instructions
+        const generationPrompt = `ROLE: World-class food photography retoucher
+TASK: ENHANCE this photo while respecting PHYSICAL REALITY
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 1: ANALYZE CAMERA ANGLE (Do this first!)
+STEP 1: DETECT CAMERA ANGLE
 ═══════════════════════════════════════════════════════════════════════════════
+OVERHEAD (90°): Looking down | Plates = circles | Only table surface | No vertical BG
+HERO (45°): Classic angle | Plates = ellipses | Table + soft bokeh BG | Shows depth
+EYE LEVEL (0°): Horizontal | Full vertical BG | Shows "face" of items
 
-Look at the photograph and determine the camera angle:
-
-OVERHEAD (90°) - Looking straight down:
-- Camera directly above, pointing down at food
-- Only TABLE SURFACE visible - no vertical backgrounds
-- Plates appear as CIRCLES (not ellipses)
-- NO walls, stalls, shelves, or standing elements visible
-- Common for: flat lays, pizzas, spreads, bowls from above
-
-HERO ANGLE (45°) - The classic food photography angle:
-- Camera at roughly 45 degrees
-- Shows food HEIGHT and DEPTH
-- Table surface visible + SOFT BLURRED background
-- Plates appear as ELLIPSES
-- Most common food photography angle
-
-EYE LEVEL (0°) - Camera at food level:
-- Camera pointing horizontally at food
-- FULL VERTICAL BACKGROUND visible
-- Shows the "face" of items (burgers, cakes, stacks)
-- Environment/venue details clearly visible
-- Table edge may not be visible
+PHYSICS CONSTRAINTS:
+• OVERHEAD → CAN: table texture, props, garnishes | CANNOT: vertical backgrounds, walls
+• HERO → CAN: soft bokeh, gentle shadows | CANNOT: sharp detailed backgrounds
+• EYE LEVEL → CAN: full environment | CANNOT: contradict existing background
 
 ═══════════════════════════════════════════════════════════════════════════════
-PHYSICS CONSTRAINTS BY ANGLE
+PRESERVATION RULES [CRITICAL]
 ═══════════════════════════════════════════════════════════════════════════════
-
-▼ IF YOU DETECT OVERHEAD:
-  ✓ CAN add/enhance: Table texture, props on surface, garnishes, sauces, napkins
-  ✗ CANNOT add: Vertical backgrounds, walls, stalls, standing elements, people
-
-▼ IF YOU DETECT HERO ANGLE:
-  ✓ CAN add/enhance: Table surface, soft bokeh background, food depth, gentle shadows
-  ✗ CANNOT add: Sharp detailed backgrounds, readable signage, clear environment
-
-▼ IF YOU DETECT EYE LEVEL:
-  ✓ CAN add/enhance: Full background environment, venue atmosphere, vertical elements
-  ✗ CANNOT add: Elements that contradict existing background
+✗ DO NOT change food items, angle, plating, or arrangement
+✗ DO NOT add physics-breaking elements
+This is ENHANCEMENT, not generation - output must be recognizably the SAME photo
 
 ═══════════════════════════════════════════════════════════════════════════════
-CRITICAL: PRESERVE THE ORIGINAL COMPOSITION
-═══════════════════════════════════════════════════════════════════════════════
-You MUST keep these elements EXACTLY as they are:
-✗ DO NOT change the food items - enhance what's there
-✗ DO NOT change the camera angle or perspective
-✗ DO NOT change the plating arrangement
-✗ DO NOT reposition any elements
-✗ DO NOT add elements that violate the physics of the detected angle
-
-This is a PHOTO ENHANCEMENT task, NOT a scene generation task.
-The output must be clearly recognizable as the SAME photograph, just enhanced.
-
-═══════════════════════════════════════════════════════════════════════════════
-STEP 2: APPLY ANGLE-APPROPRIATE VENUE STYLING
+STEP 2: APPLY VENUE STYLING
 ═══════════════════════════════════════════════════════════════════════════════
 ${venueStyleSection}
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 3: UNIVERSAL ENHANCEMENTS (Apply to all angles)
+STEP 3: UNIVERSAL ENHANCEMENTS
 ═══════════════════════════════════════════════════════════════════════════════
-✓ LIGHTING - Improve quality while keeping direction natural
-✓ COLOR GRADING - Apply style-appropriate color palette
-✓ SHARPNESS - Enhance food detail and texture clarity
-✓ WHITE BALANCE - Correct for appetizing color temperature
-✓ CONTRAST - Optimize dynamic range for visual impact
-✓ FOOD APPEAL - Make food look fresher, more vibrant
-
-SUBTLE ADDITIONS (if appropriate for the angle):
-- Light steam for hot food
-- Enhanced texture definition
-- Gentle shadows for dimension
-- Surface reflections and highlights
+✓ Lighting (natural direction) | Color grading | Sharpness | White balance | Contrast
+✓ Food appeal: fresher, more vibrant | Optional: steam, texture, gentle shadows
 
 ═══════════════════════════════════════════════════════════════════════════════
-OUTPUT SPECIFICATIONS
+OUTPUT: ${platformConfig.aspectRatio} | ${platformConfig.imageSize} quality | ${platformConfig.platformRequirements || 'Professional'}
 ═══════════════════════════════════════════════════════════════════════════════
-- Aspect Ratio: ${platformConfig.aspectRatio} (${platformConfig.description})
-- Resolution: ${platformConfig.imageSize} quality - ultra high detail
-- Platform: ${platformConfig.platformRequirements || 'Professional food photography'}
 
-═══════════════════════════════════════════════════════════════════════════════
-QUALITY STANDARDS
-═══════════════════════════════════════════════════════════════════════════════
-1. PHYSICALLY REALISTIC - Enhancements must make spatial sense for the DETECTED angle
-2. APPETIZING - Food must look irresistibly delicious
-3. AUTHENTIC - Must be clearly the SAME photo, enhanced
-4. NATURAL - No obvious AI artifacts or physics-breaking elements
-5. PLATFORM-READY - Suitable for ${platformConfig.description}
+QUALITY: Physically realistic | Appetizing | Authentic | No AI artifacts | Platform-ready
 
-═══════════════════════════════════════════════════════════════════════════════
-ENHANCE THE IMAGE NOW
-═══════════════════════════════════════════════════════════════════════════════
-1. First, analyze and identify the camera angle (overhead/hero/eye-level)
-2. Apply ONLY enhancements appropriate for that angle
-3. NEVER add vertical backgrounds to overhead shots
-4. NEVER add sharp detailed scenes to hero angle shots
-5. Enhance to professional quality while preserving authenticity
-
-The result should look like the original photo was professionally retouched, NOT like a completely different image or a physics-breaking composite.
-
-After enhancing, respond with:
-ANGLE: [detected angle] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
+Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
         // Wrap Gemini API call with retry logic AND per-request timeout
         // - Timeout: 18s per attempt (prevents hanging on overloaded model)

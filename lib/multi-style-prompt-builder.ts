@@ -537,6 +537,11 @@ export interface SimplifiedPromptResult {
  * Build prompt using the new simplified 3-category system
  * This is the RECOMMENDED entry point for new code
  *
+ * OPTIMIZED VERSION (v0.53.0):
+ * - Removed duplicate format specification (now in buildSmartPrompt)
+ * - Condensed verification checklist
+ * - Reduced token count by ~40%
+ *
  * @param selection - SimpleSelection object with businessType, format, mood, seasonal
  * @param customInstructions - Optional custom instructions to append
  * @returns SimplifiedPromptResult with prompt and metadata
@@ -554,6 +559,7 @@ export function buildSimplifiedPrompt(
   const formatConfig = getFormatConfig(selection.format)
 
   // Build the smart prompt using professional photography elements
+  // NOTE: buildSmartPrompt now includes format/composition specs
   let prompt = buildSmartPrompt(selection)
 
   // Add custom instructions if provided
@@ -563,39 +569,22 @@ export function buildSimplifiedPrompt(
 ───────────────────────────────────────────────────────────────────────────────
 CUSTOM INSTRUCTIONS
 ───────────────────────────────────────────────────────────────────────────────
-${customInstructions}
-`
+${customInstructions}`
   }
 
-  // Add format-specific instructions
-  prompt += `
-
-───────────────────────────────────────────────────────────────────────────────
-OUTPUT FORMAT
-───────────────────────────────────────────────────────────────────────────────
-Aspect Ratio: ${formatConfig.aspectRatio}
-Resolution: ${formatConfig.width}x${formatConfig.height}px
-Optimize composition for this format while maintaining food as the hero.
-`
-
-  // Add verification checklist
+  // Add condensed verification checklist (single source, not duplicated)
   prompt += `
 
 ═══════════════════════════════════════════════════════════════════════════════
-VERIFICATION CHECKLIST
+VERIFY BEFORE OUTPUT
 ═══════════════════════════════════════════════════════════════════════════════
-Before outputting, verify:
-✓ Same food items as input image
-✓ Same plates/dishes as input image
-✓ Same arrangement as input image
-✓ Enhanced lighting and colors
-✓ Professional, appetizing appearance
-✓ No artificial or fake-looking elements
-✓ Applied all 8 professional photography elements
+✓ Same food/plates/arrangement as input
+✓ Enhanced lighting & colors applied
+✓ Professional, appetizing result
+✓ No humans visible in output
+✓ Correct format: ${formatConfig.aspectRatio}
 
-After enhancement, provide 3 tips in format:
-SUGGESTIONS: [tip1] | [tip2] | [tip3]
-`
+Provide 3 tips: SUGGESTIONS: [tip1] | [tip2] | [tip3]`
 
   // Count non-null selections
   let selectionCount = 0
