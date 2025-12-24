@@ -33,6 +33,7 @@ import {
   emptySimpleSelection,
   getFormatConfig,
 } from '@/lib/simplified-styles'
+import { replaceBackgroundImage } from '@/lib/background-removal'
 
 function EditorContent() {
   const searchParams = useSearchParams()
@@ -57,6 +58,10 @@ function EditorContent() {
   const [promptSheetOpen, setPromptSheetOpen] = useState(false)
   // Prompt text for AI enhancement
   const [prompt, setPrompt] = useState('')
+  // Custom background for branded backgrounds (optional)
+  const [customBackground, setCustomBackground] = useState<string | null>(null)
+  // Background processing state
+  const [applyingBackground, setApplyingBackground] = useState(false)
 
   // Initialize sidebar state based on screen size (lg = 1024px)
   useEffect(() => {
@@ -237,6 +242,39 @@ function EditorContent() {
           throw new Error(enhanceData.error || 'Enhancement failed')
         }
 
+        setUploadProgress(90)
+
+        // If custom background was provided, apply it now
+        if (customBackground && enhanceData.enhancedUrl) {
+          setApplyingBackground(true)
+          try {
+            // Apply custom background using client-side processing
+            const compositedUrl = await replaceBackgroundImage(
+              enhanceData.enhancedUrl,
+              customBackground,
+              { quality: 'medium' }
+            )
+
+            // Upload the composited result back to the server
+            const blob = await fetch(compositedUrl).then(r => r.blob())
+            const compositedFile = new File([blob], 'composited.jpg', { type: 'image/jpeg' })
+
+            const updateFormData = new FormData()
+            updateFormData.append('file', compositedFile)
+            updateFormData.append('imageId', imageRecord.id)
+
+            await fetch('/api/images/update-enhanced', {
+              method: 'POST',
+              body: updateFormData,
+            })
+          } catch (bgError) {
+            console.error('Background replacement failed:', bgError)
+            // Continue anyway - user can still see the enhanced image without custom background
+          } finally {
+            setApplyingBackground(false)
+          }
+        }
+
         setUploadProgress(100)
         router.push(`/editor/${imageRecord.id}`)
       } catch (fetchError: unknown) {
@@ -251,6 +289,7 @@ function EditorContent() {
       setError((err as Error).message || 'Upload failed. Please try again.')
       setUploading(false)
       setEnhancing(false)
+      setApplyingBackground(false)
     }
   }
 
@@ -360,6 +399,8 @@ function EditorContent() {
               <SimplifiedStylePicker
                 selection={selectedStyles}
                 onSelectionChange={setSelectedStyles}
+                customBackground={customBackground}
+                onBackgroundChange={setCustomBackground}
               />
             )}
           </aside>
@@ -666,13 +707,13 @@ function EditorContent() {
                 {/* Enhance Button */}
                 <Button
                   onClick={handleUploadAndEnhance}
-                  disabled={!canTransform || uploading || enhancing}
+                  disabled={!canTransform || uploading || enhancing || applyingBackground}
                   className="bg-orange-500 hover:bg-orange-600 px-6"
                 >
-                  {uploading || enhancing ? (
+                  {uploading || enhancing || applyingBackground ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {enhancing ? 'Transforming...' : 'Uploading...'}
+                      {applyingBackground ? 'Applying background...' : enhancing ? 'Transforming...' : 'Uploading...'}
                     </>
                   ) : (
                     <>
@@ -685,7 +726,7 @@ function EditorContent() {
             </div>
 
             {/* Progress Bar */}
-            {(uploading || enhancing) && (
+            {(uploading || enhancing || applyingBackground) && (
               <div className="max-w-4xl mx-auto mt-4">
                 <Progress value={uploadProgress} className="h-1" />
               </div>
@@ -701,13 +742,13 @@ function EditorContent() {
             onTransformClick={handleUploadAndEnhance}
             hasImage={!!selectedFile}
             hasStyleSelected={hasStylesSelected || !!template}
-            isProcessing={uploading || enhancing}
+            isProcessing={uploading || enhancing || applyingBackground}
             disabled={false}
             variations={variations}
             onVariationsChange={setVariations}
           />
           {/* Progress Bar for mobile */}
-          {(uploading || enhancing) && (
+          {(uploading || enhancing || applyingBackground) && (
             <div className="absolute top-0 left-0 right-0">
               <Progress value={uploadProgress} className="h-1 rounded-none" />
             </div>

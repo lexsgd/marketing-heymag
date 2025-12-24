@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -22,7 +22,6 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { BeforeAfterSlider } from './BeforeAfterSlider'
-import { BackgroundRemover } from './BackgroundRemover'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
 
@@ -59,11 +58,6 @@ export function ImageEditor({
   const [downloadingOption, setDownloadingOption] = useState<DownloadOption | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [bgRemovalProgress, setBgRemovalProgress] = useState(0)
-  // Edited image from BackgroundRemover
-  const [editedImageUrl, setEditedImageUrl] = useState<string | null>(null)
-
-  // Ref for background removal module
-  const bgRemovalModuleRef = useRef<{ removeBackground: (source: string, config: Record<string, unknown>) => Promise<Blob> } | null>(null)
 
   // Download 2K (current enhanced image)
   const handleDownload2K = useCallback(async () => {
@@ -307,15 +301,9 @@ export function ImageEditor({
     }
   }, [imageId, enhancedUrl, originalFilename, creditsRemaining, onDownloadComplete])
 
-  // Use edited image if available, otherwise enhanced, otherwise original
-  const displayUrl = editedImageUrl || enhancedUrl || originalUrl
+  // Use enhanced image if available, otherwise original
+  const displayUrl = enhancedUrl || originalUrl
   const hasEnhanced = !!enhancedUrl
-  const hasEdited = !!editedImageUrl
-
-  // Handler for BackgroundRemover result
-  const handleBackgroundResult = useCallback((resultUrl: string) => {
-    setEditedImageUrl(resultUrl)
-  }, [])
 
   return (
     <div className="flex flex-col gap-4 md:gap-6 pb-20 md:pb-0">
@@ -381,44 +369,6 @@ export function ImageEditor({
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Background Tools - Only show when image is enhanced */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <BackgroundRemover
-              imageUrl={editedImageUrl || enhancedUrl}
-              onResult={handleBackgroundResult}
-              disabled={isDownloading}
-            />
-
-            {/* Show edited preview if different from enhanced */}
-            {hasEdited && (
-              <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-orange-950/30 to-gray-900">
-                <div className="aspect-[4/3] relative flex items-center justify-center p-4">
-                  <img
-                    src={editedImageUrl}
-                    alt="Edited"
-                    className="max-w-full max-h-full object-contain rounded-lg"
-                  />
-                </div>
-                <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/80 to-transparent pointer-events-none" />
-                <div className="absolute bottom-3 left-3 z-10">
-                  <Badge className="bg-orange-500/90 text-white border-0">
-                    <Sparkles className="h-3 w-3 mr-1" />
-                    Custom Background
-                  </Badge>
-                </div>
-                {/* Reset button */}
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="absolute top-3 right-3 z-10"
-                  onClick={() => setEditedImageUrl(null)}
-                >
-                  Reset
-                </Button>
-              </div>
-            )}
           </div>
         </>
       ) : (

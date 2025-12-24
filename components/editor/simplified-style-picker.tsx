@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import Link from 'next/link'
-import { ChevronDown, ChevronRight, Check, Sparkles, AlertTriangle, Info, X, Wand2 } from 'lucide-react'
+import Image from 'next/image'
+import { ChevronDown, ChevronRight, Check, Sparkles, AlertTriangle, Info, X, Wand2, Upload, ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
@@ -35,6 +36,10 @@ interface SimplifiedStylePickerProps {
   onSelectionChange: (selection: SimpleSelection) => void
   disabled?: boolean
   onClose?: () => void
+  /** Optional custom background URL for branded backgrounds */
+  customBackground?: string | null
+  /** Callback when custom background changes */
+  onBackgroundChange?: (url: string | null) => void
 }
 
 // Category data mapping
@@ -53,12 +58,45 @@ export function SimplifiedStylePicker({
   onSelectionChange,
   disabled = false,
   onClose,
+  customBackground,
+  onBackgroundChange,
 }: SimplifiedStylePickerProps) {
   // First two categories expanded by default
   const [expandedCategories, setExpandedCategories] = useState<string[]>([
     'businessType',
     'format',
   ])
+  const [backgroundExpanded, setBackgroundExpanded] = useState(false)
+  const backgroundInputRef = useRef<HTMLInputElement>(null)
+
+  // Handle background file upload
+  const handleBackgroundUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !onBackgroundChange) return
+
+    // Validate file
+    if (!file.type.startsWith('image/')) {
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      return // Max 10MB
+    }
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      onBackgroundChange(reader.result as string)
+    }
+    reader.readAsDataURL(file)
+
+    // Reset input
+    e.target.value = ''
+  }
+
+  const clearBackground = () => {
+    if (onBackgroundChange) {
+      onBackgroundChange(null)
+    }
+  }
 
   const selectedCount = countSelections(selection)
   const status = getSelectionStatus(selection)
@@ -397,6 +435,111 @@ export function SimplifiedStylePicker({
                 </div>
               )
             })}
+
+            {/* Custom Background Section - Only show if onBackgroundChange is provided */}
+            {onBackgroundChange && (
+              <div className="border-b border-border last:border-0">
+                {/* Background Header */}
+                <button
+                  onClick={() => setBackgroundExpanded(!backgroundExpanded)}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/50 transition-colors"
+                >
+                  {backgroundExpanded ? (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  )}
+
+                  <div className="flex-1 text-left">
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-sm">
+                        Custom Background
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-medium">
+                        Optional
+                      </span>
+                      {customBackground && (
+                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                      )}
+                    </div>
+                    {!backgroundExpanded && customBackground && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Background uploaded
+                      </p>
+                    )}
+                  </div>
+
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                </button>
+
+                {/* Background Upload Content */}
+                {backgroundExpanded && (
+                  <div className="px-4 pb-3 space-y-3">
+                    {/* Hidden file input */}
+                    <input
+                      ref={backgroundInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleBackgroundUpload}
+                      disabled={disabled}
+                    />
+
+                    {customBackground ? (
+                      /* Preview uploaded background */
+                      <div className="relative aspect-video rounded-lg overflow-hidden border border-border">
+                        <Image
+                          src={customBackground}
+                          alt="Custom background"
+                          fill
+                          className="object-cover"
+                        />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-2 right-2 h-7 w-7 bg-background/80 hover:bg-background"
+                          onClick={clearBackground}
+                          disabled={disabled}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        <Badge className="absolute bottom-2 left-2 bg-green-500 text-white border-0 text-[10px]">
+                          <Check className="h-3 w-3 mr-1" />
+                          Ready
+                        </Badge>
+                      </div>
+                    ) : (
+                      /* Upload zone */
+                      <label
+                        className={cn(
+                          'flex flex-col items-center justify-center h-24 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors',
+                          disabled && 'opacity-50 cursor-not-allowed'
+                        )}
+                      >
+                        <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                        <span className="text-xs text-muted-foreground">Upload branded background</span>
+                        <span className="text-[10px] text-muted-foreground mt-0.5">PNG, JPG up to 10MB</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleBackgroundUpload}
+                          disabled={disabled}
+                        />
+                      </label>
+                    )}
+
+                    {/* Info text */}
+                    <div className="flex items-start gap-2 p-2 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                      <Sparkles className="h-3.5 w-3.5 text-orange-500 flex-shrink-0 mt-0.5" />
+                      <p className="text-[10px] text-orange-700 dark:text-orange-400">
+                        Your food will be automatically placed on this background after enhancement
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
