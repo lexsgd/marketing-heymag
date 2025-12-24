@@ -166,9 +166,20 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     try {
       console.log('[Editor] Retrying background replacement...')
 
+      // CRITICAL: Fetch enhanced image as Blob FIRST
+      // This avoids CORS issues when @imgly library tries to fetch external URLs
+      console.log('[Editor] Fetching enhanced image as blob...')
+      const enhancedResponse = await fetch(image.enhanced_url)
+      if (!enhancedResponse.ok) {
+        throw new Error(`Failed to fetch enhanced image: ${enhancedResponse.status}`)
+      }
+      const enhancedBlob = await enhancedResponse.blob()
+      console.log('[Editor] Enhanced image blob ready:', enhancedBlob.size, 'bytes')
+
       // Apply custom background using client-side processing
+      // Pass Blob instead of URL to avoid @imgly CORS issues
       const compositedUrl = await replaceBackgroundImage(
-        image.enhanced_url,
+        enhancedBlob,  // Use blob, not URL
         pendingBackgroundUrl,
         {
           quality: 'medium',

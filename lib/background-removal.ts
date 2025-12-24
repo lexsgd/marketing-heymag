@@ -44,9 +44,27 @@ async function getBackgroundRemovalModule() {
  * Load an ESM module from CDN using script injection
  * This bypasses bundler static analysis and works with Vercel
  */
-async function loadModuleFromCDN(url: string): Promise<unknown> {
+async function loadModuleFromCDN(url: string, retries = 2): Promise<unknown> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await loadModuleFromCDNOnce(url)
+      console.log('[BgRemoval] Module loaded successfully on attempt', attempt + 1)
+      return result
+    } catch (error) {
+      console.warn(`[BgRemoval] CDN load attempt ${attempt + 1} failed:`, error)
+      if (attempt === retries) {
+        throw error
+      }
+      // Wait before retry
+      await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)))
+    }
+  }
+  throw new Error('Failed to load module after all retries')
+}
+
+async function loadModuleFromCDNOnce(url: string): Promise<unknown> {
   // Create a unique callback name
-  const callbackName = `__bgRemoval_${Date.now()}`
+  const callbackName = `__bgRemoval_${Date.now()}_${Math.random().toString(36).slice(2)}`
 
   return new Promise((resolve, reject) => {
     // Create a script that imports and exposes the module
@@ -58,36 +76,44 @@ async function loadModuleFromCDN(url: string): Promise<unknown> {
       window.dispatchEvent(new CustomEvent('${callbackName}'));
     `
 
+    let resolved = false
+    const cleanup = () => {
+      if (resolved) return
+      resolved = true
+      window.removeEventListener(callbackName, handler)
+      if (script.parentNode) {
+        document.head.removeChild(script)
+      }
+    }
+
     const handler = () => {
       const windowAny = window as unknown as Record<string, unknown>
       const loadedModule = windowAny[callbackName]
       delete windowAny[callbackName]
-      window.removeEventListener(callbackName, handler)
-      document.head.removeChild(script)
-      resolve(loadedModule)
+      cleanup()
+      if (loadedModule) {
+        resolve(loadedModule)
+      } else {
+        reject(new Error('Module loaded but was undefined'))
+      }
     }
 
     window.addEventListener(callbackName, handler)
 
-    script.onerror = () => {
-      window.removeEventListener(callbackName, handler)
-      document.head.removeChild(script)
-      reject(new Error(`Failed to load module from ${url}`))
+    script.onerror = (event) => {
+      cleanup()
+      reject(new Error(`Failed to load module from ${url}: ${event}`))
     }
 
     document.head.appendChild(script)
 
-    // Timeout after 30 seconds
+    // Timeout after 45 seconds (increased for slow connections)
     setTimeout(() => {
-      const windowAny = window as unknown as Record<string, unknown>
-      if (windowAny[callbackName] === undefined) {
-        window.removeEventListener(callbackName, handler)
-        if (script.parentNode) {
-          document.head.removeChild(script)
-        }
+      if (!resolved) {
+        cleanup()
         reject(new Error(`Timeout loading module from ${url}`))
       }
-    }, 30000)
+    }, 45000)
   })
 }
 
@@ -105,16 +131,20 @@ export async function removeImageBackground(
     onProgress
   } = options
 
+  console.log('[BgRemoval] Starting background removal...')
+
   // Dynamically import the background removal module
   const bgModule = await getBackgroundRemovalModule() as { removeBackground: (source: string | Blob | File, config: Record<string, unknown>) => Promise<Blob> }
   const { removeBackground } = bgModule
+
+  console.log('[BgRemoval] Module loaded, configuring...')
 
   // Determine model based on quality
   const modelType: 'isnet' | 'isnet_quint8' | 'isnet_fp16' =
     quality === 'high' ? 'isnet' : quality === 'low' ? 'isnet_quint8' : 'isnet'
 
-  // Configure the background removal
-  const config = {
+  // Build config - will try GPU first, then fallback to CPU
+  const buildConfig = (device: 'gpu' | 'cpu') => ({
     // Debug mode off for production
     debug: false,
     // Progress callback
@@ -126,30 +156,44 @@ export async function removeImageBackground(
     },
     // Model - uses isnet variants (the library's supported models)
     model: modelType,
-    // Use GPU if available for better performance
-    device: 'gpu' as const,
+    // Device for processing
+    device: device,
     // Output settings
     output: {
       format: format,
       quality: quality === 'high' ? 1 : quality === 'low' ? 0.7 : 0.85
     }
-  }
+  })
 
+  // Try GPU first, fallback to CPU
+  let resultBlob: Blob
   try {
-    // Remove background - returns a Blob
-    const resultBlob = await removeBackground(imageSource, config)
-
-    // Convert to data URL
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader()
-      reader.onload = () => resolve(reader.result as string)
-      reader.onerror = () => reject(new Error('Failed to read result'))
-      reader.readAsDataURL(resultBlob)
-    })
-  } catch (error) {
-    console.error('Background removal failed:', error)
-    throw new Error(`Background removal failed: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    console.log('[BgRemoval] Attempting GPU processing...')
+    resultBlob = await removeBackground(imageSource, buildConfig('gpu'))
+    console.log('[BgRemoval] GPU processing successful')
+  } catch (gpuError) {
+    console.warn('[BgRemoval] GPU processing failed, falling back to CPU:', gpuError)
+    try {
+      resultBlob = await removeBackground(imageSource, buildConfig('cpu'))
+      console.log('[BgRemoval] CPU processing successful')
+    } catch (cpuError) {
+      console.error('[BgRemoval] Both GPU and CPU processing failed:', cpuError)
+      throw new Error(`Background removal failed: ${cpuError instanceof Error ? cpuError.message : 'Unknown error'}`)
+    }
   }
+
+  console.log('[BgRemoval] Converting result to data URL...')
+
+  // Convert to data URL
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      console.log('[BgRemoval] Background removal complete!')
+      resolve(reader.result as string)
+    }
+    reader.onerror = () => reject(new Error('Failed to read result'))
+    reader.readAsDataURL(resultBlob)
+  })
 }
 
 /**
@@ -259,14 +303,22 @@ export async function replaceBackgroundImage(
   backgroundImageUrl: string,
   options: BackgroundRemovalOptions = {}
 ): Promise<string> {
+  console.log('[BgRemoval] replaceBackgroundImage: Starting...')
+  console.log('[BgRemoval] Foreground type:', foregroundSource instanceof Blob ? 'Blob' : foregroundSource instanceof File ? 'File' : 'string')
+  console.log('[BgRemoval] Background URL type:', backgroundImageUrl.startsWith('data:') ? 'data URL' : 'external URL')
+
   // Remove foreground background
+  console.log('[BgRemoval] Step 1: Removing background from foreground...')
   const transparentForeground = await removeImageBackground(foregroundSource, options)
+  console.log('[BgRemoval] Step 1 complete: Got transparent foreground')
 
   // Load both images
+  console.log('[BgRemoval] Step 2: Loading images...')
   const [foregroundImg, backgroundImg] = await Promise.all([
     loadImageFromUrl(transparentForeground),
     loadImageFromUrl(backgroundImageUrl)
   ])
+  console.log('[BgRemoval] Step 2 complete: Foreground:', foregroundImg.width, 'x', foregroundImg.height, 'Background:', backgroundImg.width, 'x', backgroundImg.height)
 
   // Create canvas matching foreground dimensions
   const canvas = document.createElement('canvas')
@@ -288,13 +340,18 @@ export async function replaceBackgroundImage(
   const bgX = (canvas.width - bgWidth) / 2
   const bgY = (canvas.height - bgHeight) / 2
 
+  console.log('[BgRemoval] Step 3: Compositing images...')
+
   // Draw background (scaled to cover)
   ctx.drawImage(backgroundImg, bgX, bgY, bgWidth, bgHeight)
 
   // Draw foreground on top
   ctx.drawImage(foregroundImg, 0, 0)
 
-  return canvas.toDataURL('image/jpeg', 0.92)
+  const result = canvas.toDataURL('image/jpeg', 0.92)
+  console.log('[BgRemoval] Step 3 complete: Composited image ready, size:', result.length, 'chars')
+
+  return result
 }
 
 /**
