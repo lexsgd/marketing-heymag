@@ -144,19 +144,25 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     loadImage()
   }, [loadImage])
 
-  // Check for pending background replacement from query params
+  // Check for pending background replacement from sessionStorage
+  // (Using sessionStorage instead of query params to avoid URI_TOO_LONG errors with data URLs)
   useEffect(() => {
     const pendingBackground = searchParams.get('pendingBackground')
-    const bgUrl = searchParams.get('bgUrl')
-    if (pendingBackground === 'true' && bgUrl) {
-      setPendingBackgroundUrl(decodeURIComponent(bgUrl))
-      // Show toast notification
-      toast.warning('Custom background could not be applied automatically', {
-        description: 'Click "Apply Custom Background" to try again.',
-        duration: 10000,
-      })
+    if (pendingBackground === 'true') {
+      // Read from sessionStorage (supports data URLs of any size)
+      const storedBgUrl = sessionStorage.getItem(`pendingBackground_${params.id}`)
+      if (storedBgUrl) {
+        setPendingBackgroundUrl(storedBgUrl)
+        // Clear from sessionStorage after reading
+        sessionStorage.removeItem(`pendingBackground_${params.id}`)
+        // Show toast notification
+        toast.warning('Custom background could not be applied automatically', {
+          description: 'Click "Apply Custom Background" to try again.',
+          duration: 10000,
+        })
+      }
     }
-  }, [searchParams])
+  }, [searchParams, params.id])
 
   // Handle background replacement retry
   const handleApplyBackground = async () => {

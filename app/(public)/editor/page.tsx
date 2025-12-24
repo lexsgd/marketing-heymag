@@ -390,9 +390,9 @@ function EditorContent() {
 
         // Navigate to result, with flag if background replacement failed
         if (backgroundConfig.mode === 'upload' && backgroundConfig.uploadedUrl && !backgroundApplied) {
-          // Pass the uploaded background URL as a query param so user can retry
-          const bgParam = encodeURIComponent(backgroundConfig.uploadedUrl)
-          router.push(`/editor/${imageRecord.id}?pendingBackground=true&bgUrl=${bgParam}`)
+          // Store the background URL in sessionStorage (avoids URI_TOO_LONG error with data URLs)
+          sessionStorage.setItem(`pendingBackground_${imageRecord.id}`, backgroundConfig.uploadedUrl)
+          router.push(`/editor/${imageRecord.id}?pendingBackground=true`)
         } else {
           router.push(`/editor/${imageRecord.id}`)
         }
