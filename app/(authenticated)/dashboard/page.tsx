@@ -253,8 +253,8 @@ export default async function DashboardPage() {
         <Card className="hover:shadow-md transition-shadow cursor-pointer group">
           <Link href="/explore">
             <CardHeader>
-              <div className="h-12 w-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-2 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50 transition-colors">
-                <Wand2 className="h-6 w-6 text-purple-500" />
+              <div className="h-12 w-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-2 group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50 transition-colors">
+                <Wand2 className="h-6 w-6 text-orange-500" />
               </div>
               <CardTitle className="text-lg">Explore Styles</CardTitle>
               <CardDescription>

@@ -134,7 +134,7 @@ export function VariationsPicker({
               </div>
             </div>
             <div className="flex items-start gap-2 pt-2 border-t border-zinc-700">
-              <Wand2 className="h-4 w-4 text-purple-400 mt-0.5 flex-shrink-0" />
+              <Wand2 className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-medium text-sm text-zinc-100">Creative Mode Coming Soon</p>
                 <p className="text-xs text-zinc-400 mt-1">
@@ -209,7 +209,7 @@ export function VariationsPicker({
                         {option.count} {option.count === 1 ? 'Image' : 'Images'}
                       </p>
                       {option.comingSoon && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-600 font-medium">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-orange-500/20 text-orange-600 font-medium">
                           Coming Soon
                         </span>
                       )}

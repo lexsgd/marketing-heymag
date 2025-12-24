@@ -28,7 +28,7 @@ const categories = [
     name: 'Fine Dining',
     icon: ChefHat,
     description: 'Michelin-star editorial quality',
-    color: 'bg-purple-500'
+    color: 'bg-orange-600'
   },
   {
     id: 'cafe',

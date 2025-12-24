@@ -78,7 +78,7 @@ export function MainNav({ user, credits, subscriptionStatus, loading }: MainNavP
               {user && (
                 <div className="py-4 border-b">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-medium">
                       {user.email?.charAt(0).toUpperCase() || 'U'}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -247,7 +247,7 @@ export function MainNav({ user, credits, subscriptionStatus, loading }: MainNavP
 
               {/* User Avatar */}
               <Link href="/settings">
-                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-medium text-sm hover:opacity-90 transition-opacity">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-orange-500 to-amber-500 flex items-center justify-center text-white font-medium text-sm hover:opacity-90 transition-opacity">
                   {user.email?.charAt(0).toUpperCase() || 'U'}
                 </div>
               </Link>

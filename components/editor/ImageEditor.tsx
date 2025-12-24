@@ -539,7 +539,7 @@ export function ImageEditor({
             >
               <div className="relative h-5 w-5 mt-0.5">
                 <div className="h-5 w-5 bg-[url('/checkerboard.svg')] bg-repeat rounded border border-border" />
-                <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-purple-500" />
+                <Sparkles className="h-3 w-3 absolute -top-1 -right-1 text-orange-500" />
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2">

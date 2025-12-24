@@ -535,7 +535,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                     className={cn(
                       'flex items-center gap-2 px-3 py-2 rounded-lg border transition-all',
                       selectedSocialPlatforms.includes('facebook')
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
+                        ? 'border-orange-500 bg-orange-50 dark:bg-orange-950/20'
                         : 'border-border hover:border-muted-foreground/50',
                       !connectedPlatforms.includes('facebook') && 'opacity-50'
                     )}
@@ -548,7 +548,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                     ) : !connectedPlatforms.includes('facebook') ? (
                       <span className="text-[10px] text-muted-foreground">(Not connected)</span>
                     ) : selectedSocialPlatforms.includes('facebook') && (
-                      <Check className="h-3 w-3 text-blue-500" />
+                      <Check className="h-3 w-3 text-orange-500" />
                     )}
                   </button>
                 </div>
