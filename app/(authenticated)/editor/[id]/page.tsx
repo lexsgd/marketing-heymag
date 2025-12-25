@@ -478,48 +478,71 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     setIsEditingWithAI(true)
 
     try {
-      // Call enhance API in edit mode - uses enhanced image as source
-      const response = await fetch('/api/ai/enhance', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          imageId: image.id,
-          stylePreset: image.style_preset || 'delivery',
-          // Pass the edit prompt as customPrompt
-          customPrompt: editPrompt.trim(),
-          // Enable edit mode - uses enhanced image and edit-specific prompt
-          editMode: true,
-          // preserveMode removed - Gemini cannot truly preserve pixels
-          // AI will regenerate the image with requested changes
-          preserveMode: false,
-        }),
-      })
+      let response: Response
+      let data: Record<string, unknown>
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Edit failed')
-      }
-
-      // Check if a new image was created (edit mode creates a new record)
-      if (data.isNewImage && data.imageId !== image.id) {
-        // Redirect to the new edited image page
-        toast.success('New edited image created!', {
-          description: 'Your original image is still available in the gallery.',
+      if (preserveOriginal) {
+        // Use Vertex AI inpainting - TRUE preservation mode
+        // Adds props to the image while keeping original pixels intact
+        response = await fetch('/api/ai/edit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageId: image.id,
+            prompt: editPrompt.trim(),
+            editType: 'add_props',
+          }),
         })
-        // Clear state before redirect
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error((data.error as string) || 'Edit failed')
+        }
+
+        // Vertex AI edit creates a new image record
+        toast.success('Props added successfully!', {
+          description: 'Your original image is preserved. New version created.',
+        })
         setEditPrompt('')
         setShowEditPanel(false)
-        // Navigate to the new image
+        // Navigate to the new edited image
         router.push(`/editor/${data.imageId}`)
+
       } else {
-        // Reload existing image (fallback case)
-        await loadImage()
-        setEditPrompt('')
-        setShowEditPanel(false)
-        toast.success('Image updated successfully!', {
-          description: 'Your AI edits have been applied.',
+        // Use Gemini regeneration - reimagines the entire image
+        response = await fetch('/api/ai/enhance', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageId: image.id,
+            stylePreset: image.style_preset || 'delivery',
+            customPrompt: editPrompt.trim(),
+            editMode: true,
+            preserveMode: false,
+          }),
         })
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error((data.error as string) || 'Edit failed')
+        }
+
+        // Check if a new image was created (edit mode creates a new record)
+        if (data.isNewImage && data.imageId !== image.id) {
+          toast.success('New version created!', {
+            description: 'Your original image is still available in the gallery.',
+          })
+          setEditPrompt('')
+          setShowEditPanel(false)
+          router.push(`/editor/${data.imageId as string}`)
+        } else {
+          await loadImage()
+          setEditPrompt('')
+          setShowEditPanel(false)
+          toast.success('Image updated successfully!', {
+            description: 'Your AI edits have been applied.',
+          })
+        }
       }
 
     } catch (err) {
@@ -706,31 +729,63 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             {/* Expandable Edit Panel */}
             {showEditPanel && (
               <div className="mt-4 space-y-3 pt-4 border-t">
+                {/* Preserve Mode Toggle */}
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border">
+                  <Checkbox
+                    id="preserveOriginal"
+                    checked={preserveOriginal}
+                    onCheckedChange={(checked) => setPreserveOriginal(checked === true)}
+                    className="mt-0.5"
+                  />
+                  <div className="flex-1">
+                    <Label htmlFor="preserveOriginal" className="text-sm font-medium cursor-pointer">
+                      Preserve Original (True Inpainting)
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {preserveOriginal
+                        ? 'Add props to the exact positions around your food - original pixels stay untouched'
+                        : 'Regenerate the entire image with your changes - may alter background and composition'}
+                    </p>
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <Label className="text-sm">Describe your edits</Label>
+                  <Label className="text-sm">
+                    {preserveOriginal ? 'What props to add?' : 'Describe your edits'}
+                  </Label>
                   <Textarea
                     value={editPrompt}
                     onChange={(e) => setEditPrompt(e.target.value)}
-                    placeholder="E.g., 'Add chinese wooden chopsticks and a white porcelain saucer on the side with red cut chili and light soya sauce inside the saucer'"
+                    placeholder={preserveOriginal
+                      ? "E.g., 'Add wooden chopsticks and a small white saucer with red chili slices'"
+                      : "E.g., 'Make the colors more vibrant and add steam rising from the food'"}
                     rows={3}
                     className="resize-none text-sm"
                     maxLength={500}
                   />
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <span>Describe what you want to add or change</span>
+                    <span>{preserveOriginal ? 'Props will be placed naturally around the food' : 'Describe what you want to change'}</span>
                     <span>{editPrompt.length}/500</span>
                   </div>
                 </div>
 
-                {/* Quick suggestions */}
+                {/* Quick suggestions - different for each mode */}
                 <div className="flex flex-wrap gap-2">
                   <span className="text-xs text-muted-foreground">Try:</span>
-                  {[
-                    'Add wooden chopsticks',
-                    'Add a garnish of herbs',
-                    'Make it more vibrant',
-                    'Add steam rising',
-                  ].map((suggestion) => (
+                  {(preserveOriginal
+                    ? [
+                        'Add wooden chopsticks',
+                        'Add a small saucer with soy sauce',
+                        'Add fresh chili slices',
+                        'Add a cloth napkin',
+                      ]
+                    : [
+                        'Make colors more vibrant',
+                        'Add steam rising',
+                        'Darker moody background',
+                        'Brighter lighting',
+                      ]
+                  ).map((suggestion) => (
                     <button
                       key={suggestion}
                       type="button"
@@ -742,16 +797,28 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   ))}
                 </div>
 
-                {/* Honest explanation about AI regeneration */}
-                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
-                  <div className="flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-amber-800 dark:text-amber-200">
-                      <span className="font-medium">Note:</span> AI will generate a new image based on your request.
-                      The background, composition, and styling may change. Your original enhanced image will be preserved separately.
-                    </p>
+                {/* Mode-specific explanation */}
+                {preserveOriginal ? (
+                  <div className="p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800">
+                    <div className="flex items-start gap-2">
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-green-800 dark:text-green-200">
+                        <span className="font-medium">True Preservation:</span> Uses advanced AI inpainting to add props
+                        to the background areas while keeping your food exactly as it appears now.
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                      <p className="text-xs text-amber-800 dark:text-amber-200">
+                        <span className="font-medium">Full Regeneration:</span> AI will create a new version of the image.
+                        The background, composition, and styling may change. Original is preserved separately.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Apply Button */}
                 <Button
@@ -762,18 +829,20 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   {isEditingWithAI ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Generating new version...
+                      {preserveOriginal ? 'Adding props...' : 'Generating new version...'}
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Reimagine (1 credit)
+                      {preserveOriginal ? 'Add Props (1 credit)' : 'Reimagine (1 credit)'}
                     </>
                   )}
                 </Button>
 
                 <p className="text-[11px] text-muted-foreground text-center">
-                  AI will regenerate the image with your requested changes while preserving the original style.
+                  {preserveOriginal
+                    ? 'Props will be added to the background areas. Your food stays exactly the same.'
+                    : 'AI will regenerate the image with your requested changes.'}
                 </p>
               </div>
             )}
