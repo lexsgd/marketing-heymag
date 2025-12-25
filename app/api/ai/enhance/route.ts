@@ -413,11 +413,7 @@ export async function POST(request: NextRequest) {
       let stylePrompt: string
       let simplifiedResult: ReturnType<typeof buildSimplifiedPrompt> | null = null
 
-      if (customPrompt) {
-        // Custom prompt overrides everything
-        stylePrompt = customPrompt
-        logger.debug('Using custom prompt (user override)')
-      } else if (hasSimpleSelection && simpleSelection) {
+      if (hasSimpleSelection && simpleSelection) {
         // NEW: Use simplified prompt builder for new 3-category system
         simplifiedResult = buildSimplifiedPrompt(simpleSelection, undefined)
         stylePrompt = simplifiedResult.prompt
@@ -516,6 +512,33 @@ Create a professional, appetizing result that incorporates the user's requested 
 `
         logger.debug('Added describe background instructions to prompt', {
           description: backgroundConfig.description.substring(0, 50),
+        })
+      }
+
+      // Append user's custom prompt for additional elements/styling
+      if (customPrompt && customPrompt.trim()) {
+        stylePrompt += `
+
+═══════════════════════════════════════════════════════════════════════════════
+ADDITIONAL USER REQUEST - IMPORTANT
+═══════════════════════════════════════════════════════════════════════════════
+The user has provided additional instructions for the image:
+
+"${customPrompt.trim()}"
+
+INSTRUCTIONS:
+- Incorporate the user's request into the final image
+- This may include adding props, elements, or styling that the user described
+- The user's request should complement the existing style, not override it
+- Ensure all added elements look natural and professional
+- Maintain the food as the primary focal point
+- Added props/elements should be food-photography appropriate
+
+IMPORTANT: The user specifically requested these additions, so make sure to include them
+in the generated image while maintaining professional food photography quality.
+`
+        logger.debug('Added custom prompt to stylePrompt', {
+          customPrompt: customPrompt.substring(0, 100),
         })
       }
 

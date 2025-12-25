@@ -288,6 +288,8 @@ function EditorContent() {
             backgroundConfig: backgroundConfig.mode !== 'auto' ? backgroundConfig : undefined,
             // Tell AI to use simple background when custom background will be uploaded
             hasCustomBackground: backgroundConfig.mode === 'upload' && !!backgroundConfig.uploadedUrl,
+            // User's custom prompt for additional elements/styling
+            customPrompt: prompt || undefined,
           }),
           signal: controller.signal,
         })
