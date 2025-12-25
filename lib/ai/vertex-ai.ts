@@ -317,15 +317,14 @@ export async function editImageWithVertexAI(
 }
 
 /**
- * Add props/objects to a food photo while preserving the original
+ * Add props/objects to a food photo while preserving the food itself
  *
- * IMPORTANT: Uses OUTPAINTING instead of inpainting for TRUE preservation.
- * Outpainting extends the canvas and adds content in the NEW areas only,
- * keeping the original image pixels completely untouched.
+ * Uses MASK_MODE_FOREGROUND - the model detects the food as foreground
+ * and only allows additions to areas that are NOT the food.
  *
  * @param imageBase64 - Base64 encoded food photo
  * @param propsPrompt - Description of props to add (e.g., "chopsticks and red chilies")
- * @returns Edited image with props added around the original
+ * @returns Edited image with props added around the food
  */
 export async function addPropsToFoodPhoto(
   imageBase64: string,
@@ -334,19 +333,15 @@ export async function addPropsToFoodPhoto(
     aspectRatio?: string
   } = {}
 ): Promise<{ imageBase64: string; mimeType: string }> {
-  // Use outpainting to extend the canvas and add props in the new areas
-  // This is TRUE preservation - the original image is never modified
-  const expandPrompt = `Extend this food photograph to show a wider view of the table.
-In the expanded areas, add: ${propsPrompt}
-Keep the original food and plate EXACTLY as they appear - do not modify them at all.
-The new props should be placed naturally on the table surface in the extended areas.
-Match the lighting, shadows, and color grading perfectly.`
+  // Use FOREGROUND mask mode - model detects food as foreground
+  // and only modifies areas OUTSIDE the foreground (the table surface)
+  const prompt = `Add ${propsPrompt} to the table surface around the food. The food dish must remain completely unchanged.`
 
-  return editImageWithVertexAI(imageBase64, expandPrompt, {
-    editMode: 'outpaint',
-    // Expand to 16:9 to add space on the sides for props
-    aspectRatio: options.aspectRatio || '16:9',
-    baseSteps: 35, // Standard for outpainting
+  return editImageWithVertexAI(imageBase64, prompt, {
+    editMode: 'inpaint_insertion',
+    maskMode: 'foreground', // Detect food as foreground, edit around it
+    aspectRatio: options.aspectRatio,
+    baseSteps: 20, // Lower steps for less aggressive changes
   })
 }
 
