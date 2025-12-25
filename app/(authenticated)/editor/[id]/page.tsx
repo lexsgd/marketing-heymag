@@ -569,7 +569,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           <div className="min-w-0 flex-1">
             <h1 className="text-lg md:text-2xl font-bold truncate">{image.original_filename || 'Untitled'}</h1>
             <div className="flex flex-wrap items-center gap-2 mt-1">
-              {image.status === 'completed' && (
+              {image.enhanced_url && (
                 <Badge className="bg-orange-500 text-white text-xs">
                   <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
@@ -624,7 +624,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
               </div>
             )}
             {/* Show Apply Custom Background button when background replacement failed */}
-            {pendingBackgroundUrl && image.status === 'completed' && (
+            {pendingBackgroundUrl && image.enhanced_url && (
               <div className="mt-2">
                 <Button
                   onClick={handleApplyBackground}
@@ -676,7 +676,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       />
 
       {/* Edit with AI Section - Make additional edits to the enhanced image */}
-      {image.status === 'completed' && image.enhanced_url && (
+      {image.enhanced_url && (
         <Card className="border-dashed">
           <CardContent className="p-4">
             {/* Toggle Button */}
