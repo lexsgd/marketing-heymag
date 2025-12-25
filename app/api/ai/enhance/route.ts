@@ -421,47 +421,29 @@ export async function POST(request: NextRequest) {
       // EDIT MODE: Use a special prompt for making modifications to already-enhanced images
       if (editMode && customPrompt) {
         if (preserveMode) {
-          // PRESERVE MODE: Uses "Anchor & Add" prompting strategy with power words
-          // Based on research: Gemini's conversational image editing (Nano Banana) works best with this pattern
-          // Power words: "LOCAL EDIT", "SEAMLESS BLEND", detailed reference descriptions
-          stylePrompt = `Using the provided image, perform a LOCAL EDIT using INPAINTING to add props to the scene.
+          // PRESERVE MODE: Uses "Anchor & Add" prompting strategy
+          // Research shows SIMPLER prompts work better - one clear sentence pattern
+          // Pattern: "Edit this image to [ADD]. Keep [ANCHOR] exactly the same. Match [STYLE]."
 
-TASK: Add the following items to the table surface around the food:
-${customPrompt.trim()}
+          // Build the prompt following the Golden Template exactly
+          stylePrompt = `Edit this image to add ${customPrompt.trim()} on the table surface beside the food plate.
 
-Maintain the food, plate, and all existing elements exactly as they are. Match the lighting, style, perspective, and grain of the original photo.
+ANCHOR (keep these 100% pixel-perfect identical):
+- The food dish itself
+- The plate
+- The existing background
+- All current elements in the image
 
-CRITICAL INSTRUCTIONS:
-1. Change ONLY the area on the table surface where you are placing the new props
-2. Leave the REST of the image 100% PIXEL-PERFECT IDENTICAL
-3. The food dish, plate, and existing elements must remain EXACTLY as they appear
-4. Match the lighting, style, perspective, and grain of the original photo exactly
-5. The new props should cast shadows consistent with the scene's lighting direction
-6. Use SEAMLESS BLEND to feather the edges of new objects so they don't look pasted on
-7. Maintain the same camera angle and depth of field as the original
+ADD (place these naturally in the scene):
+- ${customPrompt.trim()}
+- Position on the table BESIDE or AROUND the plate, NOT on the food
 
-PLACEMENT RULES:
-- Place props on the table BESIDE or AROUND the plate - NOT on the food
-- If the image is tightly cropped, you may extend the canvas slightly to make room
-- Extended areas must use SEAMLESS BLEND to match the existing background color and surface
+STYLE MATCH:
+- The new props should cast shadows consistent with the scene's existing lighting
+- Match the lighting, perspective, and grain of the original photo exactly
+- Use seamless blend to feather edges so props don't look pasted on
 
-PROP REFERENCE DETAILS:
-- "chopsticks" = ONE PAIR (2 wooden sticks) with natural wood grain texture, positioned diagonally
-- "saucer" = ONE small ceramic dish, matching the photo's style (white porcelain if unspecified)
-- "chili" = Fresh red chilies, sliced to show the inside if "cut" is mentioned
-- All props should match the quality and style of professional food photography
-
-INTERPRET LITERALLY:
-- Add ONLY what is explicitly requested - nothing extra
-- One item = exactly one item, not multiples
-
-DO NOT:
-- Change the food appearance in any way
-- Change the background setting or style
-- Add items not explicitly requested
-- Modify the plate position or angle
-
-OUTPUT: The same food photograph with ONLY the requested props added naturally to the scene, using SEAMLESS BLEND for realistic integration.`
+Change ONLY the empty table surface area. Leave the rest of the image 100% pixel-perfect identical.`
           logger.info('Using PRESERVE mode prompt (strict pixel-perfect)', {
             editRequest: customPrompt.substring(0, 100),
           })
