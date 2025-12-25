@@ -424,18 +424,21 @@ export async function POST(request: NextRequest) {
           // PRESERVE MODE: Uses "Anchor & Add" prompting strategy with power words
           // Based on research: Gemini's conversational image editing (Nano Banana) works best with this pattern
           // Power words: "LOCAL EDIT", "SEAMLESS BLEND", detailed reference descriptions
-          stylePrompt = `Edit this image to perform a LOCAL EDIT using INPAINTING.
+          stylePrompt = `Using the provided image, perform a LOCAL EDIT using INPAINTING to add props to the scene.
 
 TASK: Add the following items to the table surface around the food:
 ${customPrompt.trim()}
+
+Maintain the food, plate, and all existing elements exactly as they are. Match the lighting, style, perspective, and grain of the original photo.
 
 CRITICAL INSTRUCTIONS:
 1. Change ONLY the area on the table surface where you are placing the new props
 2. Leave the REST of the image 100% PIXEL-PERFECT IDENTICAL
 3. The food dish, plate, and existing elements must remain EXACTLY as they appear
-4. Match the lighting, shadows, and color grading of the original photo
+4. Match the lighting, style, perspective, and grain of the original photo exactly
 5. The new props should cast shadows consistent with the scene's lighting direction
 6. Use SEAMLESS BLEND to feather the edges of new objects so they don't look pasted on
+7. Maintain the same camera angle and depth of field as the original
 
 PLACEMENT RULES:
 - Place props on the table BESIDE or AROUND the plate - NOT on the food
