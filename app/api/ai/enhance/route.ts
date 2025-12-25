@@ -970,26 +970,86 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         suggestions: aiSuggestions.length > 0 ? aiSuggestions : defaultEnhancements.suggestions
       }
 
-      // Update image record with enhanced URL (or original if processing skipped)
+      // Handle image record update differently for edit mode vs normal mode
       currentStep = 'updating image record'
-      logger.debug('Updating image record')
-      const { error: imageUpdateError } = await supabase
-        .from('images')
-        .update({
-          status: 'completed',
-          enhanced_url: enhancedUrl,
-          enhancement_settings: enhancementData.enhancements,
-          processed_at: new Date().toISOString(),
-          ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'gemini-3-pro-image-enhancement' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
-          ai_suggestions: enhancementData.suggestions,
-          // Note: processing_skipped is returned in API response but not stored in DB
-        })
-        .eq('id', imageId)
+      let finalImageId = imageId // Track the final image ID (may change in edit mode)
 
-      if (imageUpdateError) {
-        logger.error('Image update error', imageUpdateError)
+      if (editMode) {
+        // EDIT MODE: Create a NEW image record instead of overwriting
+        // This preserves the original enhanced image and creates version history
+        logger.debug('Edit mode: Creating new image record')
+
+        const { data: newImage, error: insertError } = await supabase
+          .from('images')
+          .insert({
+            business_id: business.id,
+            // The "original" for this new record is the previous enhanced image
+            original_url: sourceImageUrl, // This is the previous enhanced_url
+            enhanced_url: enhancedUrl,
+            thumbnail_url: image.thumbnail_url, // Reuse existing thumbnail for now
+            original_filename: image.original_filename ? `${image.original_filename.replace(/\.[^/.]+$/, '')}_edited${image.original_filename.match(/\.[^/.]+$/)?.[0] || '.jpg'}` : 'edited_image.jpg',
+            style_preset: image.style_preset,
+            status: 'completed',
+            enhancement_settings: enhancementData.enhancements,
+            processed_at: new Date().toISOString(),
+            ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'gemini-3-pro-image-enhancement' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
+            ai_suggestions: enhancementData.suggestions,
+            metadata: {
+              ...(image.metadata || {}),
+              editedFrom: imageId, // Reference to the original image
+              editPrompt: customPrompt?.substring(0, 500), // Store the edit request
+              preserveMode: preserveMode,
+            },
+          })
+          .select('id')
+          .single()
+
+        if (insertError) {
+          logger.error('Failed to create new image record', insertError)
+          // Fall back to updating existing record
+          const { error: fallbackError } = await supabase
+            .from('images')
+            .update({
+              status: 'completed',
+              enhanced_url: enhancedUrl,
+              enhancement_settings: enhancementData.enhancements,
+              processed_at: new Date().toISOString(),
+              ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'gemini-3-pro-image-enhancement' : 'skipped',
+              ai_suggestions: enhancementData.suggestions,
+            })
+            .eq('id', imageId)
+
+          if (fallbackError) {
+            logger.error('Fallback update also failed', fallbackError)
+          }
+        } else {
+          finalImageId = newImage.id
+          logger.info('Created new edited image record', {
+            originalId: imageId,
+            newId: newImage.id,
+            preserveMode
+          })
+        }
       } else {
-        logger.debug('Image record updated successfully')
+        // NORMAL MODE: Update existing image record
+        logger.debug('Updating existing image record')
+        const { error: imageUpdateError } = await supabase
+          .from('images')
+          .update({
+            status: 'completed',
+            enhanced_url: enhancedUrl,
+            enhancement_settings: enhancementData.enhancements,
+            processed_at: new Date().toISOString(),
+            ai_model: enhancementMethod === 'hybrid-sharp-gemini' ? 'gemini-3-pro-image-enhancement' : (enhancementMethod === 'sharp-only' ? 'sharp-processing' : 'skipped'),
+            ai_suggestions: enhancementData.suggestions,
+          })
+          .eq('id', imageId)
+
+        if (imageUpdateError) {
+          logger.error('Image update error', imageUpdateError)
+        } else {
+          logger.debug('Image record updated successfully')
+        }
       }
 
       // Deduct credit
@@ -1015,8 +1075,8 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           business_id: business.id,
           amount: -1,
           transaction_type: 'usage',
-          description: `Image enhancement - ${stylePreset} style`,
-          image_id: imageId,
+          description: editMode ? `AI Edit - ${customPrompt?.substring(0, 50)}...` : `Image enhancement - ${stylePreset} style`,
+          image_id: finalImageId, // Use final image ID (may be new in edit mode)
           balance_after: credits.credits_remaining - 1,
         })
 
@@ -1039,11 +1099,13 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
       logger.info('Enhancement complete', { method: enhancementMethod, processingSkipped })
       return NextResponse.json({
         success: true,
-        imageId,
+        imageId: finalImageId, // Return the actual image ID (may be new in edit mode)
+        originalImageId: editMode ? imageId : undefined, // Reference to original if edited
         enhancedUrl,
         enhancements: enhancementData,
         creditsRemaining: credits.credits_remaining - 1,
         processingSkipped, // If true, client should apply enhancements using the settings
+        isNewImage: editMode && finalImageId !== imageId, // Flag to indicate a new image was created
       })
     } catch (aiError: unknown) {
       const errorMessage = (aiError as Error).message || 'Unknown error'

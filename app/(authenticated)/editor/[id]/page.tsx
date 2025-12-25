@@ -500,15 +500,26 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         throw new Error(data.error || 'Edit failed')
       }
 
-      // Reload image to get updated enhanced URL
-      await loadImage()
-
-      // Clear the edit prompt and show success
-      setEditPrompt('')
-      setShowEditPanel(false)
-      toast.success('Image updated successfully!', {
-        description: 'Your AI edits have been applied.',
-      })
+      // Check if a new image was created (edit mode creates a new record)
+      if (data.isNewImage && data.imageId !== image.id) {
+        // Redirect to the new edited image page
+        toast.success('New edited image created!', {
+          description: 'Your original image is still available in the gallery.',
+        })
+        // Clear state before redirect
+        setEditPrompt('')
+        setShowEditPanel(false)
+        // Navigate to the new image
+        router.push(`/editor/${data.imageId}`)
+      } else {
+        // Reload existing image (fallback case)
+        await loadImage()
+        setEditPrompt('')
+        setShowEditPanel(false)
+        toast.success('Image updated successfully!', {
+          description: 'Your AI edits have been applied.',
+        })
+      }
 
     } catch (err) {
       console.error('AI edit error:', err)
