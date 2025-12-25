@@ -12,9 +12,6 @@ import {
   Loader2,
   X,
   Calendar,
-  Sparkles,
-  Clock,
-  AlertCircle,
   LayoutGrid,
   List,
   MoreHorizontal,
@@ -65,7 +62,6 @@ interface GalleryClientProps {
   initialImages: ImageData[]
 }
 
-type StatusFilter = 'all' | 'completed' | 'processing' | 'pending' | 'failed'
 type DateFilter = 'all' | 'today' | 'week' | 'month'
 type ViewMode = 'grid' | 'list'
 
@@ -76,7 +72,6 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
   const [isDeleting, setIsDeleting] = useState(false)
   const [isDownloading, setIsDownloading] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all')
   const [dateFilter, setDateFilter] = useState<DateFilter>('all')
   const [viewMode, setViewMode] = useState<ViewMode>('grid')
 
@@ -110,25 +105,13 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
         (image.original_filename?.toLowerCase().includes(searchQuery.toLowerCase())) ||
         (image.style_preset?.toLowerCase().includes(searchQuery.toLowerCase()))
 
-      // Status filter
-      const matchesStatus = statusFilter === 'all' || image.status === statusFilter
-
       // Date filter
       const dateBoundary = getDateBoundary(dateFilter)
       const matchesDate = !dateBoundary || new Date(image.created_at) >= dateBoundary
 
-      return matchesSearch && matchesStatus && matchesDate
+      return matchesSearch && matchesDate
     })
-  }, [images, searchQuery, statusFilter, dateFilter])
-
-  // Get counts for sidebar
-  const statusCounts = useMemo(() => ({
-    all: images.length,
-    completed: images.filter(i => i.status === 'completed').length,
-    processing: images.filter(i => i.status === 'processing').length,
-    pending: images.filter(i => i.status === 'pending').length,
-    failed: images.filter(i => i.status === 'failed').length,
-  }), [images])
+  }, [images, searchQuery, dateFilter])
 
   // Selection handlers
   const toggleSelection = useCallback((id: string) => {
@@ -256,79 +239,6 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
     })
   }
 
-  // Status Badge Component
-  const StatusBadge = ({ status }: { status: string }) => {
-    switch (status) {
-      case 'completed':
-        return (
-          <Badge className="bg-orange-500 text-white border-0">
-            <svg className="h-3 w-3 mr-1" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
-            </svg>
-            AI Enhanced
-          </Badge>
-        )
-      case 'processing':
-        return (
-          <Badge className="bg-amber-500 text-white border-0">
-            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-            Processing
-          </Badge>
-        )
-      case 'pending':
-        return (
-          <Badge variant="secondary" className="text-muted-foreground">
-            <Clock className="h-3 w-3 mr-1" />
-            Pending
-          </Badge>
-        )
-      case 'failed':
-        return (
-          <Badge variant="destructive">
-            <AlertCircle className="h-3 w-3 mr-1" />
-            Failed
-          </Badge>
-        )
-      default:
-        return null
-    }
-  }
-
-  // Status icon for grid view overlay
-  const StatusIcon = ({ status }: { status: string }) => {
-    const iconClass = "h-3.5 w-3.5"
-    switch (status) {
-      case 'completed':
-        return (
-          <div className="p-1.5 rounded-full bg-orange-500/90 backdrop-blur-sm shadow-lg">
-            <svg className={cn(iconClass, "text-white")} viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2L9.19 8.63L2 9.24L7.46 13.97L5.82 21L12 17.27L18.18 21L16.54 13.97L22 9.24L14.81 8.63L12 2Z" />
-            </svg>
-          </div>
-        )
-      case 'processing':
-        return (
-          <div className="p-1.5 rounded-full bg-black/50 backdrop-blur-sm shadow-lg">
-            <Loader2 className={cn(iconClass, "text-white animate-spin")} />
-          </div>
-        )
-      case 'pending':
-        return (
-          <div className="p-1.5 rounded-full bg-black/40 backdrop-blur-sm shadow-lg">
-            <Clock className={cn(iconClass, "text-white/70")} />
-          </div>
-        )
-      case 'failed':
-        return (
-          <div className="p-1.5 rounded-full bg-red-500/80 backdrop-blur-sm shadow-lg">
-            <AlertCircle className={cn(iconClass, "text-white")} />
-          </div>
-        )
-      default:
-        return null
-    }
-  }
-
   return (
     <TooltipProvider>
     <div className="min-h-[calc(100vh-64px)] flex">
@@ -341,90 +251,17 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
           </h3>
           <nav className="space-y-1">
             <button
-              onClick={() => { setStatusFilter('all'); setDateFilter('all'); }}
+              onClick={() => setDateFilter('all')}
               className={cn(
                 'w-full text-left px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-between',
-                statusFilter === 'all' && dateFilter === 'all'
+                dateFilter === 'all'
                   ? 'bg-muted text-foreground'
                   : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               )}
             >
               <span>All Photos</span>
-              <Badge variant="secondary" className="text-xs">{statusCounts.all}</Badge>
+              <Badge variant="secondary" className="text-xs">{images.length}</Badge>
             </button>
-          </nav>
-        </div>
-
-        {/* Status Section */}
-        <div className="mb-8">
-          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-            STATUS
-          </h3>
-          <nav className="space-y-1">
-            <button
-              onClick={() => setStatusFilter('completed')}
-              className={cn(
-                'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between',
-                statusFilter === 'completed'
-                  ? 'bg-muted text-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-3.5 w-3.5 text-orange-500" />
-                <span>Enhanced</span>
-              </div>
-              <Badge variant="secondary" className="text-xs">{statusCounts.completed}</Badge>
-            </button>
-            <button
-              onClick={() => setStatusFilter('processing')}
-              className={cn(
-                'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between',
-                statusFilter === 'processing'
-                  ? 'bg-muted text-foreground font-medium'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              )}
-            >
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-3.5 w-3.5 text-amber-500" />
-                <span>Processing</span>
-              </div>
-              <Badge variant="secondary" className="text-xs">{statusCounts.processing}</Badge>
-            </button>
-            {statusCounts.pending > 0 && (
-              <button
-                onClick={() => setStatusFilter('pending')}
-                className={cn(
-                  'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between',
-                  statusFilter === 'pending'
-                    ? 'bg-muted text-foreground font-medium'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <Clock className="h-3.5 w-3.5 text-gray-500" />
-                  <span>Pending</span>
-                </div>
-                <Badge variant="secondary" className="text-xs">{statusCounts.pending}</Badge>
-              </button>
-            )}
-            {statusCounts.failed > 0 && (
-              <button
-                onClick={() => setStatusFilter('failed')}
-                className={cn(
-                  'w-full text-left px-3 py-2 rounded-lg text-sm transition-colors flex items-center justify-between',
-                  statusFilter === 'failed'
-                    ? 'bg-muted text-foreground font-medium'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                )}
-              >
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="h-3.5 w-3.5 text-red-500" />
-                  <span>Failed</span>
-                </div>
-                <Badge variant="secondary" className="text-xs">{statusCounts.failed}</Badge>
-              </button>
-            )}
           </nav>
         </div>
 
@@ -499,14 +336,10 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">
-              {statusFilter === 'all' && dateFilter === 'all' && 'All Photos'}
-              {statusFilter === 'completed' && 'Enhanced Photos'}
-              {statusFilter === 'processing' && 'Processing'}
-              {statusFilter === 'pending' && 'Pending'}
-              {statusFilter === 'failed' && 'Failed'}
-              {dateFilter === 'today' && statusFilter === 'all' && 'Today'}
-              {dateFilter === 'week' && statusFilter === 'all' && 'This Week'}
-              {dateFilter === 'month' && statusFilter === 'all' && 'This Month'}
+              {dateFilter === 'all' && 'All Photos'}
+              {dateFilter === 'today' && 'Today'}
+              {dateFilter === 'week' && 'This Week'}
+              {dateFilter === 'month' && 'This Month'}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {filteredImages.length} {filteredImages.length === 1 ? 'photo' : 'photos'}
@@ -584,11 +417,6 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
                       "relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800 to-gray-900 transition-all duration-200",
                       isSelected && "ring-2 ring-orange-500 ring-offset-2 ring-offset-background"
                     )}>
-                      {/* Status Indicator */}
-                      <div className="absolute top-3 left-3 z-10">
-                        <StatusIcon status={image.status} />
-                      </div>
-
                       {/* Selection Checkbox */}
                       <div
                         className={cn(
@@ -642,9 +470,8 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
               {/* List Header */}
               <div className="grid grid-cols-12 gap-4 px-4 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider border-b">
                 <div className="col-span-1"></div>
-                <div className="col-span-4">Name</div>
-                <div className="col-span-2">Status</div>
-                <div className="col-span-2">Style</div>
+                <div className="col-span-5">Name</div>
+                <div className="col-span-3">Style</div>
                 <div className="col-span-2">Date</div>
                 <div className="col-span-1"></div>
               </div>
@@ -685,7 +512,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
                     </div>
 
                     {/* Name */}
-                    <div className="col-span-4">
+                    <div className="col-span-5">
                       <Link href={`/editor/${image.id}`} className="hover:underline">
                         <p className="font-medium truncate">
                           {image.original_filename || 'Untitled'}
@@ -693,13 +520,8 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
                       </Link>
                     </div>
 
-                    {/* Status */}
-                    <div className="col-span-2">
-                      <StatusBadge status={image.status} />
-                    </div>
-
                     {/* Style */}
-                    <div className="col-span-2">
+                    <div className="col-span-3">
                       <span className="text-sm text-muted-foreground">
                         {image.style_preset || '—'}
                       </span>
@@ -764,7 +586,7 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
             )}
             {searchQuery && (
               <Button
-                onClick={() => { setSearchQuery(''); setStatusFilter('all'); setDateFilter('all'); }}
+                onClick={() => { setSearchQuery(''); setDateFilter('all'); }}
                 variant="link"
                 className="text-orange-500"
               >
