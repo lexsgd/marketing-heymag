@@ -249,6 +249,12 @@ export async function editImageWithVertexAI(
   if (!response.ok) {
     const errorText = await response.text()
     console.error('[Vertex AI] API error', { status: response.status, error: errorText })
+
+    // Parse error for user-friendly messages
+    if (response.status === 403 && errorText.includes('BILLING_DISABLED')) {
+      throw new Error('Google Cloud billing not enabled. Please enable billing in Google Cloud Console for project "zazzles" to use this feature.')
+    }
+
     throw new Error(`Vertex AI API error: ${response.status} - ${errorText}`)
   }
 
