@@ -421,47 +421,55 @@ export async function POST(request: NextRequest) {
       // EDIT MODE: Use a special prompt for making modifications to already-enhanced images
       if (editMode && customPrompt) {
         if (preserveMode) {
-          // PRESERVE MODE: Extremely strict - keep image EXACTLY the same, only add elements
-          stylePrompt = `You are an expert food photography editor. Your ONLY task is to ADD NEW ELEMENTS to this image.
+          // PRESERVE MODE: Extremely strict - pixel-perfect preservation with additions only
+          stylePrompt = `CRITICAL IMAGE EDITING TASK: Add items to an existing photograph WITHOUT changing anything else.
+
+This is a SURGICAL ADDITION task - NOT a regeneration task. You must treat this like Photoshop editing where you are adding elements to an existing photo.
 
 ═══════════════════════════════════════════════════════════════════════════════
-🚨 CRITICAL: DO NOT CHANGE ANYTHING EXISTING 🚨
+ABSOLUTE REQUIREMENTS - FAILURE TO FOLLOW MEANS TASK FAILURE
 ═══════════════════════════════════════════════════════════════════════════════
 
-THE FOLLOWING MUST REMAIN 100% IDENTICAL TO THE INPUT IMAGE:
-- ❌ DO NOT change the food presentation, position, or appearance
-- ❌ DO NOT change the background (surface, table, setting)
-- ❌ DO NOT change the lighting, shadows, or color grading
-- ❌ DO NOT change the camera angle or perspective
-- ❌ DO NOT change any existing props or elements
-- ❌ DO NOT change the overall mood, style, or atmosphere
-- ❌ DO NOT crop or resize the image differently
-- ❌ DO NOT adjust contrast, brightness, or saturation
+The output image MUST be PIXEL-PERFECT IDENTICAL to the input EXCEPT for the new items:
+
+1. SAME EXACT BACKGROUND - If the background is a solid color (blue, white, etc.), it must remain that EXACT same color. If it's a studio setting, keep it. DO NOT replace with a restaurant/hawker/outdoor scene.
+
+2. SAME EXACT FOOD - The food dish must be in the EXACT same position, angle, and appearance. Do not rotate, resize, or modify the food in any way.
+
+3. SAME EXACT LIGHTING - The lighting direction, shadows, and highlights must remain identical. Match the existing light source.
+
+4. SAME EXACT CAMERA ANGLE - Top-down stays top-down, 45-degree stays 45-degree. Do not change perspective.
+
+5. SAME EXACT COLORS - The color grading, white balance, and saturation must remain identical.
 
 ═══════════════════════════════════════════════════════════════════════════════
-✅ ONLY ADD THESE NEW ELEMENTS
+ITEMS TO ADD (AND NOTHING ELSE)
 ═══════════════════════════════════════════════════════════════════════════════
-"${customPrompt.trim()}"
+${customPrompt.trim()}
+
+INTERPRET THE REQUEST LITERALLY:
+- "chopsticks" means ONE PAIR of chopsticks (2 sticks), not multiple pairs
+- "a saucer" means exactly ONE saucer
+- "red cut chili" means ONLY RED chilies, not green or mixed
+- Add ONLY what is explicitly requested - nothing extra
 
 ═══════════════════════════════════════════════════════════════════════════════
-INSTRUCTIONS FOR ADDING NEW ELEMENTS
+PLACEMENT GUIDELINES
 ═══════════════════════════════════════════════════════════════════════════════
 
-1. Position the new elements naturally in the scene (beside, behind, or near the food)
-2. Match the lighting - new items should have shadows and highlights matching the existing scene
-3. Match the color temperature - new items should look like they belong in the same photo
-4. Scale appropriately - new items should be the correct size relative to the food
-5. Add realistic shadows where new items touch surfaces
-6. Materials should look authentic (wood grain on chopsticks, porcelain glaze on saucers, etc.)
+Place new items in EMPTY SPACE around the food:
+- To the left, right, or front of the main dish
+- On the same surface/background as the food
+- With shadows that match the existing lighting direction
+- At appropriate scale relative to the dish
 
-EXAMPLES OF GOOD PLACEMENTS:
-- Chopsticks: Resting beside or in front of the dish
-- Saucer with sauce: Positioned to the side or corner of the frame
-- Garnishes: Sprinkled around or near the main dish
-- Utensils: Placed naturally as if someone is about to eat
+DO NOT:
+- Add items that weren't requested (no extra limes, spoons, garnishes, etc.)
+- Place items on top of the food
+- Crowd the composition with too many elements
 
-OUTPUT: Generate the exact same image with ONLY the requested new elements added.`
-          logger.info('Using PRESERVE mode prompt (strict add-only)', {
+OUTPUT: The EXACT same image with ONLY the specifically requested items added in empty spaces.`
+          logger.info('Using PRESERVE mode prompt (strict pixel-perfect)', {
             editRequest: customPrompt.substring(0, 100),
           })
         } else {
