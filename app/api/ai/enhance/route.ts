@@ -421,54 +421,60 @@ export async function POST(request: NextRequest) {
       // EDIT MODE: Use a special prompt for making modifications to already-enhanced images
       if (editMode && customPrompt) {
         if (preserveMode) {
-          // PRESERVE MODE: Extremely strict - pixel-perfect preservation with additions only
-          stylePrompt = `CRITICAL IMAGE EDITING TASK: Add items to an existing photograph WITHOUT changing anything else.
-
-This is a SURGICAL ADDITION task - NOT a regeneration task. You must treat this like Photoshop editing where you are adding elements to an existing photo.
+          // PRESERVE MODE: Smart preservation - handles both spacious and tight crops
+          stylePrompt = `CRITICAL IMAGE EDITING TASK: Add props to an existing food photograph while preserving its essence.
 
 ═══════════════════════════════════════════════════════════════════════════════
-ABSOLUTE REQUIREMENTS - FAILURE TO FOLLOW MEANS TASK FAILURE
+STEP 1: ANALYZE THE IMAGE COMPOSITION
 ═══════════════════════════════════════════════════════════════════════════════
 
-The output image MUST be PIXEL-PERFECT IDENTICAL to the input EXCEPT for the new items:
-
-1. SAME EXACT BACKGROUND - If the background is a solid color (blue, white, etc.), it must remain that EXACT same color. If it's a studio setting, keep it. DO NOT replace with a restaurant/hawker/outdoor scene.
-
-2. SAME EXACT FOOD - The food dish must be in the EXACT same position, angle, and appearance. Do not rotate, resize, or modify the food in any way.
-
-3. SAME EXACT LIGHTING - The lighting direction, shadows, and highlights must remain identical. Match the existing light source.
-
-4. SAME EXACT CAMERA ANGLE - Top-down stays top-down, 45-degree stays 45-degree. Do not change perspective.
-
-5. SAME EXACT COLORS - The color grading, white balance, and saturation must remain identical.
+First, analyze the reference image:
+- Does it have empty space around the food for placing props?
+- Or is it tightly cropped with the plate/food filling most of the frame?
 
 ═══════════════════════════════════════════════════════════════════════════════
-ITEMS TO ADD (AND NOTHING ELSE)
+STEP 2: CHOOSE THE RIGHT APPROACH
+═══════════════════════════════════════════════════════════════════════════════
+
+**SCENARIO A - Image has empty space:**
+Place the requested items in the existing empty space. Keep EVERYTHING else pixel-perfect identical:
+- Same exact background color and setting
+- Same exact food position and appearance
+- Same exact lighting, shadows, camera angle
+
+**SCENARIO B - Image is tightly cropped (no empty space):**
+You MUST "zoom out" to create space for the props. This means:
+- Extend the frame/canvas outward to reveal more of the scene
+- The extended background must PERFECTLY MATCH the existing background (same color, same surface, same lighting)
+- The original food/plate stays EXACTLY the same - just now shown in a wider view
+- Think of it as "pulling the camera back" to show more of the table
+
+IMPORTANT FOR SCENARIO B:
+- The background is a SOLID BLUE color with white surface - extend it seamlessly
+- Do NOT change to a restaurant, hawker center, or different setting
+- The extended area should look like natural continuation of the studio backdrop
+
+═══════════════════════════════════════════════════════════════════════════════
+ITEMS TO ADD
 ═══════════════════════════════════════════════════════════════════════════════
 ${customPrompt.trim()}
 
-INTERPRET THE REQUEST LITERALLY:
-- "chopsticks" means ONE PAIR of chopsticks (2 sticks), not multiple pairs
-- "a saucer" means exactly ONE saucer
-- "red cut chili" means ONLY RED chilies, not green or mixed
+INTERPRET LITERALLY:
+- "chopsticks" = ONE PAIR (2 sticks), not multiple
+- "red cut chili" = ONLY RED chilies, not green or mixed
 - Add ONLY what is explicitly requested - nothing extra
 
 ═══════════════════════════════════════════════════════════════════════════════
-PLACEMENT GUIDELINES
+STRICT RULES
 ═══════════════════════════════════════════════════════════════════════════════
 
-Place new items in EMPTY SPACE around the food:
-- To the left, right, or front of the main dish
-- On the same surface/background as the food
-- With shadows that match the existing lighting direction
-- At appropriate scale relative to the dish
+1. PRESERVE THE STYLE - Same studio backdrop, same lighting direction, same color grading
+2. PRESERVE THE FOOD - The dish must look identical, not modified in any way
+3. NO UNREQUESTED ITEMS - Don't add limes, spoons, napkins, or anything not asked for
+4. NO SCENE CHANGE - If it's a blue studio backdrop, keep it blue studio. Don't change to hawker/restaurant
+5. NATURAL PLACEMENT - Props should be on the table surface, with matching shadows
 
-DO NOT:
-- Add items that weren't requested (no extra limes, spoons, garnishes, etc.)
-- Place items on top of the food
-- Crowd the composition with too many elements
-
-OUTPUT: The EXACT same image with ONLY the specifically requested items added in empty spaces.`
+OUTPUT: The food photograph with a naturally wider composition (if needed) and ONLY the requested items added.`
           logger.info('Using PRESERVE mode prompt (strict pixel-perfect)', {
             editRequest: customPrompt.substring(0, 100),
           })
