@@ -473,9 +473,20 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
 
   // Edit enhanced image with AI - apply additional changes
   const handleEditWithAI = async () => {
-    if (!image || !editPrompt.trim()) return
+    console.log('[EditWithAI] Function called', {
+      hasImage: !!image,
+      editPrompt: editPrompt.trim().substring(0, 50),
+      preserveOriginal
+    })
+
+    if (!image || !editPrompt.trim()) {
+      console.log('[EditWithAI] Early return - missing image or prompt')
+      toast.error('Please enter a description of your edits')
+      return
+    }
 
     setIsEditingWithAI(true)
+    toast.info('Starting AI edit...', { duration: 2000 })
 
     try {
       let response: Response
@@ -484,6 +495,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       if (preserveOriginal) {
         // Use Vertex AI inpainting - TRUE preservation mode
         // Adds props to the image while keeping original pixels intact
+        console.log('[EditWithAI] Calling /api/ai/edit with:', {
+          imageId: image.id,
+          prompt: editPrompt.trim().substring(0, 50),
+          editType: 'add_props'
+        })
+
         response = await fetch('/api/ai/edit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -493,10 +510,13 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
             editType: 'add_props',
           }),
         })
+
+        console.log('[EditWithAI] API response status:', response.status)
         data = await response.json()
+        console.log('[EditWithAI] API response data:', data)
 
         if (!response.ok) {
-          throw new Error((data.error as string) || 'Edit failed')
+          throw new Error((data.error as string) || `Edit failed with status ${response.status}`)
         }
 
         // Vertex AI edit creates a new image record
@@ -546,11 +566,18 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       }
 
     } catch (err) {
-      console.error('AI edit error:', err)
+      const errorMessage = err instanceof Error ? err.message : String(err)
+      console.error('[EditWithAI] Error:', {
+        error: err,
+        message: errorMessage,
+        stack: err instanceof Error ? err.stack : undefined
+      })
       toast.error('Failed to apply edits', {
-        description: (err as Error).message || 'Please try again.',
+        description: errorMessage || 'Please try again.',
+        duration: 10000, // Keep error visible longer
       })
     } finally {
+      console.log('[EditWithAI] Finally block - resetting state')
       setIsEditingWithAI(false)
     }
   }
