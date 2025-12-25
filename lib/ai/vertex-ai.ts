@@ -28,21 +28,35 @@ interface VertexAICredentials {
   client_x509_cert_url: string
 }
 
+// Reference image entry for raw image
+interface RawReferenceImage {
+  referenceType: 'REFERENCE_TYPE_RAW'
+  referenceId: number
+  referenceImage: {
+    bytesBase64Encoded: string
+  }
+}
+
+// Reference image entry for mask (auto-generated - no image data)
+interface MaskReferenceImage {
+  referenceType: 'REFERENCE_TYPE_MASK'
+  referenceId: number
+  maskImageConfig: {
+    maskMode: string
+    dilation?: number
+  }
+}
+
 interface ImagenEditRequest {
   instances: {
     prompt: string
-    referenceImages: {
-      referenceType: number
-      referenceId: number
-      referenceImage: {
-        bytesBase64Encoded: string
-      }
-    }[]
-    editMode: string
-    maskMode?: string
-    segmentationClasses?: number[]
+    referenceImages: (RawReferenceImage | MaskReferenceImage)[]
   }[]
   parameters: {
+    editMode: string
+    editConfig?: {
+      baseSteps: number
+    }
     sampleCount: number
     aspectRatio?: string
     personGeneration?: string
@@ -175,7 +189,7 @@ export async function editImageWithVertexAI(
     editMode?: 'inpaint_insertion' | 'inpaint_removal' | 'outpaint'
     maskMode?: 'background' | 'foreground' | 'semantic'
     aspectRatio?: string
-    segmentationClasses?: number[]
+    baseSteps?: number
   } = {}
 ): Promise<{ imageBase64: string; mimeType: string }> {
   const projectId = getProjectId()
@@ -201,28 +215,42 @@ export async function editImageWithVertexAI(
   const editMode = editModeMap[options.editMode || 'inpaint_insertion'] || 'EDIT_MODE_INPAINT_INSERTION'
   const maskMode = maskModeMap[options.maskMode || 'background'] || 'MASK_MODE_BACKGROUND'
 
-  // Build the request body
+  // Default baseSteps: 35 for insertion, 12 for removal (per Google docs)
+  const baseSteps = options.baseSteps || (options.editMode === 'inpaint_removal' ? 12 : 35)
+
+  // Build reference images array per Google documentation:
+  // 1. Raw image with REFERENCE_TYPE_RAW
+  // 2. Mask config with REFERENCE_TYPE_MASK (auto-generated mask, no image data)
+  const referenceImages: (RawReferenceImage | MaskReferenceImage)[] = [
+    {
+      referenceType: 'REFERENCE_TYPE_RAW',
+      referenceId: 1,
+      referenceImage: {
+        bytesBase64Encoded: imageBase64,
+      },
+    },
+    {
+      referenceType: 'REFERENCE_TYPE_MASK',
+      referenceId: 2,
+      maskImageConfig: {
+        maskMode: maskMode,
+        dilation: 0.01, // Recommended value for insertion
+      },
+    },
+  ]
+
+  // Build the request body per Google Vertex AI documentation
   const requestBody: ImagenEditRequest = {
     instances: [{
       prompt: prompt,
-      referenceImages: [{
-        referenceType: 1, // REFERENCE_TYPE_RAW
-        referenceId: 1,
-        referenceImage: {
-          bytesBase64Encoded: imageBase64,
-        },
-      }],
-      editMode: editMode,
-      maskMode: maskMode,
-      // Add segmentation classes for semantic mode (e.g., 7 = background)
-      ...(options.maskMode === 'semantic' && options.segmentationClasses
-        ? { segmentationClasses: options.segmentationClasses }
-        : {}),
+      referenceImages: referenceImages,
     }],
     parameters: {
+      editMode: editMode,
+      editConfig: {
+        baseSteps: baseSteps,
+      },
       sampleCount: 1,
-      aspectRatio: options.aspectRatio || '1:1',
-      personGeneration: 'dont_allow',
       outputOptions: {
         mimeType: 'image/png',
       },
@@ -233,7 +261,9 @@ export async function editImageWithVertexAI(
     projectId,
     editMode,
     maskMode,
+    baseSteps,
     promptPreview: prompt.substring(0, 100),
+    requestStructure: JSON.stringify(requestBody, null, 2).substring(0, 500),
   })
 
   // Make the API call
