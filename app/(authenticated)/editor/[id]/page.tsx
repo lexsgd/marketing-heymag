@@ -466,7 +466,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     setIsEditingWithAI(true)
 
     try {
-      // Call enhance API with the custom prompt to make edits
+      // Call enhance API in edit mode - uses enhanced image as source
       const response = await fetch('/api/ai/enhance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -475,6 +475,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           stylePreset: image.style_preset || 'delivery',
           // Pass the edit prompt as customPrompt
           customPrompt: editPrompt.trim(),
+          // Enable edit mode - uses enhanced image and edit-specific prompt
+          editMode: true,
         }),
       })
 

@@ -302,6 +302,8 @@ export async function POST(request: NextRequest) {
     const hasCustomBackground = body.hasCustomBackground as boolean | undefined
     // Background configuration for describe/upload modes
     const backgroundConfig = body.backgroundConfig as BackgroundConfig | undefined
+    // Edit mode - for making modifications to already-enhanced images
+    const editMode = body.editMode as boolean | undefined
 
     // imageId is required by schema, but double-check for safety
     if (!imageId) {
@@ -319,6 +321,7 @@ export async function POST(request: NextRequest) {
       hasCustomPrompt: !!customPrompt,
       hasSimpleSelection,
       simpleSelection: hasSimpleSelection ? JSON.stringify(simpleSelection) : undefined,
+      editMode: !!editMode,
     })
 
     // Get authenticated user
@@ -413,7 +416,51 @@ export async function POST(request: NextRequest) {
       let stylePrompt: string
       let simplifiedResult: ReturnType<typeof buildSimplifiedPrompt> | null = null
 
-      if (hasSimpleSelection && simpleSelection) {
+      // EDIT MODE: Use a special prompt for making modifications to already-enhanced images
+      if (editMode && customPrompt) {
+        stylePrompt = `You are an expert food photography editor. Your task is to make SPECIFIC MODIFICATIONS to an already-enhanced food photograph.
+
+═══════════════════════════════════════════════════════════════════════════════
+EDIT REQUEST FROM USER
+═══════════════════════════════════════════════════════════════════════════════
+"${customPrompt.trim()}"
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL INSTRUCTIONS FOR EDITING
+═══════════════════════════════════════════════════════════════════════════════
+
+1. PRESERVE THE EXISTING STYLE:
+   - The image has already been professionally enhanced with specific lighting, colors, and composition
+   - DO NOT change the overall style, mood, lighting, or color grading
+   - Keep the background, surface, and existing props exactly as they are
+   - Maintain the same camera angle and perspective
+
+2. MAKE ONLY THE REQUESTED CHANGES:
+   - Focus EXCLUSIVELY on what the user requested
+   - Add elements naturally as if they were always part of the scene
+   - New elements should match the existing lighting and color temperature
+   - Props should have realistic shadows and reflections
+
+3. QUALITY STANDARDS:
+   - Added elements must look photorealistic, not AI-generated
+   - Maintain the professional food photography quality
+   - Ensure proper scale and perspective for any added items
+   - New items should look physically accurate (correct materials, textures)
+
+4. COMMON EDIT TYPES:
+   - Adding props (chopsticks, utensils, saucers, garnishes)
+   - Adding condiments (sauces, oils, seasonings)
+   - Adding garnishes (herbs, chili, sesame seeds)
+   - Minor adjustments to the existing food presentation
+   - Adding steam, droplets, or other finishing touches
+
+IMPORTANT: This is an EDIT, not a full re-enhancement. Only modify what the user specifically requested.
+
+Generate the edited image now.`
+        logger.info('Using edit mode prompt', {
+          editRequest: customPrompt.substring(0, 100),
+        })
+      } else if (hasSimpleSelection && simpleSelection) {
         // NEW: Use simplified prompt builder for new 3-category system
         simplifiedResult = buildSimplifiedPrompt(simpleSelection, undefined)
         stylePrompt = simplifiedResult.prompt
@@ -516,7 +563,8 @@ Create a professional, appetizing result that incorporates the user's requested 
       }
 
       // Append user's custom prompt for additional elements/styling
-      if (customPrompt && customPrompt.trim()) {
+      // Skip this in edit mode since customPrompt is already fully included in the edit mode prompt
+      if (customPrompt && customPrompt.trim() && !editMode) {
         stylePrompt += `
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -542,10 +590,23 @@ in the generated image while maintaining professional food photography quality.
         })
       }
 
-      // Fetch the original image
-      currentStep = 'fetching original image'
-      logger.debug('Fetching original image')
-      const imageResponse = await fetch(image.original_url)
+      // Determine which image URL to use
+      // In edit mode, use the enhanced image; otherwise use original
+      let sourceImageUrl: string
+      if (editMode) {
+        if (!image.enhanced_url) {
+          throw new Error('Cannot edit: Image has not been enhanced yet. Please enhance the image first.')
+        }
+        sourceImageUrl = image.enhanced_url
+        logger.info('Edit mode: Using enhanced image as source')
+      } else {
+        sourceImageUrl = image.original_url
+      }
+
+      // Fetch the source image
+      currentStep = editMode ? 'fetching enhanced image for editing' : 'fetching original image'
+      logger.debug('Fetching source image', { editMode, urlPreview: sourceImageUrl.substring(0, 50) })
+      const imageResponse = await fetch(sourceImageUrl)
 
       if (!imageResponse.ok) {
         logger.error('Failed to fetch image', undefined, { status: imageResponse.status })
