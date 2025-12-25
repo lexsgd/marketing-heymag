@@ -493,21 +493,23 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
       let data: Record<string, unknown>
 
       if (preserveOriginal) {
-        // Use Vertex AI inpainting - TRUE preservation mode
-        // Adds props to the image while keeping original pixels intact
-        console.log('[EditWithAI] Calling /api/ai/edit with:', {
+        // Use Gemini with PRESERVE MODE - uses "Anchor & Add" prompting
+        // Tells AI to edit the image locally while keeping original elements intact
+        console.log('[EditWithAI] Calling /api/ai/enhance with preserveMode:', {
           imageId: image.id,
           prompt: editPrompt.trim().substring(0, 50),
-          editType: 'add_props'
+          preserveMode: true
         })
 
-        response = await fetch('/api/ai/edit', {
+        response = await fetch('/api/ai/enhance', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             imageId: image.id,
-            prompt: editPrompt.trim(),
-            editType: 'add_props',
+            stylePreset: image.style_preset || 'delivery',
+            customPrompt: editPrompt.trim(),
+            editMode: true,
+            preserveMode: true, // This uses the "Anchor & Add" prompt strategy
           }),
         })
 
@@ -516,16 +518,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         console.log('[EditWithAI] API response data:', data)
 
         if (!response.ok) {
-          // Include error details from API response for debugging
-          const errorMsg = (data.error as string) || `Edit failed with status ${response.status}`
-          const errorDetails = (data.details as string) || ''
-          const errorType = (data.errorType as string) || ''
-          throw new Error(`${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorType ? ` (${errorType})` : ''}`)
+          throw new Error((data.error as string) || 'Edit failed')
         }
 
-        // Vertex AI edit creates a new image record
+        // Preserve mode creates a new image record
         toast.success('Props added successfully!', {
-          description: 'Your original image is preserved. New version created.',
+          description: 'New version created with your requested props.',
         })
         setEditPrompt('')
         setShowEditPanel(false)

@@ -421,60 +421,37 @@ export async function POST(request: NextRequest) {
       // EDIT MODE: Use a special prompt for making modifications to already-enhanced images
       if (editMode && customPrompt) {
         if (preserveMode) {
-          // PRESERVE MODE: Smart preservation - handles both spacious and tight crops
-          stylePrompt = `CRITICAL IMAGE EDITING TASK: Add props to an existing food photograph while preserving its essence.
+          // PRESERVE MODE: Uses "Anchor & Add" prompting strategy
+          // Based on research: Gemini's conversational image editing works best with this pattern
+          stylePrompt = `Edit this image to perform a LOCAL EDIT.
 
-═══════════════════════════════════════════════════════════════════════════════
-STEP 1: ANALYZE THE IMAGE COMPOSITION
-═══════════════════════════════════════════════════════════════════════════════
-
-First, analyze the reference image:
-- Does it have empty space around the food for placing props?
-- Or is it tightly cropped with the plate/food filling most of the frame?
-
-═══════════════════════════════════════════════════════════════════════════════
-STEP 2: CHOOSE THE RIGHT APPROACH
-═══════════════════════════════════════════════════════════════════════════════
-
-**SCENARIO A - Image has empty space:**
-Place the requested items in the existing empty space. Keep EVERYTHING else pixel-perfect identical:
-- Same exact background color and setting
-- Same exact food position and appearance
-- Same exact lighting, shadows, camera angle
-
-**SCENARIO B - Image is tightly cropped (no empty space):**
-You MUST "zoom out" to create space for the props. This means:
-- Extend the frame/canvas outward to reveal more of the scene
-- The extended background must PERFECTLY MATCH the existing background (same color, same surface, same lighting)
-- The original food/plate stays EXACTLY the same - just now shown in a wider view
-- Think of it as "pulling the camera back" to show more of the table
-
-IMPORTANT FOR SCENARIO B:
-- The background is a SOLID BLUE color with white surface - extend it seamlessly
-- Do NOT change to a restaurant, hawker center, or different setting
-- The extended area should look like natural continuation of the studio backdrop
-
-═══════════════════════════════════════════════════════════════════════════════
-ITEMS TO ADD
-═══════════════════════════════════════════════════════════════════════════════
+TASK: Add the following items to the table surface around the food:
 ${customPrompt.trim()}
 
+CRITICAL INSTRUCTIONS:
+1. Change ONLY the area on the table surface where you are placing the new props
+2. Leave the REST of the image 100% PIXEL-PERFECT IDENTICAL
+3. The food dish, plate, and existing elements must remain EXACTLY as they appear
+4. Match the lighting, shadows, and color grading of the original photo
+5. The new props should cast shadows consistent with the scene's lighting direction
+
+PLACEMENT RULES:
+- Place props on the table BESIDE or AROUND the plate - NOT on the food
+- If the image is tightly cropped, you may extend the canvas slightly to make room
+- Extended areas must seamlessly match the existing background color and surface
+
 INTERPRET LITERALLY:
-- "chopsticks" = ONE PAIR (2 sticks), not multiple
-- "red cut chili" = ONLY RED chilies, not green or mixed
+- "chopsticks" = ONE PAIR (2 sticks) only
+- "saucer" = ONE small dish only
 - Add ONLY what is explicitly requested - nothing extra
 
-═══════════════════════════════════════════════════════════════════════════════
-STRICT RULES
-═══════════════════════════════════════════════════════════════════════════════
+DO NOT:
+- Change the food appearance in any way
+- Change the background setting or style
+- Add items not explicitly requested
+- Modify the plate position or angle
 
-1. PRESERVE THE STYLE - Same studio backdrop, same lighting direction, same color grading
-2. PRESERVE THE FOOD - The dish must look identical, not modified in any way
-3. NO UNREQUESTED ITEMS - Don't add limes, spoons, napkins, or anything not asked for
-4. NO SCENE CHANGE - If it's a blue studio backdrop, keep it blue studio. Don't change to hawker/restaurant
-5. NATURAL PLACEMENT - Props should be on the table surface, with matching shadows
-
-OUTPUT: The food photograph with a naturally wider composition (if needed) and ONLY the requested items added.`
+OUTPUT: The same food photograph with ONLY the requested props added naturally to the scene.`
           logger.info('Using PRESERVE mode prompt (strict pixel-perfect)', {
             editRequest: customPrompt.substring(0, 100),
           })
