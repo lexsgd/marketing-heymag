@@ -19,6 +19,7 @@ import {
   List,
   MoreHorizontal,
   ExternalLink,
+  Share2,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -228,6 +229,20 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
       URL.revokeObjectURL(blobUrl)
     } catch (err) {
       console.error('Download failed:', err)
+    }
+  }
+
+  // Share - navigates to editor page with share dialog trigger
+  const handleShare = () => {
+    if (selectedIds.size === 0) return
+
+    // Get the first selected image (share works best for single images)
+    const firstSelectedId = Array.from(selectedIds)[0]
+    const selectedImage = images.find(img => img.id === firstSelectedId)
+
+    if (selectedImage) {
+      // Navigate to editor with share query param to auto-open share dialog
+      router.push(`/editor/${selectedImage.id}?share=true`)
     }
   }
 
@@ -780,6 +795,14 @@ export function GalleryClient({ initialImages }: GalleryClientProps) {
               </div>
 
               <div className="flex items-center gap-3">
+                <Button
+                  size="sm"
+                  onClick={handleShare}
+                  className="h-9 bg-orange-500 hover:bg-orange-600"
+                >
+                  <Share2 className="mr-2 h-4 w-4" />
+                  {selectedIds.size === 1 ? 'Share' : `Share (${selectedIds.size > 1 ? '1st' : ''})`}
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"

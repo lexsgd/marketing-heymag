@@ -171,6 +171,17 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     }
   }, [searchParams, params.id])
 
+  // Check for share query param to auto-open social dialog
+  useEffect(() => {
+    const shouldShare = searchParams.get('share')
+    if (shouldShare === 'true' && image?.enhanced_url && !loading) {
+      // Auto-open the social posting dialog
+      handleOpenSocialDialog()
+      // Remove the query param to prevent re-opening on refresh
+      router.replace(`/editor/${params.id}`, { scroll: false })
+    }
+  }, [searchParams, image?.enhanced_url, loading, params.id, router])
+
   // Handle background replacement retry
   const handleApplyBackground = async () => {
     if (!pendingBackgroundUrl || !image?.enhanced_url) return
