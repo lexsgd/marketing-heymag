@@ -218,9 +218,9 @@ export async function editImageWithVertexAI(
   // Default baseSteps: 35 for insertion, 12 for removal (per Google docs)
   const baseSteps = options.baseSteps || (options.editMode === 'inpaint_removal' ? 12 : 35)
 
-  // Build reference images array per Google documentation:
-  // 1. Raw image with REFERENCE_TYPE_RAW
-  // 2. Mask config with REFERENCE_TYPE_MASK (auto-generated mask, no image data)
+  // Build reference images array per Google documentation
+  // For outpainting: only need the raw image, no mask
+  // For inpainting: need raw image + mask config
   const referenceImages: (RawReferenceImage | MaskReferenceImage)[] = [
     {
       referenceType: 'REFERENCE_TYPE_RAW',
@@ -229,15 +229,19 @@ export async function editImageWithVertexAI(
         bytesBase64Encoded: imageBase64,
       },
     },
-    {
+  ]
+
+  // Add mask reference only for inpainting modes (not outpainting)
+  if (options.editMode !== 'outpaint') {
+    referenceImages.push({
       referenceType: 'REFERENCE_TYPE_MASK',
       referenceId: 2,
       maskImageConfig: {
         maskMode: maskMode,
         dilation: 0.01, // Recommended value for insertion
       },
-    },
-  ]
+    })
+  }
 
   // Build the request body per Google Vertex AI documentation
   const requestBody: ImagenEditRequest = {
@@ -251,6 +255,8 @@ export async function editImageWithVertexAI(
         baseSteps: baseSteps,
       },
       sampleCount: 1,
+      // Include aspectRatio for outpainting (required to know how much to expand)
+      ...(options.aspectRatio ? { aspectRatio: options.aspectRatio } : {}),
       outputOptions: {
         mimeType: 'image/png',
       },
@@ -260,10 +266,10 @@ export async function editImageWithVertexAI(
   console.log('[Vertex AI] Calling Imagen edit API', {
     projectId,
     editMode,
-    maskMode,
+    maskMode: options.editMode !== 'outpaint' ? maskMode : 'N/A (outpaint)',
     baseSteps,
+    aspectRatio: options.aspectRatio || 'default',
     promptPreview: prompt.substring(0, 100),
-    requestStructure: JSON.stringify(requestBody, null, 2).substring(0, 500),
   })
 
   // Make the API call
@@ -312,11 +318,14 @@ export async function editImageWithVertexAI(
 
 /**
  * Add props/objects to a food photo while preserving the original
- * Uses MASK_MODE_BACKGROUND to auto-detect where to place new objects
+ *
+ * IMPORTANT: Uses OUTPAINTING instead of inpainting for TRUE preservation.
+ * Outpainting extends the canvas and adds content in the NEW areas only,
+ * keeping the original image pixels completely untouched.
  *
  * @param imageBase64 - Base64 encoded food photo
  * @param propsPrompt - Description of props to add (e.g., "chopsticks and red chilies")
- * @returns Edited image with props added
+ * @returns Edited image with props added around the original
  */
 export async function addPropsToFoodPhoto(
   imageBase64: string,
@@ -325,20 +334,19 @@ export async function addPropsToFoodPhoto(
     aspectRatio?: string
   } = {}
 ): Promise<{ imageBase64: string; mimeType: string }> {
-  // Build a specific prompt for adding props to food photography
-  const enhancedPrompt = `Add ${propsPrompt} to this food photograph.
+  // Use outpainting to extend the canvas and add props in the new areas
+  // This is TRUE preservation - the original image is never modified
+  const expandPrompt = `Extend this food photograph to show a wider view of the table.
+In the expanded areas, add: ${propsPrompt}
+Keep the original food and plate EXACTLY as they appear - do not modify them at all.
+The new props should be placed naturally on the table surface in the extended areas.
+Match the lighting, shadows, and color grading perfectly.`
 
-CRITICAL REQUIREMENTS:
-- Place the new items naturally on the table/surface around the food
-- Match the existing lighting, shadows, and color grading perfectly
-- Do NOT modify the food itself - it must remain exactly as is
-- New items should look like they belong in the same photo session
-- Maintain professional food photography quality`
-
-  return editImageWithVertexAI(imageBase64, enhancedPrompt, {
-    editMode: 'inpaint_insertion',
-    maskMode: 'background',
-    aspectRatio: options.aspectRatio,
+  return editImageWithVertexAI(imageBase64, expandPrompt, {
+    editMode: 'outpaint',
+    // Expand to 16:9 to add space on the sides for props
+    aspectRatio: options.aspectRatio || '16:9',
+    baseSteps: 35, // Standard for outpainting
   })
 }
 
