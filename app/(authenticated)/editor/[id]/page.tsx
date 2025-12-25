@@ -88,6 +88,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   const [editPrompt, setEditPrompt] = useState('')
   const [isEditingWithAI, setIsEditingWithAI] = useState(false)
   const [showEditPanel, setShowEditPanel] = useState(false)
+  const [preserveOriginal, setPreserveOriginal] = useState(true) // Default: only add elements, don't change existing
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -488,6 +489,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           customPrompt: editPrompt.trim(),
           // Enable edit mode - uses enhanced image and edit-specific prompt
           editMode: true,
+          // Preserve mode - only add elements, keep everything else identical
+          preserveMode: preserveOriginal,
         }),
       })
 
@@ -725,6 +728,29 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                       {suggestion}
                     </button>
                   ))}
+                </div>
+
+                {/* Preserve Original Checkbox */}
+                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50 border border-border">
+                  <Checkbox
+                    id="preserve-original"
+                    checked={preserveOriginal}
+                    onCheckedChange={(checked) => setPreserveOriginal(checked === true)}
+                    className="mt-0.5 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
+                  />
+                  <div className="space-y-1">
+                    <Label
+                      htmlFor="preserve-original"
+                      className="text-sm font-medium cursor-pointer leading-none"
+                    >
+                      Keep original image unchanged
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      {preserveOriginal
+                        ? 'Only add new elements — the food, background, lighting, and colors will stay exactly the same'
+                        : 'Allow full re-styling — AI may change background, lighting, and overall look'}
+                    </p>
+                  </div>
                 </div>
 
                 {/* Apply Button */}

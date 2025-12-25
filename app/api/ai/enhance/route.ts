@@ -304,6 +304,8 @@ export async function POST(request: NextRequest) {
     const backgroundConfig = body.backgroundConfig as BackgroundConfig | undefined
     // Edit mode - for making modifications to already-enhanced images
     const editMode = body.editMode as boolean | undefined
+    // Preserve mode - only add elements, keep everything else identical (stricter than editMode)
+    const preserveMode = body.preserveMode as boolean | undefined
 
     // imageId is required by schema, but double-check for safety
     if (!imageId) {
@@ -418,7 +420,53 @@ export async function POST(request: NextRequest) {
 
       // EDIT MODE: Use a special prompt for making modifications to already-enhanced images
       if (editMode && customPrompt) {
-        stylePrompt = `You are an expert food photography editor. Your task is to make SPECIFIC MODIFICATIONS to an already-enhanced food photograph.
+        if (preserveMode) {
+          // PRESERVE MODE: Extremely strict - keep image EXACTLY the same, only add elements
+          stylePrompt = `You are an expert food photography editor. Your ONLY task is to ADD NEW ELEMENTS to this image.
+
+═══════════════════════════════════════════════════════════════════════════════
+🚨 CRITICAL: DO NOT CHANGE ANYTHING EXISTING 🚨
+═══════════════════════════════════════════════════════════════════════════════
+
+THE FOLLOWING MUST REMAIN 100% IDENTICAL TO THE INPUT IMAGE:
+- ❌ DO NOT change the food presentation, position, or appearance
+- ❌ DO NOT change the background (surface, table, setting)
+- ❌ DO NOT change the lighting, shadows, or color grading
+- ❌ DO NOT change the camera angle or perspective
+- ❌ DO NOT change any existing props or elements
+- ❌ DO NOT change the overall mood, style, or atmosphere
+- ❌ DO NOT crop or resize the image differently
+- ❌ DO NOT adjust contrast, brightness, or saturation
+
+═══════════════════════════════════════════════════════════════════════════════
+✅ ONLY ADD THESE NEW ELEMENTS
+═══════════════════════════════════════════════════════════════════════════════
+"${customPrompt.trim()}"
+
+═══════════════════════════════════════════════════════════════════════════════
+INSTRUCTIONS FOR ADDING NEW ELEMENTS
+═══════════════════════════════════════════════════════════════════════════════
+
+1. Position the new elements naturally in the scene (beside, behind, or near the food)
+2. Match the lighting - new items should have shadows and highlights matching the existing scene
+3. Match the color temperature - new items should look like they belong in the same photo
+4. Scale appropriately - new items should be the correct size relative to the food
+5. Add realistic shadows where new items touch surfaces
+6. Materials should look authentic (wood grain on chopsticks, porcelain glaze on saucers, etc.)
+
+EXAMPLES OF GOOD PLACEMENTS:
+- Chopsticks: Resting beside or in front of the dish
+- Saucer with sauce: Positioned to the side or corner of the frame
+- Garnishes: Sprinkled around or near the main dish
+- Utensils: Placed naturally as if someone is about to eat
+
+OUTPUT: Generate the exact same image with ONLY the requested new elements added.`
+          logger.info('Using PRESERVE mode prompt (strict add-only)', {
+            editRequest: customPrompt.substring(0, 100),
+          })
+        } else {
+          // STANDARD EDIT MODE: Allow more flexibility in modifications
+          stylePrompt = `You are an expert food photography editor. Your task is to make MODIFICATIONS to this food photograph.
 
 ═══════════════════════════════════════════════════════════════════════════════
 EDIT REQUEST FROM USER
@@ -426,40 +474,26 @@ EDIT REQUEST FROM USER
 "${customPrompt.trim()}"
 
 ═══════════════════════════════════════════════════════════════════════════════
-CRITICAL INSTRUCTIONS FOR EDITING
+FLEXIBLE EDITING MODE
 ═══════════════════════════════════════════════════════════════════════════════
 
-1. PRESERVE THE EXISTING STYLE:
-   - The image has already been professionally enhanced with specific lighting, colors, and composition
-   - DO NOT change the overall style, mood, lighting, or color grading
-   - Keep the background, surface, and existing props exactly as they are
-   - Maintain the same camera angle and perspective
+You have creative freedom to:
+- Modify the background, lighting, or styling to match the requested changes
+- Adjust colors, contrast, or mood to improve the overall result
+- Reposition elements if needed to accommodate new additions
+- Apply a fresh enhancement while incorporating the requested changes
 
-2. MAKE ONLY THE REQUESTED CHANGES:
-   - Focus EXCLUSIVELY on what the user requested
-   - Add elements naturally as if they were always part of the scene
-   - New elements should match the existing lighting and color temperature
-   - Props should have realistic shadows and reflections
+QUALITY STANDARDS:
+1. The final result should look like a professional food photograph
+2. All elements (new and existing) should look cohesive together
+3. Lighting and shadows should be consistent throughout
+4. The food should remain appetizing and visually appealing
 
-3. QUALITY STANDARDS:
-   - Added elements must look photorealistic, not AI-generated
-   - Maintain the professional food photography quality
-   - Ensure proper scale and perspective for any added items
-   - New items should look physically accurate (correct materials, textures)
-
-4. COMMON EDIT TYPES:
-   - Adding props (chopsticks, utensils, saucers, garnishes)
-   - Adding condiments (sauces, oils, seasonings)
-   - Adding garnishes (herbs, chili, sesame seeds)
-   - Minor adjustments to the existing food presentation
-   - Adding steam, droplets, or other finishing touches
-
-IMPORTANT: This is an EDIT, not a full re-enhancement. Only modify what the user specifically requested.
-
-Generate the edited image now.`
-        logger.info('Using edit mode prompt', {
-          editRequest: customPrompt.substring(0, 100),
-        })
+Generate an enhanced version of the image with the requested modifications.`
+          logger.info('Using standard edit mode prompt (flexible)', {
+            editRequest: customPrompt.substring(0, 100),
+          })
+        }
       } else if (hasSimpleSelection && simpleSelection) {
         // NEW: Use simplified prompt builder for new 3-category system
         simplifiedResult = buildSimplifiedPrompt(simpleSelection, undefined)
