@@ -302,6 +302,14 @@ export async function POST(request: NextRequest) {
       })
     } catch (editError: unknown) {
       const errorMessage = (editError as Error).message || 'Unknown error'
+      const errorStack = (editError as Error).stack || 'No stack trace'
+
+      // Log detailed error info to server logs
+      console.error('[Edit API] Edit failed with error:', {
+        message: errorMessage,
+        stack: errorStack,
+        error: editError,
+      })
       logger.error('Edit error', editError as Error)
 
       // Reset image status
@@ -313,10 +321,13 @@ export async function POST(request: NextRequest) {
         })
         .eq('id', imageId)
 
+      // Include error details for debugging (temporarily enabled for debugging)
       return NextResponse.json(
         {
           error: 'Edit failed',
-          details: process.env.NODE_ENV === 'production' ? undefined : errorMessage,
+          // Temporarily include details for debugging
+          details: errorMessage,
+          errorType: (editError as Error).name || 'UnknownError',
         },
         { status: 500 }
       )

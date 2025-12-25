@@ -68,19 +68,31 @@ let authClient: GoogleAuth | null = null
 function getAuthClient(): GoogleAuth {
   if (authClient) return authClient
 
+  console.log('[Vertex AI] Initializing auth client...')
+
   // Get credentials from environment variable
   const credentialsBase64 = process.env.GOOGLE_VERTEX_AI_CREDENTIALS
 
   if (!credentialsBase64) {
+    console.error('[Vertex AI] GOOGLE_VERTEX_AI_CREDENTIALS not set')
     throw new Error('GOOGLE_VERTEX_AI_CREDENTIALS environment variable is not set')
   }
+
+  console.log('[Vertex AI] Credentials base64 length:', credentialsBase64.length)
 
   // Decode base64 credentials
   let credentials: VertexAICredentials
   try {
     const credentialsJson = Buffer.from(credentialsBase64, 'base64').toString('utf-8')
     credentials = JSON.parse(credentialsJson)
+    console.log('[Vertex AI] Credentials parsed successfully', {
+      project_id: credentials.project_id,
+      client_email: credentials.client_email?.substring(0, 20) + '...',
+      has_private_key: !!credentials.private_key,
+      private_key_length: credentials.private_key?.length || 0,
+    })
   } catch (error) {
+    console.error('[Vertex AI] Failed to parse credentials:', error)
     throw new Error('Failed to parse GOOGLE_VERTEX_AI_CREDENTIALS: Invalid base64 or JSON')
   }
 
@@ -94,6 +106,7 @@ function getAuthClient(): GoogleAuth {
     projectId: credentials.project_id,
   })
 
+  console.log('[Vertex AI] Auth client created successfully')
   return authClient
 }
 
@@ -101,15 +114,31 @@ function getAuthClient(): GoogleAuth {
  * Get access token for Vertex AI API
  */
 async function getAccessToken(): Promise<string> {
-  const auth = getAuthClient()
-  const client = await auth.getClient()
-  const tokenResponse = await client.getAccessToken()
+  console.log('[Vertex AI] Getting access token...')
 
-  if (!tokenResponse.token) {
-    throw new Error('Failed to get access token from Google Auth')
+  try {
+    const auth = getAuthClient()
+    console.log('[Vertex AI] Got auth client, getting OAuth client...')
+
+    const client = await auth.getClient()
+    console.log('[Vertex AI] Got OAuth client, requesting access token...')
+
+    const tokenResponse = await client.getAccessToken()
+    console.log('[Vertex AI] Token response received:', {
+      hasToken: !!tokenResponse.token,
+      tokenLength: tokenResponse.token?.length || 0,
+    })
+
+    if (!tokenResponse.token) {
+      throw new Error('Failed to get access token from Google Auth - token is empty')
+    }
+
+    console.log('[Vertex AI] Access token acquired successfully')
+    return tokenResponse.token
+  } catch (error) {
+    console.error('[Vertex AI] Failed to get access token:', error)
+    throw error
   }
-
-  return tokenResponse.token
 }
 
 /**

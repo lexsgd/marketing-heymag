@@ -516,7 +516,11 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         console.log('[EditWithAI] API response data:', data)
 
         if (!response.ok) {
-          throw new Error((data.error as string) || `Edit failed with status ${response.status}`)
+          // Include error details from API response for debugging
+          const errorMsg = (data.error as string) || `Edit failed with status ${response.status}`
+          const errorDetails = (data.details as string) || ''
+          const errorType = (data.errorType as string) || ''
+          throw new Error(`${errorMsg}${errorDetails ? ` - ${errorDetails}` : ''}${errorType ? ` (${errorType})` : ''}`)
         }
 
         // Vertex AI edit creates a new image record
