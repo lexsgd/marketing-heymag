@@ -577,7 +577,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   AI Enhanced
                 </Badge>
               )}
-              {image.status === 'processing' && (
+              {image.status === 'processing' && !image.enhanced_url && (
                 <Badge className="bg-orange-500 text-xs">Processing</Badge>
               )}
               {image.status === 'pending' && (
@@ -616,8 +616,8 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                 )}
               </div>
             )}
-            {/* Show processing indicator */}
-            {image.status === 'processing' && (
+            {/* Show processing indicator only if no enhanced_url yet */}
+            {image.status === 'processing' && !image.enhanced_url && (
               <div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
                 <Loader2 className="h-4 w-4 animate-spin" />
                 AI enhancement in progress...
