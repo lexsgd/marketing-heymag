@@ -17,6 +17,9 @@ import {
   ExternalLink,
   Wand2,
   ImagePlus,
+  Pencil,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { Card, CardContent } from '@/components/ui/card'
@@ -81,6 +84,10 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
   // Pending background replacement (when upload mode failed)
   const [pendingBackgroundUrl, setPendingBackgroundUrl] = useState<string | null>(null)
   const [applyingBackground, setApplyingBackground] = useState(false)
+  // AI Edit feature - make additional edits to enhanced image
+  const [editPrompt, setEditPrompt] = useState('')
+  const [isEditingWithAI, setIsEditingWithAI] = useState(false)
+  const [showEditPanel, setShowEditPanel] = useState(false)
 
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -452,6 +459,51 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
     }
   }
 
+  // Edit enhanced image with AI - apply additional changes
+  const handleEditWithAI = async () => {
+    if (!image || !editPrompt.trim()) return
+
+    setIsEditingWithAI(true)
+
+    try {
+      // Call enhance API with the custom prompt to make edits
+      const response = await fetch('/api/ai/enhance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          imageId: image.id,
+          stylePreset: image.style_preset || 'delivery',
+          // Pass the edit prompt as customPrompt
+          customPrompt: editPrompt.trim(),
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Edit failed')
+      }
+
+      // Reload image to get updated enhanced URL
+      await loadImage()
+
+      // Clear the edit prompt and show success
+      setEditPrompt('')
+      setShowEditPanel(false)
+      toast.success('Image updated successfully!', {
+        description: 'Your AI edits have been applied.',
+      })
+
+    } catch (err) {
+      console.error('AI edit error:', err)
+      toast.error('Failed to apply edits', {
+        description: (err as Error).message || 'Please try again.',
+      })
+    } finally {
+      setIsEditingWithAI(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -595,6 +647,100 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
         onDownloadComplete={handleCreditsRefresh}
         onPostToSocial={handleOpenSocialDialog}
       />
+
+      {/* Edit with AI Section - Make additional edits to the enhanced image */}
+      {image.status === 'completed' && image.enhanced_url && (
+        <Card className="border-dashed">
+          <CardContent className="p-4">
+            {/* Toggle Button */}
+            <button
+              onClick={() => setShowEditPanel(!showEditPanel)}
+              className="w-full flex items-center justify-between text-left"
+            >
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-900/30">
+                  <Pencil className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div>
+                  <h3 className="font-medium text-sm">Edit with AI</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Add elements, change props, or modify the styling
+                  </p>
+                </div>
+              </div>
+              {showEditPanel ? (
+                <ChevronUp className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              )}
+            </button>
+
+            {/* Expandable Edit Panel */}
+            {showEditPanel && (
+              <div className="mt-4 space-y-3 pt-4 border-t">
+                <div className="space-y-2">
+                  <Label className="text-sm">Describe your edits</Label>
+                  <Textarea
+                    value={editPrompt}
+                    onChange={(e) => setEditPrompt(e.target.value)}
+                    placeholder="E.g., 'Add chinese wooden chopsticks and a white porcelain saucer on the side with red cut chili and light soya sauce inside the saucer'"
+                    rows={3}
+                    className="resize-none text-sm"
+                    maxLength={500}
+                  />
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span>Describe what you want to add or change</span>
+                    <span>{editPrompt.length}/500</span>
+                  </div>
+                </div>
+
+                {/* Quick suggestions */}
+                <div className="flex flex-wrap gap-2">
+                  <span className="text-xs text-muted-foreground">Try:</span>
+                  {[
+                    'Add wooden chopsticks',
+                    'Add a garnish of herbs',
+                    'Make it more vibrant',
+                    'Add steam rising',
+                  ].map((suggestion) => (
+                    <button
+                      key={suggestion}
+                      type="button"
+                      onClick={() => setEditPrompt(suggestion)}
+                      className="text-xs px-2 py-1 rounded-full bg-muted hover:bg-muted/80 transition-colors"
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Apply Button */}
+                <Button
+                  onClick={handleEditWithAI}
+                  disabled={isEditingWithAI || !editPrompt.trim()}
+                  className="w-full bg-orange-500 hover:bg-orange-600"
+                >
+                  {isEditingWithAI ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Applying edits...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Apply AI Edits (1 credit)
+                    </>
+                  )}
+                </Button>
+
+                <p className="text-[11px] text-muted-foreground text-center">
+                  AI will regenerate the image with your requested changes while preserving the original style.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Social Posting Dialog - Redesigned for lower friction */}
       <Dialog open={socialDialogOpen} onOpenChange={setSocialDialogOpen}>
