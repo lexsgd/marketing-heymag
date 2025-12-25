@@ -426,24 +426,28 @@ export async function POST(request: NextRequest) {
           // Pattern: "Edit this image to [ADD]. Keep [ANCHOR] exactly the same. Match [STYLE]."
 
           // Build the prompt following the Golden Template exactly
-          stylePrompt = `Edit this image to add ${customPrompt.trim()} on the table surface beside the food plate.
+          stylePrompt = `Edit this image to add ONLY: ${customPrompt.trim()}
 
-ANCHOR (keep these 100% pixel-perfect identical):
-- The food dish itself
-- The plate
-- The existing background
-- All current elements in the image
+STRICT ANCHOR - DO NOT CHANGE THESE (must remain 100% pixel-perfect identical):
+- The food dish and everything on the plate
+- The plate itself
+- The entire background (walls, table surface color, texture, lighting)
+- Every single existing element in the image
+- The overall scene composition
 
-ADD (place these naturally in the scene):
+WHAT TO ADD (ONLY these items, nothing else):
 - ${customPrompt.trim()}
-- Position on the table BESIDE or AROUND the plate, NOT on the food
+- Place on the table surface beside the plate
 
-STYLE MATCH:
-- The new props should cast shadows consistent with the scene's existing lighting
-- Match the lighting, perspective, and grain of the original photo exactly
-- Use seamless blend to feather edges so props don't look pasted on
+CRITICAL RULES:
+- Add ONLY the items listed above - NO extra items
+- Do NOT add lime, lemon, herbs, spoons, or any garnish unless explicitly requested
+- Do NOT change the background color, texture, or any surface
+- Do NOT add any decorative elements
+- The new props should match the existing lighting and cast appropriate shadows
+- Use seamless blend so edges look natural
 
-Change ONLY the empty table surface area. Leave the rest of the image 100% pixel-perfect identical.`
+OUTPUT: The exact same image with ONLY "${customPrompt.trim()}" added. Nothing else changed.`
           logger.info('Using PRESERVE mode prompt (strict pixel-perfect)', {
             editRequest: customPrompt.substring(0, 100),
           })
