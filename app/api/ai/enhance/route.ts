@@ -421,9 +421,10 @@ export async function POST(request: NextRequest) {
       // EDIT MODE: Use a special prompt for making modifications to already-enhanced images
       if (editMode && customPrompt) {
         if (preserveMode) {
-          // PRESERVE MODE: Uses "Anchor & Add" prompting strategy
-          // Based on research: Gemini's conversational image editing works best with this pattern
-          stylePrompt = `Edit this image to perform a LOCAL EDIT.
+          // PRESERVE MODE: Uses "Anchor & Add" prompting strategy with power words
+          // Based on research: Gemini's conversational image editing (Nano Banana) works best with this pattern
+          // Power words: "LOCAL EDIT", "SEAMLESS BLEND", detailed reference descriptions
+          stylePrompt = `Edit this image to perform a LOCAL EDIT using INPAINTING.
 
 TASK: Add the following items to the table surface around the food:
 ${customPrompt.trim()}
@@ -434,16 +435,22 @@ CRITICAL INSTRUCTIONS:
 3. The food dish, plate, and existing elements must remain EXACTLY as they appear
 4. Match the lighting, shadows, and color grading of the original photo
 5. The new props should cast shadows consistent with the scene's lighting direction
+6. Use SEAMLESS BLEND to feather the edges of new objects so they don't look pasted on
 
 PLACEMENT RULES:
 - Place props on the table BESIDE or AROUND the plate - NOT on the food
 - If the image is tightly cropped, you may extend the canvas slightly to make room
-- Extended areas must seamlessly match the existing background color and surface
+- Extended areas must use SEAMLESS BLEND to match the existing background color and surface
+
+PROP REFERENCE DETAILS:
+- "chopsticks" = ONE PAIR (2 wooden sticks) with natural wood grain texture, positioned diagonally
+- "saucer" = ONE small ceramic dish, matching the photo's style (white porcelain if unspecified)
+- "chili" = Fresh red chilies, sliced to show the inside if "cut" is mentioned
+- All props should match the quality and style of professional food photography
 
 INTERPRET LITERALLY:
-- "chopsticks" = ONE PAIR (2 sticks) only
-- "saucer" = ONE small dish only
 - Add ONLY what is explicitly requested - nothing extra
+- One item = exactly one item, not multiples
 
 DO NOT:
 - Change the food appearance in any way
@@ -451,7 +458,7 @@ DO NOT:
 - Add items not explicitly requested
 - Modify the plate position or angle
 
-OUTPUT: The same food photograph with ONLY the requested props added naturally to the scene.`
+OUTPUT: The same food photograph with ONLY the requested props added naturally to the scene, using SEAMLESS BLEND for realistic integration.`
           logger.info('Using PRESERVE mode prompt (strict pixel-perfect)', {
             editRequest: customPrompt.substring(0, 100),
           })
