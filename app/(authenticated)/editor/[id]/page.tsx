@@ -489,8 +489,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
           customPrompt: editPrompt.trim(),
           // Enable edit mode - uses enhanced image and edit-specific prompt
           editMode: true,
-          // Preserve mode - only add elements, keep everything else identical
-          preserveMode: preserveOriginal,
+          // preserveMode removed - Gemini cannot truly preserve pixels
+          // AI will regenerate the image with requested changes
+          preserveMode: false,
         }),
       })
 
@@ -689,9 +690,9 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   <Pencil className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
-                  <h3 className="font-medium text-sm">Edit with AI</h3>
+                  <h3 className="font-medium text-sm">Reimagine with AI</h3>
                   <p className="text-xs text-muted-foreground">
-                    Add elements, change props, or modify the styling
+                    Generate a new version with your requested changes
                   </p>
                 </div>
               </div>
@@ -741,25 +742,13 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   ))}
                 </div>
 
-                {/* Preserve Original Checkbox */}
-                <div className="flex items-start space-x-3 p-3 rounded-lg bg-muted/50 border border-border">
-                  <Checkbox
-                    id="preserve-original"
-                    checked={preserveOriginal}
-                    onCheckedChange={(checked) => setPreserveOriginal(checked === true)}
-                    className="mt-0.5 data-[state=checked]:bg-orange-500 data-[state=checked]:border-orange-500"
-                  />
-                  <div className="space-y-1">
-                    <Label
-                      htmlFor="preserve-original"
-                      className="text-sm font-medium cursor-pointer leading-none"
-                    >
-                      Keep original image unchanged
-                    </Label>
-                    <p className="text-xs text-muted-foreground">
-                      {preserveOriginal
-                        ? 'Only add new elements — the food, background, lighting, and colors will stay exactly the same'
-                        : 'Allow full re-styling — AI may change background, lighting, and overall look'}
+                {/* Honest explanation about AI regeneration */}
+                <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-amber-800 dark:text-amber-200">
+                      <span className="font-medium">Note:</span> AI will generate a new image based on your request.
+                      The background, composition, and styling may change. Your original enhanced image will be preserved separately.
                     </p>
                   </div>
                 </div>
@@ -773,12 +762,12 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   {isEditingWithAI ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Applying edits...
+                      Generating new version...
                     </>
                   ) : (
                     <>
                       <Sparkles className="mr-2 h-4 w-4" />
-                      Apply AI Edits (1 credit)
+                      Reimagine (1 credit)
                     </>
                   )}
                 </Button>
