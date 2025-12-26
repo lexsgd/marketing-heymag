@@ -871,22 +871,18 @@ OUTPUT: The exact same photograph with ONLY the requested items added.`
           })
 
         } else {
-          // 🟢 STANDARD ENHANCEMENT MODE - "GOD MODE" PHYSICS
-          // Optimized for: Moisture, Translucency, White Balance, and Subsurface Scattering
-          generationPrompt = `ROLE: Expert Food Stylist & Director of Photography
-TASK: Re-stage this photo for a high-end culinary magazine.
+          // 🟢 STANDARD ENHANCEMENT MODE - "UNIVERSAL COMMERCIAL BASE"
+          // Optimized for: Clarity, Material Accuracy, and Style Adaptability
+          // Works across all venue types (Hawker, Fine Dining, Cafe, etc.)
+          generationPrompt = `ROLE: Commercial Food Photographer & Stylist
+TASK: Upgrade this photo to high-end menu quality while strictly preserving the food identity.
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 1: DETECT CAMERA ANGLE & LENS PHYSICS
+STEP 1: DETECT CAMERA ANGLE
 ═══════════════════════════════════════════════════════════════════════════════
-• OVERHEAD (Flat Lay): Focus on graphic composition. High f-stop (f/8-f/11, everything in focus).
-• HERO (45°): Focus on volume. Medium aperture (f/2.8-f/4) for soft background blur (bokeh).
-• EYE LEVEL (0°): Focus on height. Shallow depth of field (f/1.8-f/2.8) for strong bokeh behind subject.
-
-PHYSICS CONSTRAINTS:
-• OVERHEAD → CAN: table texture, props, garnishes | CANNOT: vertical backgrounds, walls
-• HERO → CAN: soft bokeh, gentle shadows | CANNOT: sharp detailed backgrounds
-• EYE LEVEL → CAN: full environment | CANNOT: contradict existing background
+• OVERHEAD: Focus on composition and graphic shapes.
+• HERO (45°): Focus on depth and volume.
+• EYE LEVEL: Focus on layers and height.
 
 ═══════════════════════════════════════════════════════════════════════════════
 STEP 2: APPLY VENUE STYLING
@@ -894,43 +890,45 @@ STEP 2: APPLY VENUE STYLING
 ${venueStyleSection}
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 3: THE "HUNGER PHYSICS" ENGINE (Sensory Reconstruction)
+STEP 3: THE "HIGH-FIDELITY" PHYSICS ENGINE (Universal Base)
 ═══════════════════════════════════════════════════════════════════════════════
 
-1. HYPER-REALISTIC MOISTURE (The "Succulence" Signal)
-   • Apply SPECULAR HIGHLIGHTS (tiny white reflections) to oils, glazes, and wet surfaces
-   • NON-PLASTIC LOOK: Use SUBSURFACE SCATTERING for sauces and meats (light penetrating the surface)
-   • If greens/vegetables exist: Make them look crisp and hydrated (spritzed water effect)
-   • Condensation on cold drinks/desserts if present
+1. TEXTURE CLARITY (The "Anti-Blur" Rule)
+   • BANISH "AI Smoothness": Food must have distinct, tactile texture.
+   • Noodle strands, rice grains, and crusts must be SEPARATE, not merged.
+   • Apply "Smart Sharpening" to the focal point only.
+   • Every ingredient must be visually distinct and crisp.
 
-2. LIGHTING SCULPTING (The "Volume" Signal)
-   • REMOVE "Indoor Yellow Cast": Correct WHITE BALANCE to 5500K (Daylight Neutral)
-   • LIGHT SOURCE: Large, soft window light from side/back (Rembrandt style lighting)
-   • SHADOWS: Soft, diffused shadows are REQUIRED to anchor the food to the plate
-   • The light-to-shadow ratio creates appetite appeal
+2. MATERIAL ACCURACY (Adaptive Glaze)
+   • WET ITEMS (Sauces, Meats, Oils): Must have clear, defined SPECULAR HIGHLIGHTS.
+   • DRY ITEMS (Bread, Rice, Noodles, Powder): Must look matte and textured, NOT plastic/shiny.
+   • TRANSLUCENCY: Only applied to naturally translucent items (citrus, sashimi, broth).
+   • DO NOT apply subsurface scattering to opaque/fried items (causes wax effect).
 
-3. TEXTURE & DETAIL (The "Crunch" Signal)
-   • MICRO-CONTRAST: Sharpen ONLY the focal point (sear on meat, crust on bread, grill lines)
-   • Soften the background to separate the subject (depth blur)
-   • Do NOT over-sharpen noise/grain - preserve natural film quality
+3. LIGHTING QUALITY (The Professional Standard)
+   • WHITE BALANCE: Correct to neutral 5500K (eliminate amateur yellow/green casts).
+   • SEPARATION: Use shadows to separate the food from the plate/table.
+   • DIMENSIONALITY: Avoid flat lighting. Ensure there is a light side and a shadow side to create volume.
+   • Light should be directional enough to catch the glint of oil on individual strands.
 
 4. COLOR SCIENCE
-   • CHROMATIC SEPARATION: Boost saturation of red/green/orange organic tones ONLY
-   • NEUTRAL BASE: Keep plate white/ceramic and table surface neutral
-   • NO "Neon" effect: Colors must look edible, not radioactive
-   • Prevent color bleeding onto backgrounds
+   • Clean, distinct colors. Prevent "muddy" blending.
+   • Boost the vibrancy of fresh ingredients (herbs, fruits) without over-saturating the whole image.
+   • Keep whites (plates/napkins) pure white.
+   • De-saturate shadows slightly to make highlights pop.
 
 ═══════════════════════════════════════════════════════════════════════════════
-PRESERVATION CONSTRAINTS (CRITICAL)
+NEGATIVE CONSTRAINTS (CRITICAL)
 ═══════════════════════════════════════════════════════════════════════════════
-✗ DO NOT hallucinate new ingredients
-✗ DO NOT change the plating arrangement
-✗ DO NOT remove natural "mess" (crumbs, drips) if they add authenticity
-✗ DO NOT apply HDR filters or "clarity" sliders
-This is ENHANCEMENT, not generation - output must be recognizably the SAME photo
+✗ DO NOT apply a "greasy filter" to the whole image.
+✗ DO NOT apply "subsurface scattering" to opaque items (causes the wax effect).
+✗ DO NOT blur or merge food textures - keep everything SHARP and DISTINCT.
+✗ DO NOT hallucinate steam unless the food is clearly boiling hot.
+✗ DO NOT change the plating or portion size.
+✗ DO NOT make the image look "dreamy" or "misty."
 
 ═══════════════════════════════════════════════════════════════════════════════
-OUTPUT: ${platformConfig.aspectRatio} | ${platformConfig.imageSize} quality | Photorealistic
+OUTPUT: ${platformConfig.aspectRatio} | ${platformConfig.imageSize} quality | Commercial Quality
 ═══════════════════════════════════════════════════════════════════════════════
 
 Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
