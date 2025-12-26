@@ -12,8 +12,7 @@ import {
   sendSubscriptionActivatedEmail,
   sendCreditsAddedEmail,
   sendLowCreditsWarningEmail,
-  sendTrialEndingEmail,
-  sendTrialExpiredEmail,
+  sendCreditsExhaustedEmail,
   isEmailConfigured,
 } from '@/lib/email'
 
@@ -118,24 +117,16 @@ export async function POST(request: NextRequest) {
           email,
           remainingCredits: 3,
           suggestedPack: '23 Credit Pack ($99)',
-          buyUrl: 'https://marketing.heymag.app/pricing#credits',
+          buyUrl: 'https://zazzles.ai/billing#credits',
         })
         break
 
-      case 'trial_ending':
-        result = await sendTrialEndingEmail({
+      case 'credits_exhausted':
+        result = await sendCreditsExhaustedEmail({
           businessName,
           email,
-          daysRemaining: 3,
-          upgradeUrl: 'https://marketing.heymag.app/pricing',
-        })
-        break
-
-      case 'trial_expired':
-        result = await sendTrialExpiredEmail({
-          businessName,
-          email,
-          upgradeUrl: 'https://marketing.heymag.app/pricing',
+          upgradeUrl: 'https://zazzles.ai/billing',
+          buyCreditsUrl: 'https://zazzles.ai/billing#credits',
         })
         break
 
@@ -148,8 +139,7 @@ export async function POST(request: NextRequest) {
             'subscription_activated',
             'credits_added',
             'low_credits',
-            'trial_ending',
-            'trial_expired',
+            'credits_exhausted',
           ],
         }, { status: 400 })
     }
@@ -190,8 +180,7 @@ export async function GET() {
       'subscription_activated',
       'credits_added',
       'low_credits',
-      'trial_ending',
-      'trial_expired',
+      'credits_exhausted',
     ],
   })
 }

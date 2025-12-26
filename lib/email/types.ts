@@ -12,8 +12,7 @@ export type EmailTemplate =
   | 'low_credits_warning'
   | 'password_reset'
   | 'export_ready'
-  | 'trial_ending'
-  | 'trial_expired'
+  | 'credits_exhausted'
 
 export interface EmailParams {
   to: string
@@ -96,15 +95,9 @@ export interface ExportReadyData {
   imageCount: number
 }
 
-export interface TrialEndingData {
-  businessName: string
-  email: string
-  daysRemaining: number
-  upgradeUrl: string
-}
-
-export interface TrialExpiredData {
+export interface CreditsExhaustedData {
   businessName: string
   email: string
   upgradeUrl: string
+  buyCreditsUrl: string
 }

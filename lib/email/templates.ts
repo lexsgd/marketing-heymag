@@ -12,8 +12,7 @@ import type {
   LowCreditsWarningData,
   PasswordResetData,
   ExportReadyData,
-  TrialEndingData,
-  TrialExpiredData,
+  CreditsExhaustedData,
 } from './types'
 
 // Zazzles brand colors
@@ -675,94 +674,59 @@ This link expires: ${data.expiresAt}
   return { html, text, subject }
 }
 
-export function getTrialEndingEmail(data: TrialEndingData): { html: string; text: string; subject: string } {
-  const subject = `Your Zazzles Trial Ends in ${data.daysRemaining} Day${data.daysRemaining === 1 ? '' : 's'}`
+export function getCreditsExhaustedEmail(data: CreditsExhaustedData): { html: string; text: string; subject: string } {
+  const subject = 'Your Zazzles Credits Have Run Out'
 
   const html = wrapTemplate(`
-    ${getEmailHeader('Trial Ending Soon')}
+    ${getEmailHeader('Credits Exhausted')}
     <div class="content">
-      <h2>Don't lose your progress!</h2>
+      <h2>You've used all your credits!</h2>
       <p>Hi ${data.businessName},</p>
-      <p>Your free trial ends in <strong>${data.daysRemaining} day${data.daysRemaining === 1 ? '' : 's'}</strong>. Upgrade now to keep creating stunning food photography.</p>
+      <p>You've used all your Zazzles credits. But don't worry - your account, settings, and all your enhanced photos are still saved.</p>
 
-      <div class="warning-box">
-        <strong>What you'll lose:</strong>
-        <ul style="margin: 8px 0; padding-left: 20px;">
-          <li>Access to AI photo enhancement</li>
-          <li>Background removal features</li>
-          <li>Social media posting</li>
-          <li>Your saved preferences</li>
-        </ul>
-      </div>
-
-      <div style="text-align: center;">
-        <a href="${data.upgradeUrl}" class="button">Upgrade Now</a>
-      </div>
-
-      <p style="color: ${BRAND.textLight}; font-size: 14px; text-align: center;">
-        Plans start at just $25/month with 30 credits included.
-      </p>
-    </div>
-    ${getEmailFooter()}
-  `)
-
-  const text = `
-Trial Ending Soon!
-
-Hi ${data.businessName},
-
-Your free trial ends in ${data.daysRemaining} day${data.daysRemaining === 1 ? '' : 's'}.
-
-Upgrade to keep creating: ${data.upgradeUrl}
-
-Plans start at $25/month with 30 credits included.
-
-- The Zazzles Team
-  `
-
-  return { html, text, subject }
-}
-
-export function getTrialExpiredEmail(data: TrialExpiredData): { html: string; text: string; subject: string } {
-  const subject = 'Your Zazzles Trial Has Expired'
-
-  const html = wrapTemplate(`
-    ${getEmailHeader('Trial Expired')}
-    <div class="content">
-      <h2>Your trial has ended</h2>
-      <p>Hi ${data.businessName},</p>
-      <p>Your free trial has expired, but don't worry - your account and all your settings are still saved.</p>
-
-      <p>To continue creating amazing food photography, choose a plan that works for you:</p>
+      <p>To continue creating stunning food photography, you have two options:</p>
 
       <div class="info-box">
-        <strong>Popular Choice: Pro Plan ($80/month)</strong><br>
-        100 credits/month - perfect for regular content creation
+        <strong>Option 1: Subscribe to a Plan</strong><br>
+        Get monthly credits + automatic refills. Plans start at $15/month.
       </div>
 
-      <div style="text-align: center;">
-        <a href="${data.upgradeUrl}" class="button">View Plans</a>
+      <div style="text-align: center; margin-bottom: 16px;">
+        <a href="${data.upgradeUrl}" class="button">View Subscription Plans</a>
       </div>
 
       <div class="divider"></div>
 
-      <p style="color: ${BRAND.textLight}; font-size: 14px;">
-        Not ready to commit? You can also buy credit packs with no subscription. <a href="https://zazzles.ai/pricing#credits">View Credit Packs</a>
+      <div class="info-box" style="background: ${BRAND.accent}20;">
+        <strong>Option 2: Buy Credits À La Carte</strong><br>
+        No subscription needed. Buy only what you need.
+      </div>
+
+      <div style="text-align: center;">
+        <a href="${data.buyCreditsUrl}" class="button" style="background: ${BRAND.secondary};">Buy Credit Pack</a>
+      </div>
+
+      <p style="color: ${BRAND.textLight}; font-size: 14px; text-align: center; margin-top: 24px;">
+        Your free trial never expires - just add credits whenever you're ready!
       </p>
     </div>
     ${getEmailFooter()}
   `)
 
   const text = `
-Trial Expired
+Credits Exhausted
 
 Hi ${data.businessName},
 
-Your free trial has expired, but your account is still saved.
+You've used all your Zazzles credits. Your account and photos are still saved.
 
-View plans and continue: ${data.upgradeUrl}
+Option 1: Subscribe to a plan
+View plans: ${data.upgradeUrl}
 
-Not ready? Buy credit packs instead: https://zazzles.ai/pricing#credits
+Option 2: Buy credits à la carte
+Buy credits: ${data.buyCreditsUrl}
+
+Your free trial never expires - just add credits whenever you're ready!
 
 - The Zazzles Team
   `

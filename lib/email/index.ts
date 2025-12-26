@@ -14,8 +14,7 @@ export {
   sendLowCreditsWarningEmail,
   sendPasswordResetEmail,
   sendExportReadyEmail,
-  sendTrialEndingEmail,
-  sendTrialExpiredEmail,
+  sendCreditsExhaustedEmail,
   isEmailConfigured,
   DEFAULT_FROM_EMAIL,
   DEFAULT_FROM_NAME,
@@ -31,8 +30,7 @@ export {
   getLowCreditsWarningEmail,
   getPasswordResetEmail,
   getExportReadyEmail,
-  getTrialEndingEmail,
-  getTrialExpiredEmail,
+  getCreditsExhaustedEmail,
 } from './templates'
 
 // Types
@@ -48,6 +46,5 @@ export type {
   LowCreditsWarningData,
   PasswordResetData,
   ExportReadyData,
-  TrialEndingData,
-  TrialExpiredData,
+  CreditsExhaustedData,
 } from './types'

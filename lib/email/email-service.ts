@@ -15,8 +15,7 @@ import type {
   LowCreditsWarningData,
   PasswordResetData,
   ExportReadyData,
-  TrialEndingData,
-  TrialExpiredData,
+  CreditsExhaustedData,
 } from './types'
 import {
   getWelcomeEmail,
@@ -27,8 +26,7 @@ import {
   getLowCreditsWarningEmail,
   getPasswordResetEmail,
   getExportReadyEmail,
-  getTrialEndingEmail,
-  getTrialExpiredEmail,
+  getCreditsExhaustedEmail,
 } from './templates'
 
 // Initialize SendGrid with API key
@@ -189,18 +187,11 @@ export async function sendExportReadyEmail(data: ExportReadyData): Promise<SendE
 }
 
 /**
- * Send trial ending reminder
+ * Send credits exhausted notification
+ * Sent when a user runs out of credits (replaces trial expired)
  */
-export async function sendTrialEndingEmail(data: TrialEndingData): Promise<SendEmailResult> {
-  const { html, text, subject } = getTrialEndingEmail(data)
-  return sendEmail({ to: data.email, subject, html, text })
-}
-
-/**
- * Send trial expired notification
- */
-export async function sendTrialExpiredEmail(data: TrialExpiredData): Promise<SendEmailResult> {
-  const { html, text, subject } = getTrialExpiredEmail(data)
+export async function sendCreditsExhaustedEmail(data: CreditsExhaustedData): Promise<SendEmailResult> {
+  const { html, text, subject } = getCreditsExhaustedEmail(data)
   return sendEmail({ to: data.email, subject, html, text })
 }
 
