@@ -786,7 +786,7 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                     value={editPrompt}
                     onChange={(e) => setEditPrompt(e.target.value)}
                     placeholder={preserveOriginal
-                      ? "E.g., 'Add wooden chopsticks and a small white saucer with red chili slices'"
+                      ? "E.g., 'Place a pair of wooden chopsticks beside the plate and a small white saucer next to it'"
                       : "E.g., 'Make the colors more vibrant and add steam rising from the food'"}
                     rows={3}
                     className="resize-none text-sm"
@@ -803,10 +803,10 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   <span className="text-xs text-muted-foreground">Try:</span>
                   {(preserveOriginal
                     ? [
-                        'Add wooden chopsticks',
-                        'Add a small saucer with soy sauce',
-                        'Add fresh chili slices',
-                        'Add a cloth napkin',
+                        'Place chopsticks beside the plate',
+                        'Add a saucer with soy sauce next to the dish',
+                        'Place chili slices on the table surface',
+                        'Add a cloth napkin beside the plate',
                       ]
                     : [
                         'Make colors more vibrant',
