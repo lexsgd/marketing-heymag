@@ -871,17 +871,17 @@ OUTPUT: The exact same photograph with ONLY the requested items added.`
           })
 
         } else {
-          // 🟢 STANDARD ENHANCEMENT MODE - Original logic with full wrapper
-          // Model analyzes camera angle AND applies enhancements in ONE call
-          generationPrompt = `ROLE: World-class food photography retoucher
-TASK: ENHANCE this photo while respecting PHYSICAL REALITY
+          // 🟢 STANDARD ENHANCEMENT MODE - "GOD MODE" PHYSICS
+          // Optimized for: Moisture, Translucency, White Balance, and Subsurface Scattering
+          generationPrompt = `ROLE: Expert Food Stylist & Director of Photography
+TASK: Re-stage this photo for a high-end culinary magazine.
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 1: DETECT CAMERA ANGLE
+STEP 1: DETECT CAMERA ANGLE & LENS PHYSICS
 ═══════════════════════════════════════════════════════════════════════════════
-OVERHEAD (90°): Looking down | Plates = circles | Only table surface | No vertical BG
-HERO (45°): Classic angle | Plates = ellipses | Table + soft bokeh BG | Shows depth
-EYE LEVEL (0°): Horizontal | Full vertical BG | Shows "face" of items
+• OVERHEAD (Flat Lay): Focus on graphic composition. High f-stop (f/8-f/11, everything in focus).
+• HERO (45°): Focus on volume. Medium aperture (f/2.8-f/4) for soft background blur (bokeh).
+• EYE LEVEL (0°): Focus on height. Shallow depth of field (f/1.8-f/2.8) for strong bokeh behind subject.
 
 PHYSICS CONSTRAINTS:
 • OVERHEAD → CAN: table texture, props, garnishes | CANNOT: vertical backgrounds, walls
@@ -889,50 +889,49 @@ PHYSICS CONSTRAINTS:
 • EYE LEVEL → CAN: full environment | CANNOT: contradict existing background
 
 ═══════════════════════════════════════════════════════════════════════════════
-PRESERVATION RULES [CRITICAL]
-═══════════════════════════════════════════════════════════════════════════════
-✗ DO NOT change food items, angle, plating, or arrangement
-✗ DO NOT add physics-breaking elements
-This is ENHANCEMENT, not generation - output must be recognizably the SAME photo
-
-═══════════════════════════════════════════════════════════════════════════════
 STEP 2: APPLY VENUE STYLING
 ═══════════════════════════════════════════════════════════════════════════════
 ${venueStyleSection}
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 3: PHYSICS-BASED ENHANCEMENT (4 Sensory Signals)
+STEP 3: THE "HUNGER PHYSICS" ENGINE (Sensory Reconstruction)
 ═══════════════════════════════════════════════════════════════════════════════
 
-1. MOISTURE (The #1 Appetizing Signal):
-   • Add SPECULAR HIGHLIGHTS on sauces, glazes, proteins, and wet surfaces
-   • Show hydrated surfaces - slight sheen on vegetables and grilled meats
+1. HYPER-REALISTIC MOISTURE (The "Succulence" Signal)
+   • Apply SPECULAR HIGHLIGHTS (tiny white reflections) to oils, glazes, and wet surfaces
+   • NON-PLASTIC LOOK: Use SUBSURFACE SCATTERING for sauces and meats (light penetrating the surface)
+   • If greens/vegetables exist: Make them look crisp and hydrated (spritzed water effect)
    • Condensation on cold drinks/desserts if present
-   • This signals "fat/juice" to the human brain
 
-2. LIGHTING (Creates Volume & Depth):
-   • Use DIRECTIONAL SOFT LIGHT from a defined source
-   • SHADOWS ARE REQUIRED - they define shape and make food "pop"
-   • Avoid flat, even lighting that makes food appear 2D
+2. LIGHTING SCULPTING (The "Volume" Signal)
+   • REMOVE "Indoor Yellow Cast": Correct WHITE BALANCE to 5500K (Daylight Neutral)
+   • LIGHT SOURCE: Large, soft window light from side/back (Rembrandt style lighting)
+   • SHADOWS: Soft, diffused shadows are REQUIRED to anchor the food to the plate
    • The light-to-shadow ratio creates appetite appeal
 
-3. COLOR (Selective, Not Global):
-   • Apply SELECTIVE SATURATION: Boost ONLY food colors (reds, oranges, greens)
-   • Keep plate/table surface NEUTRAL (white, gray, natural wood tones)
+3. TEXTURE & DETAIL (The "Crunch" Signal)
+   • MICRO-CONTRAST: Sharpen ONLY the focal point (sear on meat, crust on bread, grill lines)
+   • Soften the background to separate the subject (depth blur)
+   • Do NOT over-sharpen noise/grain - preserve natural film quality
+
+4. COLOR SCIENCE
+   • CHROMATIC SEPARATION: Boost saturation of red/green/orange organic tones ONLY
+   • NEUTRAL BASE: Keep plate white/ceramic and table surface neutral
+   • NO "Neon" effect: Colors must look edible, not radioactive
    • Prevent color bleeding onto backgrounds
-   • The plate should NOT glow blue, yellow, or any other color
-
-4. TEXTURE (Micro-Contrast):
-   • Apply LOCAL CONTRAST on food surface ONLY
-   • Enhance crisp edges (crust, sear marks, grill lines, char)
-   • DO NOT sharpen the background - preserve depth blur
-   • Food details should "pop" while background stays soft
 
 ═══════════════════════════════════════════════════════════════════════════════
-OUTPUT: ${platformConfig.aspectRatio} | ${platformConfig.imageSize} quality | ${platformConfig.platformRequirements || 'Professional'}
+PRESERVATION CONSTRAINTS (CRITICAL)
 ═══════════════════════════════════════════════════════════════════════════════
+✗ DO NOT hallucinate new ingredients
+✗ DO NOT change the plating arrangement
+✗ DO NOT remove natural "mess" (crumbs, drips) if they add authenticity
+✗ DO NOT apply HDR filters or "clarity" sliders
+This is ENHANCEMENT, not generation - output must be recognizably the SAME photo
 
-QUALITY: Physically realistic | Appetizing | High specular highlights | Natural shadows | No AI artifacts
+═══════════════════════════════════════════════════════════════════════════════
+OUTPUT: ${platformConfig.aspectRatio} | ${platformConfig.imageSize} quality | Photorealistic
+═══════════════════════════════════════════════════════════════════════════════
 
 Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         }
