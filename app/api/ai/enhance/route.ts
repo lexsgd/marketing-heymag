@@ -767,10 +767,42 @@ ${stylePrompt}
 `
         }
 
-        // AI IMAGE ENHANCEMENT PROMPT - SELF-DETECTING ANGLE (Optimized v0.53.0)
-        // Model analyzes camera angle AND applies enhancements in ONE call
-        // Reduced from ~550 tokens to ~300 tokens while preserving all critical instructions
-        const generationPrompt = `ROLE: World-class food photography retoucher
+        // ═══════════════════════════════════════════════════════════════════════════
+        // PROMPT STRATEGY: Different prompts for EDIT MODE vs ENHANCEMENT MODE
+        // ═══════════════════════════════════════════════════════════════════════════
+        let generationPrompt: string
+
+        if (editMode) {
+          // 🔴 EDIT MODE: SURGICAL INPAINTING PROMPT
+          // BYPASS the enhancement wrapper entirely - send raw editing instruction
+          // This forces the model into "Object Addition" mode, NOT "Retouching" mode
+
+          generationPrompt = `TASK: Add objects to this image using INPAINTING.
+
+ADD THESE ITEMS ONLY:
+${customPrompt?.trim()}
+
+PLACEMENT:
+Place these items on the available table surface beside the main dish.
+
+STRICT RULES:
+- Keep the ENTIRE existing image PIXEL-PERFECT IDENTICAL
+- Do NOT change the food, plate, background, lighting, or any existing element
+- Do NOT add any items not explicitly listed above (no garnishes, herbs, utensils unless requested)
+- The new items should cast natural shadows matching the existing light direction
+- Use seamless blending so new items look naturally part of the scene
+
+OUTPUT: The exact same photograph with ONLY the requested items added.`
+
+          logger.info('Using SURGICAL EDIT prompt (bypassed enhancement wrapper)', {
+            editRequest: customPrompt?.substring(0, 100),
+            preserveMode,
+          })
+
+        } else {
+          // 🟢 STANDARD ENHANCEMENT MODE - Original logic with full wrapper
+          // Model analyzes camera angle AND applies enhancements in ONE call
+          generationPrompt = `ROLE: World-class food photography retoucher
 TASK: ENHANCE this photo while respecting PHYSICAL REALITY
 
 ═══════════════════════════════════════════════════════════════════════════════
@@ -810,6 +842,7 @@ OUTPUT: ${platformConfig.aspectRatio} | ${platformConfig.imageSize} quality | ${
 QUALITY: Physically realistic | Appetizing | Authentic | No AI artifacts | Platform-ready
 
 Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
+        }
 
         // Wrap Gemini API call with retry logic AND per-request timeout
         // - Timeout: 18s per attempt (prevents hanging on overloaded model)
