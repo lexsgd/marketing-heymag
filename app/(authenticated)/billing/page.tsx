@@ -47,7 +47,6 @@ interface BusinessData {
   subscription_status: string | null
   subscription_tier: string | null
   subscription_ends_at: string | null
-  trial_ends_at: string | null
   stripe_customer_id: string | null
 }
 
@@ -94,7 +93,6 @@ function BillingPageContent() {
           subscription_status,
           subscription_tier,
           subscription_ends_at,
-          trial_ends_at,
           stripe_customer_id
         `)
         .eq('auth_user_id', user.id)
@@ -144,8 +142,9 @@ function BillingPageContent() {
   const currentPlan = business?.subscription_tier || 'trial'
   const isTrialing = business?.subscription_status === 'trial'
   const isActive = business?.subscription_status === 'active'
-  const trialEndsAt = business?.trial_ends_at ? new Date(business.trial_ends_at) : null
-  const daysLeftInTrial = trialEndsAt ? Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : 0
+  // For trial users, use subscription_ends_at as the trial end date
+  const trialEndsAt = isTrialing && business?.subscription_ends_at ? new Date(business.subscription_ends_at) : null
+  const daysLeftInTrial = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0
   const subscriptionEndsAt = business?.subscription_ends_at ? new Date(business.subscription_ends_at) : null
 
   if (loading) {
