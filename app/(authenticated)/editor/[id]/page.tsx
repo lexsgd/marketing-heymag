@@ -803,10 +803,10 @@ export default function ImageEditorPage({ params }: { params: { id: string } }) 
                   <span className="text-xs text-muted-foreground">Try:</span>
                   {(preserveOriginal
                     ? [
-                        'Place chopsticks beside the plate',
-                        'Add a saucer with soy sauce next to the dish',
-                        'Place chili slices on the table surface',
-                        'Add a cloth napkin beside the plate',
+                        'Place wooden chopsticks beside the plate',
+                        'Place a porcelain saucer with soy sauce next to the dish',
+                        'Place fresh chili slices on the table surface',
+                        'Place a white folded napkin beside the plate',
                       ]
                     : [
                         'Make colors more vibrant',
