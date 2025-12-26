@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceRoleClient } from '@/lib/supabase/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
+import Anthropic from '@anthropic-ai/sdk'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 import { getMultiStylePrompt, parseStyleIds, buildSimplifiedPrompt } from '@/lib/multi-style-prompt-builder'
 import type { SimpleSelection, BackgroundConfig } from '@/lib/simplified-styles'
@@ -14,6 +15,7 @@ import {
   enhanceRequestSchema,
   validateInput,
   validationErrorResponse,
+  aiConfig,
 } from '@/lib/security'
 // Sharp is dynamically imported to handle platform-specific binary issues on Vercel
 // import sharp from 'sharp'
@@ -64,6 +66,73 @@ function getGoogleAI(): GoogleGenerativeAI {
     genAI = new GoogleGenerativeAI(apiKey)
   }
   return genAI
+}
+
+// Lazy initialization of Anthropic client for prompt reformatting
+let anthropicClient: Anthropic | null = null
+
+function getAnthropic(): Anthropic {
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({
+      apiKey: aiConfig.anthropicApiKey,
+    })
+  }
+  return anthropicClient
+}
+
+/**
+ * Reformat messy user input into spatially precise prop placement instructions
+ * Uses Claude Haiku for fast, cheap preprocessing
+ *
+ * Input: "add in chinese wooden chopsticks and a white porcelain saucer on the side with red cut chilli and light soya sauce inside the saucer"
+ * Output: "Place a small white porcelain saucer containing soy sauce and sliced red chili on the table surface next to the plate. Place a pair of wooden chopsticks resting beside the saucer."
+ */
+async function reformatPropPrompt(rawUserInput: string): Promise<string> {
+  try {
+    logger.info('Reformatting user prop prompt with Claude Haiku', {
+      inputLength: rawUserInput.length,
+      inputPreview: rawUserInput.substring(0, 50),
+    })
+
+    const response = await getAnthropic().messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 300,
+      messages: [
+        {
+          role: 'user',
+          content: `You are a prompt formatter for an AI image editing system. Your task is to reformat the user's messy input into clear, spatially precise instructions for adding props to a food photograph.
+
+USER'S RAW INPUT:
+"${rawUserInput}"
+
+RULES:
+1. Convert to clear, spatially precise language
+2. Specify exact placement (e.g., "on the table surface next to the plate", "beside the saucer")
+3. Be specific about quantities (e.g., "a pair of chopsticks" not just "chopsticks")
+4. If user mentions contents (like "soy sauce inside"), include that detail
+5. Keep it concise - one sentence per item
+6. Do NOT add items the user didn't request
+7. Output ONLY the reformatted instruction, nothing else
+
+REFORMATTED INSTRUCTION:`
+        }
+      ]
+    })
+
+    const reformatted = (response.content[0] as { type: string; text: string }).text.trim()
+
+    logger.info('Prompt reformatted successfully', {
+      originalLength: rawUserInput.length,
+      reformattedLength: reformatted.length,
+      reformattedPreview: reformatted.substring(0, 100),
+    })
+
+    return reformatted
+  } catch (error) {
+    // If reformatting fails, fall back to original input
+    logger.warn('Prompt reformatting failed, using original input', { error })
+    return rawUserInput
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -777,13 +846,14 @@ ${stylePrompt}
           // BYPASS the enhancement wrapper entirely - send raw editing instruction
           // This forces the model into "Object Addition" mode, NOT "Retouching" mode
 
+          // Step 1: Reformat user's messy input into spatially precise instructions
+          // Uses Claude Haiku for fast preprocessing (~$0.001 per call)
+          const reformattedPrompt = await reformatPropPrompt(customPrompt?.trim() || '')
+
           generationPrompt = `TASK: Add objects to this image using INPAINTING.
 
 ADD THESE ITEMS ONLY:
-${customPrompt?.trim()}
-
-PLACEMENT:
-Place these items on the available table surface beside the main dish.
+${reformattedPrompt}
 
 STRICT RULES:
 - Keep the ENTIRE existing image PIXEL-PERFECT IDENTICAL
@@ -795,7 +865,8 @@ STRICT RULES:
 OUTPUT: The exact same photograph with ONLY the requested items added.`
 
           logger.info('Using SURGICAL EDIT prompt (bypassed enhancement wrapper)', {
-            editRequest: customPrompt?.substring(0, 100),
+            originalRequest: customPrompt?.substring(0, 100),
+            reformattedRequest: reformattedPrompt.substring(0, 100),
             preserveMode,
           })
 
