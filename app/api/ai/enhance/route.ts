@@ -901,16 +901,38 @@ STEP 2: APPLY VENUE STYLING
 ${venueStyleSection}
 
 ═══════════════════════════════════════════════════════════════════════════════
-STEP 3: UNIVERSAL ENHANCEMENTS
+STEP 3: PHYSICS-BASED ENHANCEMENT (4 Sensory Signals)
 ═══════════════════════════════════════════════════════════════════════════════
-✓ Lighting (natural direction) | Color grading | Sharpness | White balance | Contrast
-✓ Food appeal: fresher, more vibrant | Optional: steam, texture, gentle shadows
+
+1. MOISTURE (The #1 Appetizing Signal):
+   • Add SPECULAR HIGHLIGHTS on sauces, glazes, proteins, and wet surfaces
+   • Show hydrated surfaces - slight sheen on vegetables and grilled meats
+   • Condensation on cold drinks/desserts if present
+   • This signals "fat/juice" to the human brain
+
+2. LIGHTING (Creates Volume & Depth):
+   • Use DIRECTIONAL SOFT LIGHT from a defined source
+   • SHADOWS ARE REQUIRED - they define shape and make food "pop"
+   • Avoid flat, even lighting that makes food appear 2D
+   • The light-to-shadow ratio creates appetite appeal
+
+3. COLOR (Selective, Not Global):
+   • Apply SELECTIVE SATURATION: Boost ONLY food colors (reds, oranges, greens)
+   • Keep plate/table surface NEUTRAL (white, gray, natural wood tones)
+   • Prevent color bleeding onto backgrounds
+   • The plate should NOT glow blue, yellow, or any other color
+
+4. TEXTURE (Micro-Contrast):
+   • Apply LOCAL CONTRAST on food surface ONLY
+   • Enhance crisp edges (crust, sear marks, grill lines, char)
+   • DO NOT sharpen the background - preserve depth blur
+   • Food details should "pop" while background stays soft
 
 ═══════════════════════════════════════════════════════════════════════════════
 OUTPUT: ${platformConfig.aspectRatio} | ${platformConfig.imageSize} quality | ${platformConfig.platformRequirements || 'Professional'}
 ═══════════════════════════════════════════════════════════════════════════════
 
-QUALITY: Physically realistic | Appetizing | Authentic | No AI artifacts | Platform-ready
+QUALITY: Physically realistic | Appetizing | High specular highlights | Natural shadows | No AI artifacts
 
 Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         }
