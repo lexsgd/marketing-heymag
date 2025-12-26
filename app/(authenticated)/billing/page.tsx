@@ -142,9 +142,8 @@ function BillingPageContent() {
   const currentPlan = business?.subscription_tier || 'trial'
   const isTrialing = business?.subscription_status === 'trial'
   const isActive = business?.subscription_status === 'active'
-  // For trial users, use subscription_ends_at as the trial end date
-  const trialEndsAt = isTrialing && business?.subscription_ends_at ? new Date(business.subscription_ends_at) : null
-  const daysLeftInTrial = trialEndsAt ? Math.max(0, Math.ceil((trialEndsAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0
+  // Note: Free trial has no expiry - it's credit-based, not time-based
+  // Users stay on trial forever until they subscribe or run out of credits
   const subscriptionEndsAt = business?.subscription_ends_at ? new Date(business.subscription_ends_at) : null
 
   if (loading) {
@@ -233,7 +232,7 @@ function BillingPageContent() {
               </div>
               <p className="text-xs text-muted-foreground">
                 {isTrialing
-                  ? `${daysLeftInTrial} days left`
+                  ? 'Active'
                   : subscriptionEndsAt
                   ? `Renews ${subscriptionEndsAt.toLocaleDateString()}`
                   : 'Active'}
@@ -298,9 +297,9 @@ function BillingPageContent() {
                   <div>
                     <p className="font-medium">Free Trial Active</p>
                     <p className="text-sm text-muted-foreground">
-                      {daysLeftInTrial > 0
-                        ? `${daysLeftInTrial} days left • ${creditsRemaining} credits remaining`
-                        : 'Trial expired'}
+                      {creditsRemaining > 0
+                        ? `${creditsRemaining} credits remaining`
+                        : 'No credits remaining • Subscribe or buy credits to continue'}
                     </p>
                   </div>
                 </div>
