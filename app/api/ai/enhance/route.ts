@@ -377,6 +377,9 @@ export async function POST(request: NextRequest) {
     const editMode = body.editMode as boolean | undefined
     // Preserve mode - only add elements, keep everything else identical (stricter than editMode)
     const preserveMode = body.preserveMode as boolean | undefined
+    // Template URL for style transfer mode (NEW: v0.59.2)
+    const templateUrl = body.templateUrl as string | undefined
+    const templateId = body.templateId as string | undefined
 
     // imageId is required by schema, but double-check for safety
     if (!imageId) {
@@ -386,6 +389,7 @@ export async function POST(request: NextRequest) {
 
     // Log style selection details
     const hasSimpleSelection = simpleSelection && simpleSelection.businessType !== null
+    const hasTemplateStyleTransfer = !!templateUrl // NEW: Style transfer mode
     const styleIdsArray = styleIds || (stylePreset ? stylePreset.split(',') : [])
     logger.info('Processing image', {
       imageId,
@@ -395,6 +399,9 @@ export async function POST(request: NextRequest) {
       hasSimpleSelection,
       simpleSelection: hasSimpleSelection ? JSON.stringify(simpleSelection) : undefined,
       editMode: !!editMode,
+      // NEW: Template style transfer logging
+      hasTemplateStyleTransfer,
+      templateId: templateId || undefined,
     })
 
     // Get authenticated user
@@ -718,6 +725,40 @@ in the generated image while maintaining professional food photography quality.
       const mimeType = image.mime_type || 'image/jpeg'
       logger.debug('Image prepared for AI', { mimeType })
 
+      // ═══════════════════════════════════════════════════════════════════════════
+      // TEMPLATE STYLE TRANSFER: Fetch template image if provided (NEW: v0.59.2)
+      // ═══════════════════════════════════════════════════════════════════════════
+      let templateBase64: string | null = null
+      let templateMimeType: string = 'image/jpeg'
+
+      if (hasTemplateStyleTransfer && templateUrl) {
+        currentStep = 'fetching template image for style transfer'
+        logger.info('STYLE TRANSFER MODE: Fetching template image', {
+          templateUrl: templateUrl.substring(0, 80),
+          templateId,
+        })
+
+        try {
+          const templateResponse = await fetch(templateUrl)
+          if (templateResponse.ok) {
+            const templateBuffer = Buffer.from(await templateResponse.arrayBuffer())
+            templateBase64 = templateBuffer.toString('base64')
+            // Determine mime type from URL or default to jpeg
+            if (templateUrl.includes('.png')) {
+              templateMimeType = 'image/png'
+            } else if (templateUrl.includes('.webp')) {
+              templateMimeType = 'image/webp'
+            }
+            logger.info('Template image fetched successfully', { size: templateBuffer.length })
+          } else {
+            logger.warn('Failed to fetch template image', { status: templateResponse.status })
+          }
+        } catch (templateFetchError) {
+          logger.error('Template fetch error', templateFetchError as Error)
+          // Continue without template - fall back to normal enhancement
+        }
+      }
+
       // SINGLE-CALL ENHANCEMENT PIPELINE
       // Gemini 3 Pro Image handles BOTH angle detection AND enhancement in one call
       // This reduces latency and cost (was: Flash + Pro, now: Pro only)
@@ -841,11 +882,111 @@ ${stylePrompt}
         }
 
         // ═══════════════════════════════════════════════════════════════════════════
-        // PROMPT STRATEGY: Different prompts for EDIT MODE vs ENHANCEMENT MODE
+        // PROMPT STRATEGY: STYLE TRANSFER vs EDIT MODE vs ENHANCEMENT MODE
         // ═══════════════════════════════════════════════════════════════════════════
         let generationPrompt: string
+        let useStyleTransfer = false // Flag to indicate we're using two-image style transfer
 
-        if (editMode) {
+        // 🔵 STYLE TRANSFER MODE: When a template is provided (NEW: v0.59.2)
+        if (templateBase64) {
+          useStyleTransfer = true
+          generationPrompt = `ROLE: Professional Food Photography Style Transfer Specialist
+
+═══════════════════════════════════════════════════════════════════════════════
+TASK: STYLE TRANSFER FROM TEMPLATE TO FOOD PHOTO
+═══════════════════════════════════════════════════════════════════════════════
+
+You are provided with TWO images:
+1. **STYLE TEMPLATE** (First image): This is the STYLE TARGET - analyze it carefully
+2. **USER'S FOOD PHOTO** (Second image): This is what needs to be transformed
+
+YOUR MISSION: Recreate the USER'S FOOD in the exact style of the TEMPLATE.
+The food subject must be preserved - only the styling changes.
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 1: ANALYZE THE STYLE TEMPLATE (First Image)
+═══════════════════════════════════════════════════════════════════════════════
+
+Extract and note these style characteristics from the TEMPLATE:
+
+📐 CAMERA & COMPOSITION:
+   - Camera angle (overhead, 45-degree hero, eye-level, etc.)
+   - Distance from subject (close-up, medium, wide)
+   - Framing and composition style
+
+🎨 BACKGROUND & SURFACE:
+   - Surface type (wood, marble, fabric, gradient, etc.)
+   - Surface color and texture
+   - Background depth and blur level
+   - Overall setting/environment
+
+💡 LIGHTING:
+   - Light direction (from which side/angle)
+   - Light quality (soft, harsh, dramatic)
+   - Shadow characteristics (soft, hard, directional)
+   - Highlight placement and intensity
+   - Overall brightness level
+
+🍽️ PROPS & STYLING:
+   - Utensils present (chopsticks, forks, spoons, etc.)
+   - Garnishes and decorative elements
+   - Plates/bowls/serving vessels style
+   - Additional props (napkins, ingredients, condiments)
+   - Styling arrangement
+
+🎭 MOOD & COLOR:
+   - Color temperature (warm, cool, neutral)
+   - Color palette and saturation
+   - Overall mood (bright, moody, rustic, modern, etc.)
+   - Post-processing style (vibrant, muted, high contrast, etc.)
+
+═══════════════════════════════════════════════════════════════════════════════
+STEP 2: TRANSFORM THE USER'S FOOD PHOTO (Second Image)
+═══════════════════════════════════════════════════════════════════════════════
+
+Apply ALL the style characteristics from the template to the user's food:
+
+✅ MUST PRESERVE:
+- The user's actual food/dish (the subject itself)
+- The food's identity, ingredients, and recognizable features
+- Food textures and details
+
+✅ MUST TRANSFORM TO MATCH TEMPLATE:
+- Background surface and color → Match the template exactly
+- Camera angle and perspective → Recreate the template's angle
+- Lighting direction and quality → Match the template's lighting
+- Color temperature and mood → Match the template's color grade
+- Props and styling elements → Add similar utensils/garnishes as template
+- Composition and framing → Match the template's layout style
+
+═══════════════════════════════════════════════════════════════════════════════
+CRITICAL RULES
+═══════════════════════════════════════════════════════════════════════════════
+
+1. The OUTPUT must look like the user's food was photographed in the SAME SETTING as the template
+2. The style transformation should be obvious and dramatic - not subtle
+3. Keep the food looking appetizing and professional
+4. The background MUST change to match the template's background
+5. Lighting direction MUST change to match the template
+6. Add appropriate props/utensils that match the template's styling
+7. Do NOT copy the template's food - only copy its STYLE
+8. Maintain food photography quality (sharp focus on food, appealing colors)
+
+═══════════════════════════════════════════════════════════════════════════════
+OUTPUT REQUIREMENTS: ${platformConfig.aspectRatio} | Professional Quality
+═══════════════════════════════════════════════════════════════════════════════
+
+Generate a new image of the user's food with all style elements from the template applied.
+The result should look like the user's dish was photographed in the exact same setting and style as the template.
+
+Respond with: STYLE_TRANSFER: [success/partial] | ANGLE: [detected] | MATCHED: [list key style elements applied]`
+
+          logger.info('Using STYLE TRANSFER prompt (two-image mode)', {
+            templateId,
+            templateUrlPreview: templateUrl?.substring(0, 50),
+          })
+
+        } else if (editMode) {
           // 🔴 EDIT MODE: SURGICAL INPAINTING PROMPT
           // BYPASS the enhancement wrapper entirely - send raw editing instruction
           // This forces the model into "Object Addition" mode, NOT "Retouching" mode
@@ -942,19 +1083,47 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         // - Timeout: 18s per attempt (prevents hanging on overloaded model)
         // - Retries: 3 attempts with 2s -> 4s delays
         // - Total max time: ~18*3 + 6 = ~60s (fits Vercel limit)
+
+        // Build content array - conditionally include template image for style transfer
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const contentParts: any[] = []
+
+        if (useStyleTransfer && templateBase64) {
+          // STYLE TRANSFER MODE: Send template FIRST (as style reference), then user's photo
+          contentParts.push({
+            inlineData: {
+              mimeType: templateMimeType,
+              data: templateBase64
+            }
+          })
+          contentParts.push({
+            inlineData: {
+              mimeType,
+              data: sharpEnhancedBase64
+            }
+          })
+          logger.info('Style transfer: Sending TWO images to Gemini', {
+            templateMimeType,
+            userImageMimeType: mimeType,
+          })
+        } else {
+          // STANDARD MODE: Just send user's photo
+          contentParts.push({
+            inlineData: {
+              mimeType,
+              data: sharpEnhancedBase64
+            }
+          })
+        }
+
+        // Add the prompt as the last part
+        contentParts.push({ text: generationPrompt })
+
         const result = await retryWithBackoff(
           async () => {
             // Add timeout to prevent hanging on slow model responses
             return await withTimeout(
-              model.generateContent([
-                {
-                  inlineData: {
-                    mimeType,
-                    data: sharpEnhancedBase64 // Use Sharp-enhanced image as input
-                  }
-                },
-                { text: generationPrompt }
-              ]),
+              model.generateContent(contentParts),
               GEMINI_REQUEST_TIMEOUT_MS,
               `Gemini 3 Pro Image request exceeded ${GEMINI_REQUEST_TIMEOUT_MS / 1000}s`
             )
@@ -1009,8 +1178,14 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           if (!uploadError) {
             const urlData = serviceSupabase.storage.from('images').getPublicUrl(enhancedFileName)
             enhancedUrl = urlData.data.publicUrl
-            enhancementMethod = 'hybrid-sharp-gemini'
-            logger.info('AI image enhancement successful', { style: stylePreset })
+            // Use specific method name for style transfer vs standard enhancement
+            enhancementMethod = useStyleTransfer ? 'style-transfer-gemini' : 'hybrid-sharp-gemini'
+            logger.info('AI image enhancement successful', {
+              style: stylePreset,
+              method: enhancementMethod,
+              usedStyleTransfer: useStyleTransfer,
+              templateId: templateId || null,
+            })
           } else {
             logger.error('Upload error', uploadError)
           }
@@ -1061,7 +1236,7 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           method: enhancementMethod,
           stylePreset: hasSimpleSelection ? simpleSelection?.businessType : stylePreset,
           detectedAngle: detectedAngle, // AI self-detected camera angle
-          pipeline: hasSimpleSelection ? 'simplified-v2' : 'single-call-v1',
+          pipeline: hasTemplateStyleTransfer ? 'style-transfer-v1' : (hasSimpleSelection ? 'simplified-v2' : 'single-call-v1'),
           // Include simplified selection data if used
           ...(hasSimpleSelection && simpleSelection ? {
             simplifiedSelection: {
@@ -1078,6 +1253,13 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
               mode: backgroundConfig.mode,
               description: backgroundConfig.description || null,
               // Don't store uploadedUrl to save space - it's in the image record if needed
+            },
+          } : {}),
+          // Store style transfer info (v0.59.2)
+          ...(hasTemplateStyleTransfer ? {
+            styleTransfer: {
+              templateId: templateId || null,
+              templateUrl: templateUrl?.substring(0, 200) || null, // Truncate for storage
             },
           } : {}),
         },
