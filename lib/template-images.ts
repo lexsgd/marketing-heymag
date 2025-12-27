@@ -414,7 +414,7 @@ export const restaurantTemplates: TemplateImage[] = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Hawker & Street Food (18 images)
+// Hawker & Street Food (17 images)
 // ═══════════════════════════════════════════════════════════════════════════
 export const hawkerTemplates: TemplateImage[] = [
   {
@@ -479,15 +479,6 @@ export const hawkerTemplates: TemplateImage[] = [
     thumbUrl: '/templates/hawker/IMG_6672.PNG',
     webUrl: '/templates/hawker/IMG_6672.PNG',
     originalUrl: '/templates/hawker/IMG_6672.PNG',
-  },
-  {
-    id: 'hawker-6673',
-    name: 'Carrot Cake',
-    description: 'Fried radish cake with egg',
-    category: 'hawker',
-    thumbUrl: '/templates/hawker/IMG_6673.PNG',
-    webUrl: '/templates/hawker/IMG_6673.PNG',
-    originalUrl: '/templates/hawker/IMG_6673.PNG',
   },
   {
     id: 'hawker-6674',
@@ -600,9 +591,9 @@ export const templateCounts = {
   'christmas': 4,
   'delivery': 8,
   'fine-dining': 8,
-  'hawker': 18,
+  'hawker': 17,
   'restaurant': 8,
-  total: 58,
+  total: 57,
 }
 
 /**
