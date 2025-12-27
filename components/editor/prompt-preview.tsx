@@ -3,6 +3,12 @@
 import { useMemo, useState } from 'react'
 import { ChevronDown, Eye } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from '@/components/ui/tooltip'
 import type { SimpleSelection, ProModeConfig, BackgroundConfig } from '@/lib/simplified-styles'
 
 interface PromptPreviewProps {
@@ -147,29 +153,37 @@ export function PromptPreview({
   const customCount = previewLines.filter((l) => l.type === 'custom').length
 
   return (
-    <div className={cn('border border-border/50 rounded-lg', className)}>
-      {/* Header - always visible */}
-      <button
-        type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full flex items-center justify-between px-2.5 py-2 text-left hover:bg-muted/30 transition-colors rounded-lg"
-      >
-        <div className="flex items-center gap-1.5">
-          <Eye className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-xs text-muted-foreground">Preview</span>
-          {customCount > 0 && (
-            <span className="text-[10px] px-1 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400">
-              +{customCount}
-            </span>
-          )}
-        </div>
-        <ChevronDown
-          className={cn(
-            'h-3.5 w-3.5 text-muted-foreground transition-transform',
-            isExpanded && 'rotate-180'
-          )}
-        />
-      </button>
+    <TooltipProvider>
+      <div className={cn('border border-border/50 rounded-lg', className)}>
+        {/* Header - always visible */}
+        <button
+          type="button"
+          onClick={() => setIsExpanded(!isExpanded)}
+          className="w-full flex items-center justify-between px-2.5 py-2 text-left hover:bg-muted/30 transition-colors rounded-lg"
+        >
+          <div className="flex items-center gap-1.5">
+            <Eye className="h-3.5 w-3.5 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">Preview</span>
+            {customCount > 0 && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/15 text-orange-600 dark:text-orange-400 cursor-help">
+                    +{customCount}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-xs">
+                  {customCount} custom {customCount === 1 ? 'setting' : 'settings'} added
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
+          <ChevronDown
+            className={cn(
+              'h-3.5 w-3.5 text-muted-foreground transition-transform',
+              isExpanded && 'rotate-180'
+            )}
+          />
+        </button>
 
       {/* Expanded content */}
       {isExpanded && (
@@ -178,11 +192,11 @@ export function PromptPreview({
             {previewLines.map((line, idx) => (
               <div
                 key={idx}
-                className="flex items-start gap-1.5 text-[11px] font-mono"
+                className="flex items-start gap-2 text-[11px] font-mono"
               >
                 <span
                   className={cn(
-                    'font-medium min-w-[55px]',
+                    'font-medium w-[80px] flex-shrink-0',
                     line.type === 'custom'
                       ? 'text-orange-600 dark:text-orange-400'
                       : 'text-muted-foreground'
@@ -190,13 +204,14 @@ export function PromptPreview({
                 >
                   {line.label}:
                 </span>
-                <span className="text-foreground/70">{line.value}</span>
+                <span className="text-foreground/70 break-words min-w-0">{line.value}</span>
               </div>
             ))}
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </TooltipProvider>
   )
 }
 
