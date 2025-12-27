@@ -842,8 +842,7 @@ in the generated image while maintaining professional food photography quality.
         // Features: Superior quality, professional food photography enhancement
         // Note: Has 503 "model overloaded" issues, using retry logic with exponential backoff
         // Required config per docs: temperature=1.0, responseModalities=['Text', 'Image']
-        // Note: imageConfig for 2K/4K resolution not supported in getGenerativeModel pattern
-        // TODO: Upgrade to newer SDK pattern to enable 2K output
+        // v0.59.3: Added imageConfig for 2K resolution output
 
         const model = getGoogleAI().getGenerativeModel({
           model: 'gemini-3-pro-image-preview', // Nano Banana Pro - premium quality
@@ -851,6 +850,11 @@ in the generated image while maintaining professional food photography quality.
           generationConfig: {
             responseModalities: ['Text', 'Image'],
             temperature: 1.0, // Required for Gemini 3 Pro Image generation
+            // v0.59.3: Enable 2K resolution output (2048x2048) instead of default 1K (1024x1024)
+            imageConfig: {
+              aspectRatio: platformConfig.aspectRatio, // Dynamic ratio: '1:1', '4:5', '16:9', etc.
+              imageSize: '2K' // Options: '1K', '2K', '4K' - 2K is 4x more pixels than 1K
+            }
           } as unknown as import('@google/generative-ai').GenerationConfig
         })
 
