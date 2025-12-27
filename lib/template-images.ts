@@ -414,7 +414,7 @@ export const restaurantTemplates: TemplateImage[] = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Hawker & Street Food (17 images)
+// Hawker & Street Food (16 images)
 // ═══════════════════════════════════════════════════════════════════════════
 export const hawkerTemplates: TemplateImage[] = [
   {
@@ -508,15 +508,6 @@ export const hawkerTemplates: TemplateImage[] = [
     originalUrl: '/templates/hawker/IMG_6676.PNG',
   },
   {
-    id: 'hawker-6677',
-    name: 'Chai Tow Kway (White)',
-    description: 'Fried carrot cake with egg and spring onion',
-    category: 'hawker',
-    thumbUrl: '/templates/hawker/IMG_6677.PNG',
-    webUrl: '/templates/hawker/IMG_6677.PNG',
-    originalUrl: '/templates/hawker/IMG_6677.PNG',
-  },
-  {
     id: 'hawker-6678',
     name: 'Hokkien Mee',
     description: 'Stir-fried noodles with prawns and squid',
@@ -591,9 +582,9 @@ export const templateCounts = {
   'christmas': 4,
   'delivery': 8,
   'fine-dining': 8,
-  'hawker': 17,
+  'hawker': 16,
   'restaurant': 8,
-  total: 57,
+  total: 56,
 }
 
 /**
