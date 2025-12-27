@@ -800,17 +800,6 @@ function EditorContent() {
                   <Plus className="h-5 w-5" />
                 </Button>
 
-                {/* Prompt Input */}
-                <div className="flex-1 min-w-[200px] max-w-[400px]">
-                  <input
-                    type="text"
-                    placeholder="Describe your image..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    className="w-full bg-transparent border-0 text-sm placeholder:text-muted-foreground focus:outline-none"
-                  />
-                </div>
-
                 {/* Template Reference Display */}
                 {template ? (
                   <div className="h-12 w-12 rounded-lg overflow-hidden border-2 border-orange-500 relative">

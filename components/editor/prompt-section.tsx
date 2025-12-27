@@ -80,47 +80,44 @@ export function PromptSection({
   )
 
   return (
-    <div className={cn('space-y-2', className)}>
+    <div className={cn('space-y-1.5', className)}>
       {/* Header with title and character counter */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-base">{icon}</span>
-          <span className="text-sm font-medium text-foreground">{title}</span>
+        <div className="flex items-center gap-1.5">
+          <span className="text-sm">{icon}</span>
+          <span className="text-xs font-medium text-foreground">{title}</span>
         </div>
         <span
           className={cn(
-            'text-xs tabular-nums transition-colors',
+            'text-[10px] tabular-nums',
             isOverLimit
               ? 'text-destructive font-medium'
               : isNearLimit
                 ? 'text-orange-500'
-                : 'text-muted-foreground'
+                : 'text-muted-foreground/60'
           )}
         >
           {charCount}/{maxChars}
         </span>
       </div>
 
-      {/* Textarea input */}
+      {/* Textarea input - more compact */}
       <Textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
         className={cn(
-          'min-h-[80px] resize-none text-sm',
+          'min-h-[56px] resize-none text-sm',
           isOverLimit && 'border-destructive focus-visible:ring-destructive'
         )}
-        maxLength={maxChars + 50} // Allow slight overage for UX
+        maxLength={maxChars + 50}
       />
 
-      {/* Quick suggestion chips */}
+      {/* Quick suggestion chips - compact */}
       {suggestions.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5">
-          <span className="text-xs text-muted-foreground/70 mr-0.5">
-            Quick add:
-          </span>
-          {suggestions.slice(0, 6).map((suggestion, idx) => {
+        <div className="flex flex-wrap gap-1">
+          {suggestions.slice(0, 4).map((suggestion, idx) => {
             const isAlreadyAdded = value
               .toLowerCase()
               .includes(suggestion.toLowerCase())
@@ -132,25 +129,18 @@ export function PromptSection({
                 onClick={() => handleSuggestionClick(suggestion)}
                 disabled={disabled || isAlreadyAdded}
                 className={cn(
-                  'text-xs px-2 py-0.5 rounded-full transition-all',
+                  'text-[11px] px-1.5 py-0.5 rounded transition-colors',
                   isAlreadyAdded
-                    ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400 cursor-default'
-                    : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground',
+                    ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400'
+                    : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground',
                   disabled && 'opacity-50 cursor-not-allowed'
                 )}
               >
-                {isAlreadyAdded ? `✓ ${suggestion}` : suggestion}
+                {suggestion}
               </button>
             )
           })}
         </div>
-      )}
-
-      {/* Help text */}
-      {helpText && (
-        <p className="text-xs text-muted-foreground/70 leading-relaxed">
-          {helpText}
-        </p>
       )}
     </div>
   )

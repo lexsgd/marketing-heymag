@@ -116,24 +116,17 @@ export function ProModePanel({
 
   return (
     <div className={cn('space-y-4', className)}>
-      {/* Mode Toggle */}
-      <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-        <div className="flex items-center gap-2">
+      {/* Mode Toggle - Compact */}
+      <div className="flex items-center justify-between py-1">
+        <div className="flex items-center gap-1.5">
           {proModeConfig.enabled ? (
-            <Sparkles className="h-4 w-4 text-orange-500" />
+            <Sparkles className="h-3.5 w-3.5 text-orange-500" />
           ) : (
-            <Wand2 className="h-4 w-4 text-muted-foreground" />
+            <Wand2 className="h-3.5 w-3.5 text-muted-foreground" />
           )}
-          <div>
-            <Label htmlFor="pro-mode-toggle" className="font-medium cursor-pointer">
-              {proModeConfig.enabled ? 'Pro Mode' : 'Simple Mode'}
-            </Label>
-            <p className="text-xs text-muted-foreground">
-              {proModeConfig.enabled
-                ? 'Structured sections for detailed control'
-                : 'Quick customization with single prompt'}
-            </p>
-          </div>
+          <Label htmlFor="pro-mode-toggle" className="text-sm cursor-pointer">
+            {proModeConfig.enabled ? 'Pro Mode' : 'Simple'}
+          </Label>
         </div>
         <Switch
           id="pro-mode-toggle"
@@ -144,21 +137,21 @@ export function ProModePanel({
 
       {/* Simple Mode Content */}
       {!proModeConfig.enabled && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Custom Prompt Textarea */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">
-                Describe your image (optional)
+              <Label className="text-xs text-muted-foreground">
+                Additional instructions (optional)
               </Label>
               <span
                 className={cn(
-                  'text-xs tabular-nums',
+                  'text-[10px] tabular-nums',
                   customPrompt.length > 500
                     ? 'text-destructive font-medium'
                     : customPrompt.length > 450
                       ? 'text-orange-500'
-                      : 'text-muted-foreground'
+                      : 'text-muted-foreground/60'
                 )}
               >
                 {customPrompt.length}/500
@@ -167,21 +160,18 @@ export function ProModePanel({
             <Textarea
               value={customPrompt}
               onChange={(e) => onCustomPromptChange(e.target.value)}
-              placeholder="Add any special requests... or leave blank for AI to decide"
-              className="min-h-[80px] resize-none text-sm"
+              placeholder="e.g. add steam, warm lighting..."
+              className="min-h-[60px] resize-none text-sm"
               maxLength={550}
             />
           </div>
 
-          {/* Quick Suggestions */}
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-muted-foreground/70 mr-0.5">
-              Quick add:
-            </span>
-            {simpleSuggestions.slice(0, 4).map((suggestion, idx) => {
+          {/* Quick Suggestions - more compact */}
+          <div className="flex flex-wrap gap-1">
+            {simpleSuggestions.slice(0, 3).map((suggestion, idx) => {
               const isAdded = customPrompt
                 .toLowerCase()
-                .includes(suggestion.toLowerCase().substring(0, 20))
+                .includes(suggestion.toLowerCase().substring(0, 15))
 
               return (
                 <button
@@ -190,66 +180,56 @@ export function ProModePanel({
                   onClick={() => handleSimpleSuggestionClick(suggestion)}
                   disabled={isAdded}
                   className={cn(
-                    'text-xs px-2 py-0.5 rounded-full transition-all text-left',
+                    'text-[11px] px-2 py-0.5 rounded transition-colors',
                     isAdded
-                      ? 'bg-orange-500/20 text-orange-600 dark:text-orange-400 cursor-default'
-                      : 'bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground'
+                      ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400'
+                      : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
                   )}
                 >
-                  {isAdded ? '✓' : ''}{' '}
-                  {suggestion.length > 30
-                    ? suggestion.substring(0, 30) + '...'
+                  {suggestion.length > 25
+                    ? suggestion.substring(0, 25) + '...'
                     : suggestion}
                 </button>
               )
             })}
           </div>
-
-          {/* Tip */}
-          <p className="text-xs text-muted-foreground/70">
-            Tip: Switch to Pro Mode for detailed control over props, camera
-            angles, and composition.
-          </p>
         </div>
       )}
 
       {/* Pro Mode Content */}
       {proModeConfig.enabled && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Props & Styling Section */}
           <PromptSection
             icon="🎨"
             title="Props & Styling"
-            placeholder="Add chopsticks, small soy sauce dish, scattered sesame seeds, steam rising..."
+            placeholder="chopsticks, sauce dish, steam..."
             value={proModeConfig.propsAndStyling || ''}
             onChange={(value) => updateProModeField('propsAndStyling', value)}
             maxChars={proModeCharLimits.propsAndStyling}
             suggestions={propsSuggestions}
-            helpText="Describe physical items to add or styling preferences. The AI will place these naturally."
           />
 
           {/* Photography Notes Section */}
           <PromptSection
             icon="📷"
-            title="Photography Notes"
-            placeholder="45-degree angle, shallow depth of field, soft shadows on the left..."
+            title="Photography"
+            placeholder="45° angle, shallow DOF..."
             value={proModeConfig.photographyNotes || ''}
             onChange={(value) => updateProModeField('photographyNotes', value)}
             maxChars={proModeCharLimits.photographyNotes}
             suggestions={photoSuggestions}
-            helpText="Adjust camera angle, lighting, and lens effects. Overrides smart defaults."
           />
 
           {/* Composition Notes Section */}
           <PromptSection
             icon="📐"
-            title="Composition Notes"
-            placeholder="Leave space on the right for text overlay, center the main dish..."
+            title="Composition"
+            placeholder="space for text, centered..."
             value={proModeConfig.compositionNotes || ''}
             onChange={(value) => updateProModeField('compositionNotes', value)}
             maxChars={proModeCharLimits.compositionNotes}
             suggestions={compositionSuggestions}
-            helpText="Control framing and layout for your marketing needs."
           />
         </div>
       )}
