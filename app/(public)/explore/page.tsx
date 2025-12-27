@@ -31,6 +31,7 @@ const categoryDisplayNames: Record<string, string> = {
   'restaurant': 'Restaurant',
   'fine-dining': 'Fine Dining',
   'cafe': 'Cafe & Coffee',
+  'hawker': 'Hawker & Street Food',
   'christmas': 'Christmas',
   'chinese-new-year': 'Chinese New Year',
 }
@@ -39,7 +40,7 @@ const categoryDisplayNames: Record<string, string> = {
 const templateImages: ExploreTemplate[] = []
 
 // Add regular categories
-const regularCategories = ['delivery', 'restaurant', 'fine-dining', 'cafe'] as const
+const regularCategories = ['delivery', 'restaurant', 'fine-dining', 'cafe', 'hawker'] as const
 regularCategories.forEach(catKey => {
   const templates = allTemplates[catKey] || []
   templates.forEach((t: TemplateImage, idx: number) => {
@@ -80,6 +81,7 @@ const categories = [
   { id: 'restaurant', name: 'Restaurant', match: 'Restaurant' },
   { id: 'fine-dining', name: 'Fine Dining', match: 'Fine Dining' },
   { id: 'cafe', name: 'Cafe & Coffee', match: 'Cafe & Coffee' },
+  { id: 'hawker', name: 'Hawker & Street Food', match: 'Hawker & Street Food' },
 ]
 
 const themes = [
