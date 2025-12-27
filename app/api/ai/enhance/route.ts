@@ -1120,6 +1120,33 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
           })
         }
 
+        // Add prop/logo image if provided in Pro Mode (CRITICAL FIX v0.54.1)
+        // The propImageUrl is a base64 data URL from client-side FileReader
+        // Must be sent to Gemini as inlineData for the AI to see and incorporate the logo
+        if (proModeConfig?.propImageUrl) {
+          const propImageUrl = proModeConfig.propImageUrl
+          // Parse data URL: "data:image/png;base64,ABC123..."
+          const dataUrlMatch = propImageUrl.match(/^data:([^;]+);base64,(.+)$/)
+          if (dataUrlMatch) {
+            const [, propMimeType, propBase64] = dataUrlMatch
+            contentParts.push({
+              inlineData: {
+                mimeType: propMimeType,
+                data: propBase64
+              }
+            })
+            logger.info('Prop/logo image added to Gemini request', {
+              propMimeType,
+              propDescription: proModeConfig.propImageDescription || 'no description',
+              propBase64Length: propBase64.length,
+            })
+          } else {
+            logger.warn('Invalid prop image data URL format', {
+              urlPrefix: propImageUrl.substring(0, 50),
+            })
+          }
+        }
+
         // Add the prompt as the last part
         contentParts.push({ text: generationPrompt })
 
