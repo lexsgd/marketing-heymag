@@ -275,7 +275,8 @@ function EditorContent() {
       setEnhancing(true)
 
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 60000)
+      // Increased timeout to 90s to support multi-image processing (prop/logo + food photo)
+      const timeoutId = setTimeout(() => controller.abort(), 90000)
 
       try {
         const enhanceResponse = await fetch('/api/ai/enhance', {

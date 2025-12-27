@@ -38,8 +38,9 @@ async function getSharp(): Promise<SharpInstance | null> {
   return null
 }
 
-// Extend timeout to 60 seconds (requires Vercel Pro, falls back to 10s on Hobby)
-export const maxDuration = 60
+// Extend timeout to 90 seconds for multi-image processing (prop/logo + food photo)
+// Requires Vercel Pro, falls back to 10s on Hobby
+export const maxDuration = 90
 
 // Simple GET handler to test if route is loaded
 export async function GET() {
@@ -156,7 +157,8 @@ const GEMINI_RETRY_CONFIG: RetryConfig = {
 
 // Per-request timeout for Gemini API calls
 // This prevents hanging on slow/overloaded model responses
-const GEMINI_REQUEST_TIMEOUT_MS = 18000 // 18 seconds per attempt
+const GEMINI_REQUEST_TIMEOUT_MS = 25000 // 25 seconds per attempt (increased for multi-image)
+const GEMINI_MULTI_IMAGE_TIMEOUT_MS = 35000 // 35 seconds when processing prop/logo images
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
@@ -1123,6 +1125,7 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         // Add prop/logo image if provided in Pro Mode (CRITICAL FIX v0.54.1)
         // The propImageUrl is a base64 data URL from client-side FileReader
         // Must be sent to Gemini as inlineData for the AI to see and incorporate the logo
+        let hasPropImage = false
         if (proModeConfig?.propImageUrl) {
           const propImageUrl = proModeConfig.propImageUrl
           // Parse data URL: "data:image/png;base64,ABC123..."
@@ -1135,6 +1138,7 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
                 data: propBase64
               }
             })
+            hasPropImage = true
             logger.info('Prop/logo image added to Gemini request', {
               propMimeType,
               propDescription: proModeConfig.propImageDescription || 'no description',
@@ -1150,13 +1154,21 @@ Respond: ANGLE: [detected] | SUGGESTIONS: [tip1] | [tip2] | [tip3]`
         // Add the prompt as the last part
         contentParts.push({ text: generationPrompt })
 
+        // Use longer timeout for multi-image requests (prop/logo adds complexity)
+        const geminiTimeout = hasPropImage ? GEMINI_MULTI_IMAGE_TIMEOUT_MS : GEMINI_REQUEST_TIMEOUT_MS
+        logger.info('Gemini request configuration', {
+          imageCount: contentParts.filter(p => p.inlineData).length,
+          hasPropImage,
+          timeoutMs: geminiTimeout,
+        })
+
         const result = await retryWithBackoff(
           async () => {
             // Add timeout to prevent hanging on slow model responses
             return await withTimeout(
               model.generateContent(contentParts),
-              GEMINI_REQUEST_TIMEOUT_MS,
-              `Gemini 3 Pro Image request exceeded ${GEMINI_REQUEST_TIMEOUT_MS / 1000}s`
+              geminiTimeout,
+              `Gemini 3 Pro Image request exceeded ${geminiTimeout / 1000}s`
             )
           },
           'Gemini 3 Pro Image',
