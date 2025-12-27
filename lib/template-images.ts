@@ -437,8 +437,8 @@ export const hawkerTemplates: TemplateImage[] = [
   },
   {
     id: 'hawker-6668',
-    name: 'Oyster Omelette',
-    description: 'Crispy egg omelette with fresh oysters',
+    name: 'Chai Tow Kway (White)',
+    description: 'Fried carrot cake with egg and spring onion',
     category: 'hawker',
     thumbUrl: '/templates/hawker/IMG_6668.PNG',
     webUrl: '/templates/hawker/IMG_6668.PNG',
