@@ -490,10 +490,6 @@ export function SimplifiedStylePicker({
                         </p>
                       )}
                     </div>
-
-                    <span className="text-xs text-muted-foreground">
-                      {data.styles.length}
-                    </span>
                   </button>
 
                   {/* Category Styles */}
