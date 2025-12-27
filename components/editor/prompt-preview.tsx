@@ -98,6 +98,14 @@ export function PromptPreview({
         })
       }
 
+      if (proModeConfig.propImageUrl) {
+        lines.push({
+          label: 'Prop Image',
+          value: proModeConfig.propImageDescription?.trim() || 'Uploaded (no description)',
+          type: 'custom',
+        })
+      }
+
       if (proModeConfig.photographyNotes?.trim()) {
         lines.push({
           label: 'Photo',
@@ -135,6 +143,10 @@ export function PromptPreview({
     if (proModeConfig.enabled) {
       if (proModeConfig.propsAndStyling) {
         totalChars += proModeConfig.propsAndStyling.length
+      }
+      if (proModeConfig.propImageUrl) {
+        // Prop image prompt adds ~300 chars of instructions
+        totalChars += 300 + (proModeConfig.propImageDescription?.length || 0)
       }
       if (proModeConfig.photographyNotes) {
         totalChars += proModeConfig.photographyNotes.length

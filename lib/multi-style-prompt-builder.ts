@@ -562,6 +562,22 @@ Guidelines for props:
 • Props should enhance, not distract from the dish`)
   }
 
+  // Prop Image section - for user-uploaded product/logo images
+  if (config.propImageUrl) {
+    const propDescription = config.propImageDescription?.trim() || 'product/prop'
+    sections.push(`REFERENCE PROP IMAGE TO INCLUDE:
+The user has provided a reference image of "${propDescription}" that MUST be incorporated into the final scene.
+
+CRITICAL INSTRUCTIONS FOR PROP INTEGRATION:
+• Add this ${propDescription} naturally into the food photography scene
+• Position it as a supporting element - the food remains the hero
+• Match the prop's lighting and shadows to the scene's overall lighting
+• Scale appropriately - the prop should look naturally sized relative to the food
+• Maintain the prop's brand identity and visual accuracy
+• Common placements: beside the plate, slightly behind, or as a background element
+• Ensure the prop enhances the commercial appeal of the image`)
+  }
+
   // Photography adjustments section
   if (config.photographyNotes?.trim()) {
     sections.push(`PHOTOGRAPHY ADJUSTMENTS:

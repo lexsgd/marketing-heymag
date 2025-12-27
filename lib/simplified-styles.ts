@@ -390,6 +390,17 @@ export interface ProModeConfig {
    * @maxLength 200
    */
   compositionNotes?: string
+
+  /** URL of uploaded prop image to incorporate into the scene
+   * @example Logo, Coca-Cola can, branded merchandise
+   */
+  propImageUrl?: string
+
+  /** Description of what the prop image is
+   * @example "Coca-Cola can", "Company logo", "Red Bull can"
+   * @maxLength 100
+   */
+  propImageDescription?: string
 }
 
 /** Default Pro Mode configuration (disabled) */
@@ -398,6 +409,8 @@ export const defaultProModeConfig: ProModeConfig = {
   propsAndStyling: undefined,
   photographyNotes: undefined,
   compositionNotes: undefined,
+  propImageUrl: undefined,
+  propImageDescription: undefined,
 }
 
 /** Character limits for Pro Mode sections */
@@ -405,6 +418,7 @@ export const proModeCharLimits = {
   propsAndStyling: 500,
   photographyNotes: 300,
   compositionNotes: 200,
+  propImageDescription: 100,
 } as const
 
 // ═══════════════════════════════════════════════════════════════════════════════

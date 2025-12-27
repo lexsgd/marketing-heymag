@@ -1,11 +1,14 @@
 'use client'
 
-import { useCallback, useState } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { useCallback, useState, useRef } from 'react'
+import { ChevronDown, ChevronRight, Upload, X, Package } from 'lucide-react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import { PromptSection } from './prompt-section'
 import { PromptPreview } from './prompt-preview'
 import {
@@ -66,10 +69,11 @@ export function ProModePanel({
 }: ProModePanelProps) {
   // Section expanded state
   const [isExpanded, setIsExpanded] = useState(true)
+  const propImageInputRef = useRef<HTMLInputElement>(null)
 
   // Check if there's any custom content added
   const hasCustomContent = proModeConfig.enabled
-    ? !!(proModeConfig.propsAndStyling || proModeConfig.photographyNotes || proModeConfig.compositionNotes)
+    ? !!(proModeConfig.propsAndStyling || proModeConfig.photographyNotes || proModeConfig.compositionNotes || proModeConfig.propImageUrl)
     : !!customPrompt.trim()
 
   // Toggle Pro Mode on/off
@@ -93,6 +97,41 @@ export function ProModePanel({
     },
     [proModeConfig, onProModeChange]
   )
+
+  // Handle prop image upload
+  const handlePropImageUpload = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0]
+      if (!file) return
+
+      // Validate file
+      if (!file.type.startsWith('image/')) return
+      if (file.size > 5 * 1024 * 1024) return // Max 5MB for props
+
+      const reader = new FileReader()
+      reader.onload = () => {
+        const dataUrl = reader.result as string
+        onProModeChange({
+          ...proModeConfig,
+          propImageUrl: dataUrl,
+        })
+      }
+      reader.readAsDataURL(file)
+
+      // Reset input
+      e.target.value = ''
+    },
+    [proModeConfig, onProModeChange]
+  )
+
+  // Clear prop image
+  const clearPropImage = useCallback(() => {
+    onProModeChange({
+      ...proModeConfig,
+      propImageUrl: undefined,
+      propImageDescription: undefined,
+    })
+  }, [proModeConfig, onProModeChange])
 
   // Handle Simple Mode suggestion click
   const handleSimpleSuggestionClick = useCallback(
@@ -263,6 +302,82 @@ export function ProModePanel({
                     maxChars={proModeCharLimits.propsAndStyling}
                     suggestions={propsSuggestions}
                   />
+
+                  {/* Prop Image Upload Section */}
+                  <div className="space-y-2 p-3 rounded-lg bg-muted/30 border border-border/50">
+                    <div className="flex items-center gap-2">
+                      <Package className="h-3.5 w-3.5 text-muted-foreground" />
+                      <Label className="text-xs font-medium">Add Product/Logo</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="text-[10px] text-muted-foreground cursor-help">ⓘ</span>
+                        </TooltipTrigger>
+                        <TooltipContent side="top" className="max-w-[200px] text-xs">
+                          Upload a logo, product (like a Coke can), or merchandise to include in your photo
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+
+                    {/* Hidden file input */}
+                    <input
+                      ref={propImageInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handlePropImageUpload}
+                    />
+
+                    {proModeConfig.propImageUrl ? (
+                      /* Uploaded prop preview */
+                      <div className="space-y-2">
+                        <div className="relative aspect-square w-20 rounded-lg overflow-hidden border border-border bg-background">
+                          <Image
+                            src={proModeConfig.propImageUrl}
+                            alt="Prop image"
+                            fill
+                            className="object-contain"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute top-1 right-1 h-5 w-5 bg-background/80 hover:bg-background"
+                            onClick={clearPropImage}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[10px] text-muted-foreground">
+                            What is this? (helps AI place it naturally)
+                          </Label>
+                          <Input
+                            placeholder="e.g., Coca-Cola can, company logo..."
+                            value={proModeConfig.propImageDescription || ''}
+                            onChange={(e) => updateProModeField('propImageDescription', e.target.value)}
+                            maxLength={proModeCharLimits.propImageDescription}
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      /* Upload zone */
+                      <button
+                        type="button"
+                        onClick={() => propImageInputRef.current?.click()}
+                        className="w-full flex items-center gap-3 p-3 rounded-lg border-2 border-dashed border-border hover:border-muted-foreground/50 hover:bg-muted/50 transition-colors"
+                      >
+                        <div className="flex-shrink-0 h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                          <Upload className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="text-left">
+                          <p className="text-xs font-medium">Upload prop image</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            Logo, product, merchandise (PNG/JPG, max 5MB)
+                          </p>
+                        </div>
+                      </button>
+                    )}
+                  </div>
 
                   {/* Photography Notes Section */}
                   <PromptSection
