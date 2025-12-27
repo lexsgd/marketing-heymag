@@ -462,11 +462,11 @@ export function SimplifiedStylePicker({
                           {category.question}
                         </span>
                         {category.required ? (
-                          <span className="text-[10px] text-orange-500 font-medium">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-500 font-medium whitespace-nowrap">
                             Required
                           </span>
                         ) : (
-                          <span className="text-[10px] text-muted-foreground font-medium">
+                          <span className="text-[10px] text-muted-foreground font-medium whitespace-nowrap">
                             {category.id === 'seasonal' ? 'Optional' : 'Smart default'}
                           </span>
                         )}
