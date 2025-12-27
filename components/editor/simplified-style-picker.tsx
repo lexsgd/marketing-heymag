@@ -820,7 +820,7 @@ export function SimplifiedStylePicker({
 
           {/* Pro Mode Panel - Prompt Customization */}
           {onProModeConfigChange && onCustomPromptChange && (
-            <div className="border-t border-border p-4">
+            <div className="border-b border-border last:border-0">
               <ProModePanel
                 selection={selection}
                 backgroundConfig={backgroundConfig}

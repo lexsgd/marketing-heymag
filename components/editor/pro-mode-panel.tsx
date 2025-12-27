@@ -130,7 +130,7 @@ export function ProModePanel({
 
   return (
     <TooltipProvider>
-      <div className={cn('border-t border-border', className)}>
+      <div className={cn(className)}>
         {/* Collapsible Header */}
         <button
           onClick={() => setIsExpanded(!isExpanded)}
@@ -186,7 +186,7 @@ export function ProModePanel({
 
         {/* Expandable Content */}
         {isExpanded && (
-          <div className="px-4 pb-4 space-y-4">
+          <div className="px-4 pb-3 space-y-3">
             {/* Content area with min-height to prevent layout shift */}
             <div className="min-h-[280px] transition-all duration-200 ease-in-out">
               {/* Simple Mode Content */}
