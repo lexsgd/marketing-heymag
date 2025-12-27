@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useState } from 'react'
-import { Sparkles, Wand2, ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -144,11 +144,6 @@ export function ProModePanel({
 
           <div className="flex-1 text-left">
             <div className="flex items-center gap-2">
-              {proModeConfig.enabled ? (
-                <Sparkles className="h-3.5 w-3.5 text-orange-500" />
-              ) : (
-                <Wand2 className="h-3.5 w-3.5 text-muted-foreground" />
-              )}
               <span className="font-medium text-sm">
                 {proModeConfig.enabled ? 'Pro Mode' : 'Simple'}
               </span>
