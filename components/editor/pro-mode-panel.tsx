@@ -117,7 +117,7 @@ export function ProModePanel({
   return (
     <div className={cn('space-y-4', className)}>
       {/* Mode Toggle - Compact */}
-      <div className="flex items-center justify-between py-1">
+      <div className="flex items-center justify-between py-1 border-b border-border/50 pb-3">
         <div className="flex items-center gap-1.5">
           {proModeConfig.enabled ? (
             <Sparkles className="h-3.5 w-3.5 text-orange-500" />
@@ -135,104 +135,107 @@ export function ProModePanel({
         />
       </div>
 
-      {/* Simple Mode Content */}
-      {!proModeConfig.enabled && (
-        <div className="space-y-2">
-          {/* Custom Prompt Textarea */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label className="text-xs text-muted-foreground">
-                Additional instructions (optional)
-              </Label>
-              <span
-                className={cn(
-                  'text-[10px] tabular-nums',
-                  customPrompt.length > 500
-                    ? 'text-destructive font-medium'
-                    : customPrompt.length > 450
-                      ? 'text-orange-500'
-                      : 'text-muted-foreground/60'
-                )}
-              >
-                {customPrompt.length}/500
-              </span>
-            </div>
-            <Textarea
-              value={customPrompt}
-              onChange={(e) => onCustomPromptChange(e.target.value)}
-              placeholder="e.g. add steam, warm lighting..."
-              className="min-h-[60px] resize-none text-sm"
-              maxLength={550}
-            />
-          </div>
-
-          {/* Quick Suggestions - more compact */}
-          <div className="flex flex-wrap gap-1">
-            {simpleSuggestions.slice(0, 3).map((suggestion, idx) => {
-              const isAdded = customPrompt
-                .toLowerCase()
-                .includes(suggestion.toLowerCase().substring(0, 15))
-
-              return (
-                <button
-                  key={idx}
-                  type="button"
-                  onClick={() => handleSimpleSuggestionClick(suggestion)}
-                  disabled={isAdded}
+      {/* Content area with min-height to prevent layout shift */}
+      <div className="min-h-[320px] transition-all duration-200 ease-in-out">
+        {/* Simple Mode Content */}
+        {!proModeConfig.enabled && (
+          <div className="space-y-2">
+            {/* Custom Prompt Textarea */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs text-muted-foreground">
+                  Additional instructions (optional)
+                </Label>
+                <span
                   className={cn(
-                    'text-[11px] px-2 py-0.5 rounded transition-colors',
-                    isAdded
-                      ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400'
-                      : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
+                    'text-[10px] tabular-nums',
+                    customPrompt.length > 500
+                      ? 'text-destructive font-medium'
+                      : customPrompt.length > 450
+                        ? 'text-orange-500'
+                        : 'text-muted-foreground/60'
                   )}
                 >
-                  {suggestion.length > 25
-                    ? suggestion.substring(0, 25) + '...'
-                    : suggestion}
-                </button>
-              )
-            })}
+                  {customPrompt.length}/500
+                </span>
+              </div>
+              <Textarea
+                value={customPrompt}
+                onChange={(e) => onCustomPromptChange(e.target.value)}
+                placeholder="e.g. add steam, warm lighting..."
+                className="min-h-[60px] resize-none text-sm"
+                maxLength={550}
+              />
+            </div>
+
+            {/* Quick Suggestions - more compact */}
+            <div className="flex flex-wrap gap-1">
+              {simpleSuggestions.slice(0, 3).map((suggestion, idx) => {
+                const isAdded = customPrompt
+                  .toLowerCase()
+                  .includes(suggestion.toLowerCase().substring(0, 15))
+
+                return (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => handleSimpleSuggestionClick(suggestion)}
+                    disabled={isAdded}
+                    className={cn(
+                      'text-[11px] px-2 py-0.5 rounded transition-colors',
+                      isAdded
+                        ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400'
+                        : 'bg-muted/60 hover:bg-muted text-muted-foreground hover:text-foreground'
+                    )}
+                  >
+                    {suggestion.length > 25
+                      ? suggestion.substring(0, 25) + '...'
+                      : suggestion}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Pro Mode Content */}
-      {proModeConfig.enabled && (
-        <div className="space-y-3">
-          {/* Props & Styling Section */}
-          <PromptSection
-            icon="🎨"
-            title="Props & Styling"
-            placeholder="chopsticks, sauce dish, steam..."
-            value={proModeConfig.propsAndStyling || ''}
-            onChange={(value) => updateProModeField('propsAndStyling', value)}
-            maxChars={proModeCharLimits.propsAndStyling}
-            suggestions={propsSuggestions}
-          />
+        {/* Pro Mode Content */}
+        {proModeConfig.enabled && (
+          <div className="space-y-3">
+            {/* Props & Styling Section */}
+            <PromptSection
+              icon="🎨"
+              title="Props & Styling"
+              placeholder="chopsticks, sauce dish, steam..."
+              value={proModeConfig.propsAndStyling || ''}
+              onChange={(value) => updateProModeField('propsAndStyling', value)}
+              maxChars={proModeCharLimits.propsAndStyling}
+              suggestions={propsSuggestions}
+            />
 
-          {/* Photography Notes Section */}
-          <PromptSection
-            icon="📷"
-            title="Photography"
-            placeholder="45° angle, shallow DOF..."
-            value={proModeConfig.photographyNotes || ''}
-            onChange={(value) => updateProModeField('photographyNotes', value)}
-            maxChars={proModeCharLimits.photographyNotes}
-            suggestions={photoSuggestions}
-          />
+            {/* Photography Notes Section */}
+            <PromptSection
+              icon="📷"
+              title="Photography"
+              placeholder="45° angle, shallow DOF..."
+              value={proModeConfig.photographyNotes || ''}
+              onChange={(value) => updateProModeField('photographyNotes', value)}
+              maxChars={proModeCharLimits.photographyNotes}
+              suggestions={photoSuggestions}
+            />
 
-          {/* Composition Notes Section */}
-          <PromptSection
-            icon="📐"
-            title="Composition"
-            placeholder="space for text, centered..."
-            value={proModeConfig.compositionNotes || ''}
-            onChange={(value) => updateProModeField('compositionNotes', value)}
-            maxChars={proModeCharLimits.compositionNotes}
-            suggestions={compositionSuggestions}
-          />
-        </div>
-      )}
+            {/* Composition Notes Section */}
+            <PromptSection
+              icon="📐"
+              title="Composition"
+              placeholder="space for text, centered..."
+              value={proModeConfig.compositionNotes || ''}
+              onChange={(value) => updateProModeField('compositionNotes', value)}
+              maxChars={proModeCharLimits.compositionNotes}
+              suggestions={compositionSuggestions}
+            />
+          </div>
+        )}
+      </div>
 
       {/* Preview (always visible) */}
       <PromptPreview
