@@ -414,7 +414,7 @@ export const restaurantTemplates: TemplateImage[] = [
 ]
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Hawker & Street Food (20 images)
+// Hawker & Street Food (18 images)
 // ═══════════════════════════════════════════════════════════════════════════
 export const hawkerTemplates: TemplateImage[] = [
   {
@@ -425,15 +425,6 @@ export const hawkerTemplates: TemplateImage[] = [
     thumbUrl: '/templates/hawker/IMG_6665.PNG',
     webUrl: '/templates/hawker/IMG_6665.PNG',
     originalUrl: '/templates/hawker/IMG_6665.PNG',
-  },
-  {
-    id: 'hawker-6666',
-    name: 'Chicken Rice',
-    description: 'Hainanese-style poached chicken rice',
-    category: 'hawker',
-    thumbUrl: '/templates/hawker/IMG_6666.PNG',
-    webUrl: '/templates/hawker/IMG_6666.PNG',
-    originalUrl: '/templates/hawker/IMG_6666.PNG',
   },
   {
     id: 'hawker-6667',
@@ -530,9 +521,9 @@ export const hawkerTemplates: TemplateImage[] = [
     name: 'Chilli Crab',
     description: 'Sweet and spicy crab in tomato sauce',
     category: 'hawker',
-    thumbUrl: '/templates/hawker/IMG_6677.JPG',
-    webUrl: '/templates/hawker/IMG_6677.JPG',
-    originalUrl: '/templates/hawker/IMG_6677.JPG',
+    thumbUrl: '/templates/hawker/IMG_6677.PNG',
+    webUrl: '/templates/hawker/IMG_6677.PNG',
+    originalUrl: '/templates/hawker/IMG_6677.PNG',
   },
   {
     id: 'hawker-6678',
@@ -551,15 +542,6 @@ export const hawkerTemplates: TemplateImage[] = [
     thumbUrl: '/templates/hawker/IMG_6679.PNG',
     webUrl: '/templates/hawker/IMG_6679.PNG',
     originalUrl: '/templates/hawker/IMG_6679.PNG',
-  },
-  {
-    id: 'hawker-6680',
-    name: 'Mee Goreng',
-    description: 'Spicy fried yellow noodles',
-    category: 'hawker',
-    thumbUrl: '/templates/hawker/IMG_6680.PNG',
-    webUrl: '/templates/hawker/IMG_6680.PNG',
-    originalUrl: '/templates/hawker/IMG_6680.PNG',
   },
   {
     id: 'hawker-6681',
@@ -618,9 +600,9 @@ export const templateCounts = {
   'christmas': 4,
   'delivery': 8,
   'fine-dining': 8,
-  'hawker': 20,
+  'hawker': 18,
   'restaurant': 8,
-  total: 60,
+  total: 58,
 }
 
 /**
