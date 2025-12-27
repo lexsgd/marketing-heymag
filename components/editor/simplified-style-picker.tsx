@@ -461,13 +461,24 @@ export function SimplifiedStylePicker({
                         <span className="font-medium text-sm">
                           {category.question}
                         </span>
-                        {category.required && (
+                        {category.required ? (
                           <span className="text-[10px] text-orange-500 font-medium">
                             Required
                           </span>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground font-medium">
+                            {category.id === 'seasonal' ? 'Optional' : 'Smart default'}
+                          </span>
                         )}
                         {hasSelection && !isNoneSelected && (
-                          <div className="w-2 h-2 rounded-full bg-orange-500" />
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="w-2 h-2 rounded-full bg-orange-500 cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="text-xs">
+                              Customized
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                       </div>
                       {!isExpanded && hasSelection && (
@@ -538,7 +549,14 @@ export function SimplifiedStylePicker({
                         Optional
                       </span>
                       {(backgroundConfig.mode !== 'auto' || backgroundConfig.uploadedUrl || backgroundConfig.description) && (
-                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <div className="w-2 h-2 rounded-full bg-orange-500 cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="text-xs">
+                            Customized
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </div>
                     {!backgroundExpanded && (
