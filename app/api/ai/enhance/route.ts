@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import Anthropic from '@anthropic-ai/sdk'
 import { stylePrompts as sharedStylePrompts, defaultPrompt, getStylePrompt, getPlatformConfig, type PlatformImageConfig } from '@/lib/style-prompts'
 import { getMultiStylePrompt, parseStyleIds, buildSimplifiedPrompt } from '@/lib/multi-style-prompt-builder'
-import type { SimpleSelection, BackgroundConfig } from '@/lib/simplified-styles'
+import type { SimpleSelection, BackgroundConfig, ProModeConfig } from '@/lib/simplified-styles'
 import { checkAndExecuteAutoTopUp } from '@/lib/auto-topup'
 import { getAngleAwareVenuePrompt, hasAngleAwareStyling, getAllAnglePrompts } from '@/lib/ai/angle-aware-styles'
 import {
@@ -371,6 +371,8 @@ export async function POST(request: NextRequest) {
     const hasCustomBackground = body.hasCustomBackground as boolean | undefined
     // Background configuration for describe/upload modes
     const backgroundConfig = body.backgroundConfig as BackgroundConfig | undefined
+    // Pro Mode configuration for structured prompts (Phase 2 Pro Mode system)
+    const proModeConfig = body.proModeConfig as ProModeConfig | undefined
     // Edit mode - for making modifications to already-enhanced images
     const editMode = body.editMode as boolean | undefined
     // Preserve mode - only add elements, keep everything else identical (stricter than editMode)
@@ -552,7 +554,9 @@ Generate an enhanced version of the image with the requested modifications.`
         }
       } else if (hasSimpleSelection && simpleSelection) {
         // NEW: Use simplified prompt builder for new 3-category system
-        simplifiedResult = buildSimplifiedPrompt(simpleSelection, undefined)
+        // Pass Pro Mode config for structured prompts, and background description if in describe mode
+        const backgroundDescription = backgroundConfig?.mode === 'describe' ? backgroundConfig.description : undefined
+        simplifiedResult = buildSimplifiedPrompt(simpleSelection, customPrompt, proModeConfig, backgroundDescription)
         stylePrompt = simplifiedResult.prompt
 
         // Enhanced logging for style debugging (Issue #9 investigation)

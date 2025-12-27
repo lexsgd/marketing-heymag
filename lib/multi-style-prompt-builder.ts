@@ -22,7 +22,7 @@ import { stylePrompts, defaultPrompt, getPlatformConfig } from './style-prompts'
 import { styleCategories, type SelectedStyles } from './styles-data'
 
 // New simplified system imports
-import type { SimpleSelection } from './simplified-styles'
+import type { SimpleSelection, ProModeConfig } from './simplified-styles'
 import { getFormatConfig, isSelectionValid } from './simplified-styles'
 import { buildSmartPrompt } from './smart-defaults'
 import { validateSelection, getSelectionStatus } from './conflict-rules'
@@ -530,7 +530,64 @@ export interface SimplifiedPromptResult {
     selection: SimpleSelection
     hasWarnings: boolean
     selectionCount: number
+    proModeEnabled?: boolean
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// PRO MODE SECTION BUILDER
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Build Pro Mode section with structured instructions
+ * Pro Mode is ADDITIVE - these instructions are added ON TOP of smart defaults
+ *
+ * @param config - ProModeConfig with structured user inputs
+ * @returns Formatted prompt section string
+ */
+function buildProModeSection(config: ProModeConfig): string {
+  if (!config.enabled) return ''
+
+  const sections: string[] = []
+
+  // Props & Styling section
+  if (config.propsAndStyling?.trim()) {
+    sections.push(`PROPS & STYLING:
+${config.propsAndStyling.trim()}
+
+Guidelines for props:
+• Place props naturally around the food, not overlapping it
+• Ensure props match the scene's existing lighting and cast appropriate shadows
+• Don't obscure the main food item
+• Props should enhance, not distract from the dish`)
+  }
+
+  // Photography adjustments section
+  if (config.photographyNotes?.trim()) {
+    sections.push(`PHOTOGRAPHY ADJUSTMENTS:
+${config.photographyNotes.trim()}
+
+Apply these specific camera/lighting adjustments:
+• These override the default technical settings where specified
+• Maintain consistency with the overall mood and style`)
+  }
+
+  // Composition notes section
+  if (config.compositionNotes?.trim()) {
+    sections.push(`COMPOSITION NOTES:
+${config.compositionNotes.trim()}`)
+  }
+
+  // If no sections have content, return empty
+  if (sections.length === 0) return ''
+
+  return `
+
+═══════════════════════════════════════════════════════════════════════════════
+PRO MODE CUSTOMIZATIONS [Apply These Specific Instructions]
+═══════════════════════════════════════════════════════════════════════════════
+
+${sections.join('\n\n───────────────────────────────────────────────────────────────────────────────\n\n')}`
 }
 
 /**
@@ -542,13 +599,22 @@ export interface SimplifiedPromptResult {
  * - Condensed verification checklist
  * - Reduced token count by ~40%
  *
+ * PRO MODE SUPPORT (v0.54.0):
+ * - Added optional proModeConfig for structured power-user inputs
+ * - Added optional backgroundDescription for describe mode
+ * - Pro Mode is ADDITIVE - smart defaults always apply first
+ *
  * @param selection - SimpleSelection object with businessType, format, mood, seasonal
- * @param customInstructions - Optional custom instructions to append
+ * @param customInstructions - Optional custom instructions to append (Simple Mode)
+ * @param proModeConfig - Optional Pro Mode configuration with structured inputs
+ * @param backgroundDescription - Optional background description from BackgroundConfig
  * @returns SimplifiedPromptResult with prompt and metadata
  */
 export function buildSimplifiedPrompt(
   selection: SimpleSelection,
-  customInstructions?: string
+  customInstructions?: string,
+  proModeConfig?: ProModeConfig,
+  backgroundDescription?: string
 ): SimplifiedPromptResult {
   // Validate selection
   const status = getSelectionStatus(selection)
@@ -560,16 +626,33 @@ export function buildSimplifiedPrompt(
 
   // Build the smart prompt using professional photography elements
   // NOTE: buildSmartPrompt now includes format/composition specs
+  // This is ALWAYS applied - Pro Mode adds ON TOP of this
   let prompt = buildSmartPrompt(selection)
 
-  // Add custom instructions if provided
-  if (customInstructions) {
+  // Add background description if provided (from BackgroundConfig.description)
+  if (backgroundDescription?.trim()) {
+    prompt += `
+
+───────────────────────────────────────────────────────────────────────────────
+BACKGROUND STYLING
+───────────────────────────────────────────────────────────────────────────────
+${backgroundDescription.trim()}
+
+Apply this background style while keeping the food as the focal point.`
+  }
+
+  // Determine which mode to use for additional instructions
+  if (proModeConfig?.enabled) {
+    // PRO MODE: Use structured sections
+    prompt += buildProModeSection(proModeConfig)
+  } else if (customInstructions?.trim()) {
+    // SIMPLE MODE: Use single text blob (backward compatible)
     prompt += `
 
 ───────────────────────────────────────────────────────────────────────────────
 CUSTOM INSTRUCTIONS
 ───────────────────────────────────────────────────────────────────────────────
-${customInstructions}`
+${customInstructions.trim()}`
   }
 
   // Add condensed verification checklist (single source, not duplicated)
@@ -606,6 +689,7 @@ Provide 3 tips: SUGGESTIONS: [tip1] | [tip2] | [tip3]`
       selection,
       hasWarnings: status.hasWarnings,
       selectionCount,
+      proModeEnabled: proModeConfig?.enabled ?? false,
     },
   }
 }

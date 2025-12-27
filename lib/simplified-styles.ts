@@ -358,6 +358,56 @@ export const emptySimpleSelection: SimpleSelection = {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
+// PRO MODE CONFIGURATION
+// ═══════════════════════════════════════════════════════════════════════════════
+
+/**
+ * Pro Mode Configuration
+ * Structured customization inputs for power users who want more control
+ * over the AI enhancement process while still benefiting from smart defaults.
+ *
+ * Pro Mode is ADDITIVE - it adds structured instructions ON TOP of the
+ * smart defaults, it doesn't replace them.
+ */
+export interface ProModeConfig {
+  /** Whether Pro Mode is enabled (false = Simple Mode with single text blob) */
+  enabled: boolean
+
+  /** Props & Styling instructions
+   * @example "Add chopsticks on the left, small soy sauce dish, scattered sesame seeds"
+   * @maxLength 500
+   */
+  propsAndStyling?: string
+
+  /** Photography adjustments to override or enhance defaults
+   * @example "45-degree angle, shallow depth of field, soft side lighting"
+   * @maxLength 300
+   */
+  photographyNotes?: string
+
+  /** Additional composition notes
+   * @example "Leave space on the right for text overlay"
+   * @maxLength 200
+   */
+  compositionNotes?: string
+}
+
+/** Default Pro Mode configuration (disabled) */
+export const defaultProModeConfig: ProModeConfig = {
+  enabled: false,
+  propsAndStyling: undefined,
+  photographyNotes: undefined,
+  compositionNotes: undefined,
+}
+
+/** Character limits for Pro Mode sections */
+export const proModeCharLimits = {
+  propsAndStyling: 500,
+  photographyNotes: 300,
+  compositionNotes: 200,
+} as const
+
+// ═══════════════════════════════════════════════════════════════════════════════
 // HELPER FUNCTIONS
 // ═══════════════════════════════════════════════════════════════════════════════
 

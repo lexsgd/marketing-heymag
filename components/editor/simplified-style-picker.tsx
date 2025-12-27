@@ -27,12 +27,15 @@ import {
   countSelections,
   getMoodRecommendationFromBackground,
   defaultBackgroundConfig,
+  defaultProModeConfig,
   type SimpleSelection,
   type SimpleStyle,
   type FormatStyle,
   type BackgroundConfig,
   type BackgroundMode,
+  type ProModeConfig,
 } from '@/lib/simplified-styles'
+import { ProModePanel } from './pro-mode-panel'
 import { validateSelection, getSmartSuggestions, getSelectionStatus } from '@/lib/conflict-rules'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -47,6 +50,14 @@ interface SimplifiedStylePickerProps {
   backgroundConfig?: BackgroundConfig
   /** Callback when background config changes */
   onBackgroundConfigChange?: (config: BackgroundConfig) => void
+  /** Pro Mode configuration */
+  proModeConfig?: ProModeConfig
+  /** Callback when Pro Mode config changes */
+  onProModeConfigChange?: (config: ProModeConfig) => void
+  /** Simple Mode custom prompt (when Pro Mode disabled) */
+  customPrompt?: string
+  /** Callback when custom prompt changes */
+  onCustomPromptChange?: (prompt: string) => void
 }
 
 // Category data mapping
@@ -67,6 +78,10 @@ export function SimplifiedStylePicker({
   onClose,
   backgroundConfig = defaultBackgroundConfig,
   onBackgroundConfigChange,
+  proModeConfig = defaultProModeConfig,
+  onProModeConfigChange,
+  customPrompt = '',
+  onCustomPromptChange,
 }: SimplifiedStylePickerProps) {
   // First two categories expanded by default
   const [expandedCategories, setExpandedCategories] = useState<string[]>([
@@ -788,6 +803,20 @@ export function SimplifiedStylePicker({
               </div>
             )}
           </div>
+
+          {/* Pro Mode Panel - Prompt Customization */}
+          {onProModeConfigChange && onCustomPromptChange && (
+            <div className="border-t border-border p-4">
+              <ProModePanel
+                selection={selection}
+                backgroundConfig={backgroundConfig}
+                proModeConfig={proModeConfig}
+                onProModeChange={onProModeConfigChange}
+                customPrompt={customPrompt}
+                onCustomPromptChange={onCustomPromptChange}
+              />
+            </div>
+          )}
         </div>
 
         {/* Warnings section */}

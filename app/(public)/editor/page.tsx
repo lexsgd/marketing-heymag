@@ -31,8 +31,10 @@ import { PromptBottomSheet } from '@/components/editor/prompt-bottom-sheet'
 import {
   type SimpleSelection,
   type BackgroundConfig,
+  type ProModeConfig,
   emptySimpleSelection,
   defaultBackgroundConfig,
+  defaultProModeConfig,
   getFormatConfig,
 } from '@/lib/simplified-styles'
 import { replaceBackgroundImage } from '@/lib/background-removal'
@@ -62,6 +64,8 @@ function EditorContent() {
   const [prompt, setPrompt] = useState('')
   // Background configuration for branded backgrounds
   const [backgroundConfig, setBackgroundConfig] = useState<BackgroundConfig>(defaultBackgroundConfig)
+  // Pro Mode configuration for structured prompt input
+  const [proModeConfig, setProModeConfig] = useState<ProModeConfig>(defaultProModeConfig)
   // Background processing state
   const [applyingBackground, setApplyingBackground] = useState(false)
   // Background replacement error - for showing retry option
@@ -288,8 +292,10 @@ function EditorContent() {
             backgroundConfig: backgroundConfig.mode !== 'auto' ? backgroundConfig : undefined,
             // Tell AI to use simple background when custom background will be uploaded
             hasCustomBackground: backgroundConfig.mode === 'upload' && !!backgroundConfig.uploadedUrl,
-            // User's custom prompt for additional elements/styling
-            customPrompt: prompt || undefined,
+            // Pro Mode configuration (structured prompts) - only if enabled
+            proModeConfig: proModeConfig.enabled ? proModeConfig : undefined,
+            // Simple Mode custom prompt (only used when Pro Mode is disabled)
+            customPrompt: !proModeConfig.enabled && prompt ? prompt : undefined,
           }),
           signal: controller.signal,
         })
@@ -522,6 +528,10 @@ function EditorContent() {
                 onSelectionChange={setSelectedStyles}
                 backgroundConfig={backgroundConfig}
                 onBackgroundConfigChange={setBackgroundConfig}
+                proModeConfig={proModeConfig}
+                onProModeConfigChange={setProModeConfig}
+                customPrompt={prompt}
+                onCustomPromptChange={setPrompt}
               />
             )}
           </aside>
